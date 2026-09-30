@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS product_types (
     name TEXT NOT NULL,
     description TEXT,
     icon TEXT DEFAULT 'package',
+    template TEXT NOT NULL DEFAULT 'restaurant', -- 'restaurant', 'hardware', 'fashion', 'tech'
     attributes TEXT DEFAULT '[]' -- JSON array de atributos válidos para esta rama
 );
 
@@ -21,6 +22,7 @@ CREATE TABLE IF NOT EXISTS products (
     image_url TEXT,
     sizes TEXT, -- Opciones secundarias separadas por comas
     type_id TEXT REFERENCES product_types(id),
+    template TEXT NOT NULL DEFAULT 'restaurant', -- 'restaurant', 'hardware', 'fashion', 'tech'
     active INTEGER NOT NULL DEFAULT 1, -- 1 = Activo, 0 = Inactivo
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -67,6 +69,7 @@ CREATE TABLE IF NOT EXISTS orders (
     status TEXT NOT NULL DEFAULT 'pendiente', -- pendiente, en_produccion, listo_entrega, completado, cancelado
     total_items INTEGER NOT NULL DEFAULT 0,
     total_price REAL NOT NULL DEFAULT 0.0,
+    template TEXT DEFAULT 'restaurant',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -120,6 +123,9 @@ CREATE TABLE IF NOT EXISTS settings (
 -- --- ÍNDICES PARA OPTIMIZACIÓN DE BÚSQUEDAS ---
 CREATE INDEX IF NOT EXISTS idx_products_active ON products(active);
 CREATE INDEX IF NOT EXISTS idx_products_type ON products(type_id);
+CREATE INDEX IF NOT EXISTS idx_products_template ON products(template);
+CREATE INDEX IF NOT EXISTS idx_product_types_template ON product_types(template);
+CREATE INDEX IF NOT EXISTS idx_orders_template ON orders(template);
 CREATE INDEX IF NOT EXISTS idx_product_attributes_product ON product_attributes(product_id);
 CREATE INDEX IF NOT EXISTS idx_product_variants_product ON product_variants(product_id);
 CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
@@ -137,24 +143,24 @@ INSERT OR IGNORE INTO settings (key, value) VALUES
 ('bcv_updated_at', '1970-01-01 00:00:00');
 
 -- Categorías
-INSERT OR IGNORE INTO product_types (id, name, description, icon) VALUES
-('entradas', 'Entradas y Pasapalos', 'Tequeños, empanaditas y delicias para abrir el apetito.', 'utensils'),
-('principales', 'Platos Principales', 'Pabellón criollo, carnes a la brasa, cachapas y asados.', 'flame'),
-('combos', 'Combos y Promociones', 'La mejor opción para compartir en familia o con amigos.', 'users'),
-('postres', 'Postres Tradicionales', 'Tres leches, quesillo casero y dulces venezolanos.', 'cake'),
-('bebidas', 'Bebidas Típicas', 'Papelón con limón, jugos naturales y refrescos.', 'cup-soda');
+INSERT OR IGNORE INTO product_types (id, name, description, icon, template) VALUES
+('entradas', 'Entradas y Pasapalos', 'Tequeños, empanaditas y delicias para abrir el apetito.', 'utensils', 'restaurant'),
+('principales', 'Platos Principales', 'Pabellón criollo, carnes a la brasa, cachapas y asados.', 'flame', 'restaurant'),
+('combos', 'Combos y Promociones', 'La mejor opción para compartir en familia o con amigos.', 'users', 'restaurant'),
+('postres', 'Postres Tradicionales', 'Tres leches, quesillo casero y dulces venezolanos.', 'cake', 'restaurant'),
+('bebidas', 'Bebidas Típicas', 'Papelón con limón, jugos naturales y refrescos.', 'cup-soda', 'restaurant');
 
 -- Platos del Menú
-INSERT OR IGNORE INTO products (id, name, type_id, category, price, icon, description, image_url, sizes, active) VALUES
-('pabellon-criollo', 'Pabellón Criollo Especial', 'principales', 'principales', 12.00, 'utensils', 'Carne mechada tierna y jugosa, caraotas negras con queso blanco rallado, arroz blanco y tajadas de plátano maduro.', 'assets/product_pabellon.webp', 'Carne Mechada, Pollo Mechado', 1),
-('asado-negro', 'Asado Negro Tradicional', 'principales', 'principales', 14.50, 'utensils', 'Corte de res cocinado a fuego lento en reducción dulce de papelón y especias. Acompañado de puré de papas y arroz.', 'assets/product_asado.webp', 'Puré de Papas, Arroz y Ensalada', 1),
-('cachapa-queso', 'Cachapa con Queso de Mano', 'principales', 'principales', 9.50, 'flame', 'Masa fresca de maíz tierno cocida al budare, rellena con auténtico queso de mano y bañada con mantequilla criolla.', 'assets/product_cachapa.webp', 'Sola, Con Pernil (+3$), Con Carne Mechada (+3$)', 1),
-('tequenos-queso', 'Tequeños Tradicionales (6 und)', 'entradas', 'entradas', 6.00, 'utensils', 'Deditos de masa crujiente rellenos con abundante queso llanero fundido. Servidos con salsa tártara de la casa.', 'assets/product_tequenos.webp', '6 unidades, 12 unidades (+5$)', 1),
-('empanaditas-degustacion', 'Mini Empanadas Criollas (4 und)', 'entradas', 'entradas', 5.50, 'utensils', 'Degustación de mini empanadas de maíz crujientes: carne mechada, queso llanero, pollo y cazón fresco.', 'assets/product_empanadas.webp', 'Surtidas, Solo Queso, Solo Carne', 1),
-('combo-parrillero', 'Combo Parrillero Familiar', 'combos', 'combos', 28.00, 'users', 'Para 3-4 personas: Carne de res a la parrilla, pollo asado, chorizo ahumado, yuca con mojo, ensalada y guasacaca.', 'assets/product_parrilla.webp', 'Familiar 4 personas, Pareja 2 personas (-10$)', 1),
-('quesillo-casero', 'Quesillo Tradicional Venezolano', 'postres', 'postres', 4.00, 'cake', 'Postre cremoso a base de huevos, leche condensada y vainilla, cubierto con un rico caramelo dorado hecho a mano.', 'assets/product_quesillo.webp', 'Porción individual', 1),
-('tres-leches', 'Torta Tres Leches', 'postres', 'postres', 4.50, 'cake', 'Bizcocho esponjoso empapado en nuestra mezcla especial de tres leches, coronado con merengue suave y canela.', 'assets/product_tresleches.webp', 'Porción individual', 1),
-('papelon-limon', 'Papelón con Limón (500ml)', 'bebidas', 'bebidas', 2.50, 'cup-soda', 'La bebida criolla por excelencia. Panela de papelón disuelta con abundante jugo de limón fresco y mucho hielo.', 'assets/product_papelon.webp', 'Vaso 500ml, Jarra 1.5L (+3$)', 1);
+INSERT OR IGNORE INTO products (id, name, type_id, category, price, icon, description, image_url, sizes, template, active) VALUES
+('pabellon-criollo', 'Pabellón Criollo Especial', 'principales', 'principales', 12.00, 'utensils', 'Carne mechada tierna y jugosa, caraotas negras con queso blanco rallado, arroz blanco y tajadas de plátano maduro.', 'assets/product_pabellon.webp', 'Carne Mechada, Pollo Mechado', 'restaurant', 1),
+('asado-negro', 'Asado Negro Tradicional', 'principales', 'principales', 14.50, 'utensils', 'Corte de res cocinado a fuego lento en reducción dulce de papelón y especias. Acompañado de puré de papas y arroz.', 'assets/product_asado.webp', 'Puré de Papas, Arroz y Ensalada', 'restaurant', 1),
+('cachapa-queso', 'Cachapa con Queso de Mano', 'principales', 'principales', 9.50, 'flame', 'Masa fresca de maíz tierno cocida al budare, rellena con auténtico queso de mano y bañada con mantequilla criolla.', 'assets/product_cachapa.webp', 'Sola, Con Pernil (+3$), Con Carne Mechada (+3$)', 'restaurant', 1),
+('tequenos-queso', 'Tequeños Tradicionales (6 und)', 'entradas', 'entradas', 6.00, 'utensils', 'Deditos de masa crujiente rellenos con abundante queso llanero fundido. Servidos con salsa tártara de la casa.', 'assets/product_tequenos.webp', '6 unidades, 12 unidades (+5$)', 'restaurant', 1),
+('empanaditas-degustacion', 'Mini Empanadas Criollas (4 und)', 'entradas', 'entradas', 5.50, 'utensils', 'Degustación de mini empanadas de maíz crujientes: carne mechada, queso llanero, pollo y cazón fresco.', 'assets/product_empanadas.webp', 'Surtidas, Solo Queso, Solo Carne', 'restaurant', 1),
+('combo-parrillero', 'Combo Parrillero Familiar', 'combos', 'combos', 28.00, 'users', 'Para 3-4 personas: Carne de res a la parrilla, pollo asado, chorizo ahumado, yuca con mojo, ensalada y guasacaca.', 'assets/product_parrilla.webp', 'Familiar 4 personas, Pareja 2 personas (-10$)', 'restaurant', 1),
+('quesillo-casero', 'Quesillo Tradicional Venezolano', 'postres', 'postres', 4.00, 'cake', 'Postre cremoso a base de huevos, leche condensada y vainilla, cubierto con un rico caramelo dorado hecho a mano.', 'assets/product_quesillo.webp', 'Porción individual', 'restaurant', 1),
+('tres-leches', 'Torta Tres Leches', 'postres', 'postres', 4.50, 'cake', 'Bizcocho esponjoso empapado en nuestra mezcla especial de tres leches, coronado con merengue suave y canela.', 'assets/product_tresleches.webp', 'Porción individual', 'restaurant', 1),
+('papelon-limon', 'Papelón con Limón (500ml)', 'bebidas', 'bebidas', 2.50, 'cup-soda', 'La bebida criolla por excelencia. Panela de papelón disuelta con abundante jugo de limón fresco y mucho hielo.', 'assets/product_papelon.webp', 'Vaso 500ml, Jarra 1.5L (+3$)', 'restaurant', 1);
 
 -- Usuario Administrador por Defecto (admin / admin)
 -- Para credenciales personalizadas de producción, usa: pnpm run create-admin <usuario> <clave>

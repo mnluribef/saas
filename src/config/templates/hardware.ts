@@ -208,4 +208,34 @@ export const hardwareTemplate: StoreConfig = {
     currencyCode: 'USD',
     allowCustomNotes: true,
   },
+  storePrefix: 'FER',
+  payment: {
+    pagoMovil: {
+      banco: 'Mercantil (0105)',
+      telefono: '0412-4756191',
+      cedula: 'J-40192831',
+    },
+    zelle: {
+      email: 'pagos@ferromax.com',
+      titular: 'FERROMAX SUMINISTROS C.A.',
+    },
+    efectivo: true,
+    punto: true,
+  },
+  labels: {
+    itemNounSingular: 'Artículo',
+    itemNounPlural: 'Artículos',
+    emptyCartEmoji: '🧰',
+    cartTitle: '🧰 Tu Cotización / Pedido',
+    deliveryOptionName: 'Flete / Despacho a Obra',
+    deliveryOptionPrice: 10,
+    pickupOptionName: 'Retiro en Galpón / Tienda',
+  },
+  categories: [
+    { id: 'herramientas-electricas', name: 'Herramientas Eléctricas', icon: 'zap' },
+    { id: 'herramientas-manuales', name: 'Herramientas Manuales', icon: 'wrench' },
+    { id: 'plomeria', name: 'Plomería & Tuberías', icon: 'droplet' },
+    { id: 'electricidad', name: 'Electricidad & Iluminación', icon: 'sun' },
+    { id: 'construccion-pinturas', name: 'Construcción & Pinturas', icon: 'brush' },
+  ],
 };

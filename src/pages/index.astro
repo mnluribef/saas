@@ -9,6 +9,7 @@ import ProductCatalog from '../components/landing/ProductCatalog.astro';
 import Process from '../components/landing/Process.astro';
 import Testimonials from '../components/landing/Testimonials.astro';
 import Faq from '../components/landing/Faq.astro';
+import TemplateSwitcher from '../components/common/TemplateSwitcher.astro';
 
 import storeConfig from '../config/store.config';
 ---
@@ -24,4 +25,5 @@ import storeConfig from '../config/store.config';
     <Faq config={storeConfig} />
   </main>
   <Footer config={storeConfig} />
+  <TemplateSwitcher activeTemplate={storeConfig.template} />
 </BaseLayout>

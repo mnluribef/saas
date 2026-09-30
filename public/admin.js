@@ -879,23 +879,59 @@ if (paymentForm) {
     });
 }
 
-// --- GESTIÓN DE PRODUCTOS (CRUD INVENTARIO / MENÚ) ---
+// --- GESTIÓN DE PRODUCTOS (CRUD INVENTARIO / CATÁLOGO MULTI-PLANTILLA) ---
+
+let activeProductTemplateFilter = 'all';
+
+const templateDefaultCategory = {
+    restaurant: 'principales',
+    hardware: 'herramientas-electricas',
+    fashion: 'vestidos',
+    tech: 'laptops-pc'
+};
+
+const templateBadges = {
+    restaurant: '<span class="template-badge restaurant">🍽️ Restaurante</span>',
+    hardware: '<span class="template-badge hardware">🔨 Ferretería</span>',
+    fashion: '<span class="template-badge fashion">👗 Moda</span>',
+    tech: '<span class="template-badge tech">⚡ Tecnología</span>'
+};
 
 function renderProductsTable() {
     const tableProducts = document.getElementById('table-products');
     if (!tableProducts) return;
 
-    if (productsList.length === 0) {
-        tableProducts.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-secondary);">No hay platos en el menú. Agrega uno nuevo.</td></tr>`;
+    // Actualizar contadores de las pestañas
+    const countAll = document.getElementById('count-all');
+    const countRest = document.getElementById('count-restaurant');
+    const countHard = document.getElementById('count-hardware');
+    const countFash = document.getElementById('count-fashion');
+    const countTech = document.getElementById('count-tech');
+
+    if (countAll) countAll.textContent = productsList.length;
+    if (countRest) countRest.textContent = productsList.filter(p => (p.template || 'restaurant') === 'restaurant').length;
+    if (countHard) countHard.textContent = productsList.filter(p => p.template === 'hardware').length;
+    if (countFash) countFash.textContent = productsList.filter(p => p.template === 'fashion').length;
+    if (countTech) countTech.textContent = productsList.filter(p => p.template === 'tech').length;
+
+    // Filtrar lista según pestaña activa
+    const filteredProducts = activeProductTemplateFilter === 'all'
+        ? productsList
+        : productsList.filter(p => (p.template || 'restaurant') === activeProductTemplateFilter);
+
+    if (filteredProducts.length === 0) {
+        tableProducts.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-secondary); padding: 2rem;">No hay productos registrados en esta plantilla. Agrega uno nuevo arriba.</td></tr>`;
         return;
     }
 
-    tableProducts.innerHTML = productsList.map(p => {
+    tableProducts.innerHTML = filteredProducts.map(p => {
         const sizesText = p.sizes || 'N/A';
         const priceText = p.price > 0 ? `$${parseFloat(p.price).toFixed(2)}` : '$0.00';
         const statusText = p.active === 1 ? 'Disponible' : 'Agotado';
         const statusClass = p.active === 1 ? 'completado' : 'cancelado';
         const categoryLabel = p.category || p.type_id || 'general';
+        const tmpl = p.template || 'restaurant';
+        const badge = templateBadges[tmpl] || `<span class="template-badge">${escapeHtml(tmpl)}</span>`;
 
         return `
             <tr>
@@ -904,16 +940,17 @@ function renderProductsTable() {
                 </td>
                 <td><code>${escapeHtml(p.id)}</code></td>
                 <td><strong>${escapeHtml(p.name)}</strong></td>
+                <td>${badge}</td>
                 <td><span style="font-size:0.8rem; background:rgba(255,255,255,0.03); padding:0.25rem 0.5rem; border-radius:6px;">${escapeHtml(categoryLabel)}</span></td>
                 <td>${priceText}</td>
                 <td style="font-size:0.85rem; color:var(--text-secondary);">${escapeHtml(sizesText)}</td>
                 <td><span class="status-badge ${statusClass}">${statusText}</span></td>
                 <td>
                     <div style="display:flex; gap:0.5rem;">
-                        <button class="action-icon-btn edit" onclick="startEditProduct('${escapeHtml(p.id)}')" title="Editar Plato">
+                        <button class="action-icon-btn edit" onclick="startEditProduct('${escapeHtml(p.id)}')" title="Editar Producto">
                             <i data-lucide="edit-3" style="width:18px; height:18px;"></i>
                         </button>
-                        <button class="action-icon-btn delete" onclick="deleteProduct('${escapeHtml(p.id)}')" title="Eliminar Plato">
+                        <button class="action-icon-btn delete" onclick="deleteProduct('${escapeHtml(p.id)}')" title="Eliminar Producto">
                             <i data-lucide="trash-2" style="width:18px; height:18px;"></i>
                         </button>
                     </div>
@@ -925,6 +962,39 @@ function renderProductsTable() {
     if (window.lucide) lucide.createIcons();
 }
 
+// Configurar pestañas de filtro por plantilla
+function setupTemplateFilterTabs() {
+    const tabsContainer = document.getElementById('template-filter-tabs');
+    if (!tabsContainer) return;
+
+    tabsContainer.addEventListener('click', (e) => {
+        const btn = e.target.closest('.filter-tab-btn');
+        if (!btn) return;
+
+        const filter = btn.getAttribute('data-filter');
+        if (!filter) return;
+
+        activeProductTemplateFilter = filter;
+        tabsContainer.querySelectorAll('.filter-tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        renderProductsTable();
+    });
+}
+setupTemplateFilterTabs();
+
+// Cambio dinámico de categoría por defecto al cambiar plantilla en el formulario
+const prodTemplateSelect = document.getElementById('prod-template');
+if (prodTemplateSelect) {
+    prodTemplateSelect.addEventListener('change', (e) => {
+        const selectedTmpl = e.target.value;
+        const catSelect = document.getElementById('prod-category');
+        if (catSelect && templateDefaultCategory[selectedTmpl]) {
+            catSelect.value = templateDefaultCategory[selectedTmpl];
+        }
+    });
+}
+
 // Enviar formulario (Crear / Editar Producto)
 if (productForm) {
     productForm.addEventListener('submit', async (e) => {
@@ -932,6 +1002,7 @@ if (productForm) {
 
         const method = document.getElementById('prod-method')?.value || 'POST';
         const id = document.getElementById('prod-id')?.value.trim();
+        const template = document.getElementById('prod-template')?.value || 'restaurant';
         const name = document.getElementById('prod-name')?.value.trim();
         const category = document.getElementById('prod-category')?.value.trim();
         const price = parseFloat(document.getElementById('prod-price')?.value) || 0.0;
@@ -953,26 +1024,26 @@ if (productForm) {
                 method: method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    id, name, category, price, icon, image_url, sizes: sizes || null, active, description
+                    id, name, template, category, price, icon, image_url, sizes: sizes || null, active, description
                 })
             });
 
             const data = await response.json();
 
             if (response.ok && data.success) {
-                showToast(data.message || 'Platillo guardado exitosamente.', 'success');
+                showToast(data.message || 'Producto guardado exitosamente.', 'success');
                 resetProductForm();
                 refreshAllData();
             } else {
-                showToast(data.error || 'Error al guardar el plato.', 'error');
+                showToast(data.error || 'Error al guardar el producto.', 'error');
             }
         } catch (err) {
             console.error(err);
-            showToast('Error de red al guardar plato.', 'error');
+            showToast('Error de red al guardar producto.', 'error');
         } finally {
             if (btnSave) {
                 btnSave.disabled = false;
-                btnSave.innerHTML = '<i data-lucide="plus-circle"></i> Guardar Plato';
+                btnSave.innerHTML = '<i data-lucide="plus-circle"></i> Guardar Producto';
                 if (window.lucide) lucide.createIcons();
             }
         }
@@ -986,6 +1057,7 @@ function startEditProduct(productId) {
 
     const methodEl = document.getElementById('prod-method');
     const idEl = document.getElementById('prod-id');
+    const templateEl = document.getElementById('prod-template');
     const nameEl = document.getElementById('prod-name');
     const categoryEl = document.getElementById('prod-category');
     const priceEl = document.getElementById('prod-price');
@@ -1000,6 +1072,7 @@ function startEditProduct(productId) {
         idEl.value = product.id;
         idEl.disabled = true;
     }
+    if (templateEl) templateEl.value = product.template || 'restaurant';
     if (nameEl) nameEl.value = product.name;
     if (categoryEl) categoryEl.value = product.category || product.type_id || 'principales';
     if (priceEl) priceEl.value = product.price;
@@ -1009,8 +1082,8 @@ function startEditProduct(productId) {
     if (activeEl) activeEl.value = product.active !== undefined ? product.active : 1;
     if (descEl) descEl.value = product.description || '';
 
-    if (formProductTitle) formProductTitle.textContent = `Editando Plato: ${product.name}`;
-    if (btnSubmitProduct) btnSubmitProduct.innerHTML = '<i data-lucide="save"></i> Actualizar Plato';
+    if (formProductTitle) formProductTitle.textContent = `Editando Producto: ${product.name}`;
+    if (btnSubmitProduct) btnSubmitProduct.innerHTML = '<i data-lucide="save"></i> Actualizar Producto';
     if (btnCancelEdit) btnCancelEdit.style.display = 'inline-flex';
     
     if (window.lucide) lucide.createIcons();
@@ -1030,10 +1103,12 @@ function resetProductForm() {
     if (productForm) productForm.reset();
     const methodEl = document.getElementById('prod-method');
     const idEl = document.getElementById('prod-id');
+    const templateEl = document.getElementById('prod-template');
     if (methodEl) methodEl.value = 'POST';
     if (idEl) idEl.disabled = false;
-    if (formProductTitle) formProductTitle.textContent = 'Añadir Nuevo Plato';
-    if (btnSubmitProduct) btnSubmitProduct.innerHTML = '<i data-lucide="plus-circle"></i> Guardar Plato';
+    if (templateEl) templateEl.value = 'restaurant';
+    if (formProductTitle) formProductTitle.textContent = 'Añadir Nuevo Producto';
+    if (btnSubmitProduct) btnSubmitProduct.innerHTML = '<i data-lucide="plus-circle"></i> Guardar Producto';
     if (btnCancelEdit) btnCancelEdit.style.display = 'none';
     if (window.lucide) lucide.createIcons();
 
@@ -1047,7 +1122,7 @@ if (btnCancelEdit) btnCancelEdit.addEventListener('click', resetProductForm);
 
 // Eliminar un producto
 async function deleteProduct(productId) {
-    if (!confirm(`¿Estás completamente seguro de eliminar "${productId}" del menú? Se borrará permanentemente de la base de datos.`)) {
+    if (!confirm(`¿Estás seguro de eliminar el producto "${productId}" del catálogo? Se borrará permanentemente de la base de datos.`)) {
         return;
     }
 
@@ -1058,22 +1133,22 @@ async function deleteProduct(productId) {
 
         if (!response.ok) throw new Error('Error al eliminar');
 
-        showToast('Platillo eliminado del menú.', 'info');
+        showToast('Producto eliminado del catálogo.', 'info');
         refreshAllData();
     } catch (err) {
         console.error(err);
-        showToast('Error al intentar eliminar el platillo.', 'error');
+        showToast('Error al intentar eliminar el producto.', 'error');
     }
 }
 
-// Botón Nuevo Plato (Toggle formulario)
+// Botón Nuevo Producto (Toggle formulario)
 if (btnToggleProductForm) {
     btnToggleProductForm.addEventListener('click', () => {
         const collapseEl = document.getElementById('product-form-collapse');
         if (collapseEl) {
             collapseEl.classList.toggle('expanded');
             if (collapseEl.classList.contains('expanded')) {
-                document.getElementById('prod-id')?.focus();
+                document.getElementById('prod-template')?.focus();
             }
         }
     });

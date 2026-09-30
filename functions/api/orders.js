@@ -23,6 +23,9 @@ async function ensureOrderColumns(db) {
     try {
         await db.prepare("ALTER TABLE orders ADD COLUMN total_bs REAL DEFAULT 0.0").run();
     } catch (e) {}
+    try {
+        await db.prepare("ALTER TABLE orders ADD COLUMN template TEXT DEFAULT 'restaurant'").run();
+    } catch (e) {}
 }
 
 /**
@@ -39,6 +42,7 @@ export async function onRequestGet(context) {
     
     const url = new URL(request.url);
     const orderId = url.searchParams.get("id");
+    const template = url.searchParams.get("template");
 
     try {
         if (orderId) {
@@ -57,8 +61,17 @@ export async function onRequestGet(context) {
                 headers: { "Content-Type": "application/json" }
             });
         } else {
-            // Listar todos los pedidos ordenados por fecha
-            const { results: orders } = await db.prepare("SELECT * FROM orders ORDER BY created_at DESC").all();
+            // Listar pedidos (con soporte para filtrar por plantilla)
+            let query = "SELECT * FROM orders";
+            const params = [];
+            if (template && template !== "all") {
+                query += " WHERE template = ?";
+                params.push(template);
+            }
+            query += " ORDER BY created_at DESC";
+
+            const stmt = params.length > 0 ? db.prepare(query).bind(...params) : db.prepare(query);
+            const { results: orders } = await stmt.all();
             
             return new Response(JSON.stringify(orders), {
                 headers: { "Content-Type": "application/json" }
@@ -96,6 +109,7 @@ export async function onRequestPost(context) {
             paymentReceipt = null,
             bcvRate = null,
             storePrefix = 'VEN',
+            template = 'restaurant',
             items
         } = data;
 
@@ -116,6 +130,7 @@ export async function onRequestPost(context) {
         const cleanDeliveryNotes = (deliveryNotes || '').trim().slice(0, 500);
         const cleanPaymentMethod = (paymentMethod || '').trim().slice(0, 50);
         const cleanPaymentReference = (paymentReference || '').trim().slice(0, 100);
+        const cleanTemplate = (typeof template === 'string' && template.trim()) ? template.trim().toLowerCase() : 'restaurant';
         
         // Validación de comprobante de pago (Data URL JPEG/PNG/WebP, max ~1.8MB)
         let cleanPaymentReceipt = null;
@@ -179,7 +194,7 @@ export async function onRequestPost(context) {
         // 1. Sentencia para insertar el Pedido base
         statements.push(
             db.prepare(
-                "INSERT INTO orders (id, client_name, client_phone, delivery_type, delivery_address, delivery_notes, payment_method, payment_reference, payment_receipt, bcv_rate, total_bs, status, total_items, total_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                "INSERT INTO orders (id, client_name, client_phone, delivery_type, delivery_address, delivery_notes, payment_method, payment_reference, payment_receipt, bcv_rate, total_bs, status, total_items, total_price, template) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
             )
             .bind(
                 orderId,
@@ -195,7 +210,8 @@ export async function onRequestPost(context) {
                 0.0,
                 "pendiente",
                 0,
-                0.0
+                0.0,
+                cleanTemplate
             )
         );
 

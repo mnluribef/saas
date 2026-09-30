@@ -1,0 +1,43 @@
+---
+// src/pages/demo/[template].astro
+// Renderiza dinámicamente cualquiera de las plantillas de Vendly SaaS de forma 100% aislada
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import Hero from '../../components/landing/Hero.astro';
+import Benefits from '../../components/landing/Benefits.astro';
+import ProductCatalog from '../../components/landing/ProductCatalog.astro';
+import Process from '../../components/landing/Process.astro';
+import Testimonials from '../../components/landing/Testimonials.astro';
+import Faq from '../../components/landing/Faq.astro';
+import TemplateSwitcher from '../../components/common/TemplateSwitcher.astro';
+
+import { createStoreConfig } from '../../config/store.config';
+import type { StoreTemplateType } from '../../types/store.types';
+
+export function getStaticPaths() {
+  return [
+    { params: { template: 'restaurant' } },
+    { params: { template: 'hardware' } },
+    { params: { template: 'fashion' } },
+    { params: { template: 'tech' } },
+  ];
+}
+
+const { template } = Astro.params;
+const config = createStoreConfig(template as StoreTemplateType);
+---
+
+<BaseLayout config={config}>
+  <Header config={config} />
+  <main>
+    <Hero config={config} />
+    <ProductCatalog config={config} />
+    <Benefits config={config} />
+    <Process config={config} />
+    <Testimonials config={config} />
+    <Faq config={config} />
+  </main>
+  <Footer config={config} />
+  <TemplateSwitcher activeTemplate={template as StoreTemplateType} />
+</BaseLayout>

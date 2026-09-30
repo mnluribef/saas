@@ -166,8 +166,39 @@ export interface StoreFeaturesConfig {
   allowCustomNotes: boolean;
 }
 
+export interface StorePaymentConfig {
+  pagoMovil?: {
+    banco: string;
+    telefono: string;
+    cedula: string;
+  };
+  zelle?: {
+    email: string;
+    titular: string;
+  };
+  efectivo?: boolean;
+  punto?: boolean;
+}
+
+export interface StoreLabelsConfig {
+  itemNounSingular: string; // ej: "Platillo", "Artículo", "Prenda", "Equipo"
+  itemNounPlural: string;   // ej: "Platillos", "Artículos", "Prendas", "Equipos"
+  emptyCartEmoji: string;   // ej: "🍽️", "🧰", "🛍️", "⚡"
+  cartTitle: string;        // ej: "Tu Pedido", "Tus Compras", "Tu Cotización"
+  deliveryOptionName: string; // ej: "Delivery", "Despacho a Obra", "Envío Nacional", "Envío Express"
+  deliveryOptionPrice: number; // Costo adicional en USD
+  pickupOptionName: string;   // ej: "Retiro en local", "Retiro en Galpón", "Retiro en Tienda", "Retiro en Oficina"
+}
+
+export interface CategoryDefinition {
+  id: string;
+  name: string;
+  icon?: string;
+}
+
 export interface StoreConfig {
   template: StoreTemplateType;
+  storePrefix?: string; // Prefijo para IDs de pedidos (ej: 'FOG', 'FER', 'AUR', 'NEX')
   business: StoreBusinessConfig;
   contact: StoreContactConfig;
   theme: StoreThemeConfig;
@@ -175,4 +206,8 @@ export interface StoreConfig {
   nav: StoreNavConfig;
   seo: StoreSeoConfig;
   features: StoreFeaturesConfig;
+  payment?: StorePaymentConfig;
+  labels?: StoreLabelsConfig;
+  categories?: CategoryDefinition[];
 }
+

@@ -208,4 +208,34 @@ export const fashionTemplate: StoreConfig = {
     currencyCode: 'USD',
     allowCustomNotes: true,
   },
+  storePrefix: 'AUR',
+  payment: {
+    pagoMovil: {
+      banco: 'Banesco (0134)',
+      telefono: '0412-4756191',
+      cedula: 'V-24567890',
+    },
+    zelle: {
+      email: 'pagos@aurastudio.com',
+      titular: 'AURA STUDIO FASHION',
+    },
+    efectivo: true,
+    punto: true,
+  },
+  labels: {
+    itemNounSingular: 'Prenda',
+    itemNounPlural: 'Prendas',
+    emptyCartEmoji: '🛍️',
+    cartTitle: '🛍️ Tu Bolsa de Compras',
+    deliveryOptionName: 'Envío Express / Nacional',
+    deliveryOptionPrice: 5,
+    pickupOptionName: 'Retiro en Boutique / Tienda',
+  },
+  categories: [
+    { id: 'vestidos', name: 'Vestidos & Enterizos', icon: 'sparkles' },
+    { id: 'blusas-tops', name: 'Blusas & Tops', icon: 'heart' },
+    { id: 'pantalones-jeans', name: 'Pantalones & Jeans', icon: 'scissors' },
+    { id: 'conjuntos', name: 'Conjuntos & Sets', icon: 'layers' },
+    { id: 'accesorios-calzado', name: 'Calzado & Accesorios', icon: 'tag' },
+  ],
 };

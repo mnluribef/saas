@@ -208,4 +208,34 @@ export const techTemplate: StoreConfig = {
     currencyCode: 'USD',
     allowCustomNotes: true,
   },
+  storePrefix: 'NEX',
+  payment: {
+    pagoMovil: {
+      banco: 'Banesco (0134)',
+      telefono: '0412-4756191',
+      cedula: 'J-50123984',
+    },
+    zelle: {
+      email: 'pagos@nexustech.com',
+      titular: 'NEXUS TECH SOLUTIONS C.A.',
+    },
+    efectivo: true,
+    punto: true,
+  },
+  labels: {
+    itemNounSingular: 'Equipo',
+    itemNounPlural: 'Equipos',
+    emptyCartEmoji: '⚡',
+    cartTitle: '⚡ Tu Pedido Tech',
+    deliveryOptionName: 'Envío Asegurado / Delivery',
+    deliveryOptionPrice: 5,
+    pickupOptionName: 'Retiro en Oficina / Showroom',
+  },
+  categories: [
+    { id: 'laptops-pc', name: 'Laptops & PC', icon: 'cpu' },
+    { id: 'componentes', name: 'Componentes & Almacenamiento', icon: 'hard-drive' },
+    { id: 'perifericos', name: 'Periféricos & Gaming', icon: 'headphones' },
+    { id: 'audio-video', name: 'Audio & Video', icon: 'tv' },
+    { id: 'redes-conectividad', name: 'Redes & Conectividad', icon: 'wifi' },
+  ],
 };

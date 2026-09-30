@@ -147,7 +147,7 @@ const { business, contact, features } = config;
                 </svg>
             </button>
             <h3 id="cart-title" style="margin: 0;">
-                🛒 Tu Pedido
+                {config.labels?.cartTitle || "🛒 Tu Pedido"}
             </h3>
         </div>
         <div class="cart-header-actions">
@@ -202,7 +202,7 @@ const { business, contact, features } = config;
             class="cart-items"
             style="flex: 1; overflow-y: auto;"
         >
-            <div class="empty-cart-msg">Tu pedido está vacío 🍽️</div>
+            <div class="empty-cart-msg">{config.labels?.emptyCartEmoji || "🛒"} Tu pedido está vacío</div>
         </div>
     </div>
 
@@ -274,7 +274,7 @@ const { business, contact, features } = config;
                         checked
                         style="accent-color: var(--accent);"
                     />{" "}
-                    🏪 Retiro en local
+                    🏪 {config.labels?.pickupOptionName || "Retiro en local"}
                 </label>
                 <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.9rem; cursor: pointer; color: var(--text-dark);">
                     <input
@@ -283,7 +283,7 @@ const { business, contact, features } = config;
                         value="delivery"
                         style="accent-color: var(--accent);"
                     />{" "}
-                    🛵 Delivery (+$5)
+                    🛵 {config.labels?.deliveryOptionName || "Delivery"} (+${config.labels?.deliveryOptionPrice ?? 5})
                 </label>
             </div>
         </div>
@@ -344,13 +344,13 @@ const { business, contact, features } = config;
             </p>
             <ul style="margin:0; padding-left:1.2rem; color:var(--text-light);">
                 <li>
-                    <strong>Banco:</strong> Banesco (0134)
+                    <strong>Banco:</strong> {config.payment?.pagoMovil?.banco || "Banesco (0134)"}
                 </li>
                 <li>
-                    <strong>Teléfono:</strong> 0412-4756191
+                    <strong>Teléfono:</strong> {config.payment?.pagoMovil?.telefono || contact.phone || "0412-4756191"}
                 </li>
                 <li>
-                    <strong>C.I:</strong> V-12345678
+                    <strong>C.I / RIF:</strong> {config.payment?.pagoMovil?.cedula || "V-12345678"}
                 </li>
             </ul>
             <div style="margin-top: 0.6rem; padding-top: 0.6rem; border-top: 1px dashed rgba(0,0,0,0.1); font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.2rem;">
@@ -373,10 +373,10 @@ const { business, contact, features } = config;
             </p>
             <ul style="margin:0; padding-left:1.2rem; color:var(--text-light);">
                 <li>
-                    <strong>Correo:</strong> {contact.email || "pagos@vendly.com"}
+                    <strong>Correo:</strong> {config.payment?.zelle?.email || contact.email || "pagos@vendly.com"}
                 </li>
                 <li>
-                    <strong>Titular:</strong> {business.name}
+                    <strong>Titular:</strong> {config.payment?.zelle?.titular || business.name}
                 </li>
             </ul>
         </div>
@@ -563,12 +563,21 @@ const { business, contact, features } = config;
 <!-- Metadata del Negocio para Script de Cliente -->
 <div
     id="catalog-store-meta"
+    data-template={config.template}
     data-whatsapp={contact.whatsapp}
     data-currency={features.currencySymbol}
     data-business-name={business.name}
-    data-store-prefix={business.shortName ? business.shortName.slice(0, 3).toUpperCase() : 'VEN'}
+    data-store-prefix={config.storePrefix || (business.shortName ? business.shortName.slice(0, 3).toUpperCase() : 'VEN')}
+    data-item-noun-singular={config.labels?.itemNounSingular || 'Artículo'}
+    data-item-noun-plural={config.labels?.itemNounPlural || 'Artículos'}
+    data-empty-cart-emoji={config.labels?.emptyCartEmoji || '🛒'}
+    data-delivery-name={config.labels?.deliveryOptionName || 'Delivery'}
+    data-delivery-price={String(config.labels?.deliveryOptionPrice ?? 5)}
+    data-pickup-name={config.labels?.pickupOptionName || 'Retiro en local'}
     style="display:none;"
 ></div>
+<script id="catalog-template-categories" type="application/json" is:inline set:html={JSON.stringify(config.categories || [])} />
+
 
 <!-- Floating WhatsApp -->
 <a
@@ -631,7 +640,15 @@ const { business, contact, features } = config;
     const CONFIG = {
         WHATSAPP_NUMBER: storeMetaEl?.dataset.whatsapp || "584124756191",
         DEFAULT_CURRENCY: storeMetaEl?.dataset.currency || "$",
-        BUSINESS_NAME: storeMetaEl?.dataset.businessName || "Vendly Store"
+        BUSINESS_NAME: storeMetaEl?.dataset.businessName || "Vendly Store",
+        TEMPLATE: storeMetaEl?.dataset.template || "restaurant",
+        ITEM_NOUN_SINGULAR: storeMetaEl?.dataset.itemNounSingular || "Artículo",
+        ITEM_NOUN_PLURAL: storeMetaEl?.dataset.itemNounPlural || "Artículos",
+        EMPTY_CART_EMOJI: storeMetaEl?.dataset.emptyCartEmoji || "🛒",
+        DELIVERY_NAME: storeMetaEl?.dataset.deliveryName || "Delivery",
+        DELIVERY_PRICE: parseFloat(storeMetaEl?.dataset.deliveryPrice || "5"),
+        PICKUP_NAME: storeMetaEl?.dataset.pickupName || "Retiro en local",
+        STORE_PREFIX: storeMetaEl?.dataset.storePrefix || "VEN",
     };
 
     let currentBcvRate = 853.50;
@@ -733,7 +750,7 @@ const { business, contact, features } = config;
     const STORE_KEY = storeMetaEl?.dataset.businessName
         ? storeMetaEl.dataset.businessName.toLowerCase().replace(/[^a-z0-9]/g, '_')
         : 'default';
-    const CART_STORAGE_KEY = `vendly_cart_${STORE_KEY}`;
+    const CART_STORAGE_KEY = `vendly_cart_${CONFIG.TEMPLATE}_${STORE_KEY}`;
     let cart: Array<{
         id: string;
         key?: string;
@@ -742,7 +759,7 @@ const { business, contact, features } = config;
         qty: number;
         icon: string;
         options: Record<string, string>;
-    }> = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || localStorage.getItem("fogon_cart") || "[]");
+    }> = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || "[]");
 
     const saveCart = () =>
         localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
@@ -770,7 +787,7 @@ const { business, contact, features } = config;
 
         if (cart.length === 0) {
             container.innerHTML =
-                '<div class="empty-cart-msg">Tu pedido está vacío 🍽️</div>';
+                `<div class="empty-cart-msg">${CONFIG.EMPTY_CART_EMOJI} Tu pedido está vacío</div>`;
             if (nextBtn) nextBtn.disabled = true;
             if (totalFixed) totalFixed.style.display = "none";
             return;
@@ -832,7 +849,7 @@ const { business, contact, features } = config;
                 'input[name="delivery-type"]:checked',
             ) as HTMLInputElement;
             const isDelivery = deliveryTypeInput?.value === "delivery";
-            const deliveryCost = isDelivery ? 5 : 0;
+            const deliveryCost = isDelivery ? CONFIG.DELIVERY_PRICE : 0;
             const itemsTotal = cart.reduce(
                 (s, i) => s + (i.price || 0) * i.qty,
                 0,
@@ -848,7 +865,7 @@ const { business, contact, features } = config;
                 if (totalBsEl) totalBsEl.textContent = "";
             } else {
                 totalAmount.innerHTML = isDelivery
-                    ? `${totalPrice.toFixed(2)} <span style="font-size:0.75rem; font-weight:normal; color:var(--text-light); margin-left:4px;">(Incl. $5 Delivery)</span>`
+                    ? `${totalPrice.toFixed(2)} <span style="font-size:0.75rem; font-weight:normal; color:var(--text-light); margin-left:4px;">(Incl. $${CONFIG.DELIVERY_PRICE} ${CONFIG.DELIVERY_NAME})</span>`
                     : `${totalPrice.toFixed(2)}`;
                 if (totalBsEl) {
                     totalBsEl.innerHTML = `≈ Bs. ${totalBs.toFixed(2)} <span style="font-size:0.7rem; font-weight:normal;">(BCV: ${currentBcvRate.toFixed(2)})</span>`;
@@ -1216,7 +1233,8 @@ const { business, contact, features } = config;
                         paymentReference,
                         paymentReceipt: uploadedReceiptBase64,
                         bcvRate: currentBcvRate,
-                        storePrefix: storeMetaEl?.dataset.storePrefix || "VEN",
+                        storePrefix: CONFIG.STORE_PREFIX,
+                        template: CONFIG.TEMPLATE,
                         items: cart,
                     }),
                 });
@@ -1246,13 +1264,13 @@ const { business, contact, features } = config;
                     msg += `✅ ${item.qty}x ${item.name}${opts ? ` [${opts}]` : ""} - $${itemTotal}\n`;
                 });
                 const totalCount = cart.reduce((s, i) => s + i.qty, 0);
-                const deliveryCost = deliveryType === "delivery" ? 5 : 0;
+                const deliveryCost = deliveryType === "delivery" ? CONFIG.DELIVERY_PRICE : 0;
                 const totalPrice =
                     cart.reduce((s, i) => s + (i.price || 0) * i.qty, 0) +
                     deliveryCost;
 
-                msg += `\n*Total Platillos:* ${totalCount}`;
-                msg += `\n*Entrega:* ${deliveryType === "delivery" ? "🛵 Delivery (+$5)" : "🏪 Retiro en local"}`;
+                msg += `\n*Total ${CONFIG.ITEM_NOUN_PLURAL}:* ${totalCount}`;
+                msg += `\n*Entrega:* ${deliveryType === "delivery" ? `🛵 ${CONFIG.DELIVERY_NAME} (+$${CONFIG.DELIVERY_PRICE})` : `🏪 ${CONFIG.PICKUP_NAME}`}`;
                 if (deliveryType === "delivery") {
                     msg += `\n*Dirección:* ${deliveryAddress}`;
                 }
@@ -1337,14 +1355,22 @@ const { business, contact, features } = config;
     const PAGE_SIZE = 6;
     let visibleCount = PAGE_SIZE;
 
+    // Categorías dinámicas definidas en la plantilla activa
+    const templateCategories: Array<{ id: string; name: string; icon?: string }> = (() => {
+        try {
+            return JSON.parse(document.getElementById("catalog-template-categories")?.textContent || "[]");
+        } catch {
+            return [];
+        }
+    })();
+
     const categoryNames: Record<string, string> = {
-        all: "Todo 🍽️",
-        entradas: "🥗 Entradas",
-        principales: "🥩 Platos Principales",
-        combos: "🪙 Combos",
-        postres: "🍰 Postres",
-        bebidas: "🥤 Bebidas",
+        all: `Todo ${CONFIG.EMPTY_CART_EMOJI || "✨"}`,
     };
+    for (const cat of templateCategories) {
+        categoryNames[cat.id] = cat.name;
+    }
+
     const colorMap: Record<string, string> = {
         pequeno: "#FFD4C2",
         mediano: "#FF6B35",
@@ -1355,6 +1381,15 @@ const { business, contact, features } = config;
         cerdo: "#C0504D",
         mixto: "#FF6B35",
         veggie: "#2A9D4E",
+        blanco: "#F8FAFC",
+        negro: "#0F172A",
+        nude: "#E8CBB5",
+        beige: "#F5F5DC",
+        camel: "#C19A6B",
+        rojo: "#EF4444",
+        azul: "#3B82F6",
+        verde: "#10B981",
+        amarillo: "#EAB308",
     };
 
     const renderCategoryFilters = (products: any[]) => {
@@ -1368,7 +1403,7 @@ const { business, contact, features } = config;
             .map((type) => {
                 const name =
                     categoryNames[type] ||
-                    type.charAt(0).toUpperCase() + type.slice(1);
+                    type.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
                 return `<button class="category-filter-btn ${activeCategory === type ? "active" : ""}" data-category="${type}">${name}</button>`;
             })
             .join("");
@@ -1487,7 +1522,7 @@ const { business, contact, features } = config;
 
     const fetchCatalog = async () => {
         try {
-            const res = await fetch("/api/products");
+            const res = await fetch(`/api/products?template=${encodeURIComponent(CONFIG.TEMPLATE)}`);
             if (!res.ok) throw new Error();
             const products = (await res.json()) as any[];
             catalogProducts = products;

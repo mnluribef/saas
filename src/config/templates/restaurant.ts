@@ -209,4 +209,34 @@ export const restaurantTemplate: StoreConfig = {
     currencyCode: 'USD',
     allowCustomNotes: true,
   },
+  storePrefix: 'FOG',
+  payment: {
+    pagoMovil: {
+      banco: 'Banesco (0134)',
+      telefono: '0412-4756191',
+      cedula: 'V-12345678',
+    },
+    zelle: {
+      email: 'contacto@fogon.ve',
+      titular: 'FOGÓN C.A.',
+    },
+    efectivo: true,
+    punto: true,
+  },
+  labels: {
+    itemNounSingular: 'Platillo',
+    itemNounPlural: 'Platillos',
+    emptyCartEmoji: '🍽️',
+    cartTitle: '🛒 Tu Pedido',
+    deliveryOptionName: 'Delivery',
+    deliveryOptionPrice: 5,
+    pickupOptionName: 'Retiro en local',
+  },
+  categories: [
+    { id: 'entradas', name: 'Entradas', icon: 'utensils' },
+    { id: 'principales', name: 'Platos Principales', icon: 'flame' },
+    { id: 'combos', name: 'Combos', icon: 'users' },
+    { id: 'postres', name: 'Postres', icon: 'cake' },
+    { id: 'bebidas', name: 'Bebidas', icon: 'cup-soda' },
+  ],
 };

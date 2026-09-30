@@ -356,6 +356,69 @@
                 background: rgba(239, 68, 68, 0.15);
                 color: var(--danger);
             }
+            .filter-tabs {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                flex-wrap: wrap;
+                padding: 1rem 1.5rem;
+                background: rgba(255, 255, 255, 0.02);
+                border-bottom: 1px solid var(--border-color);
+            }
+            .filter-tab-btn {
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid var(--border-color);
+                color: var(--text-secondary);
+                border-radius: 8px;
+                padding: 0.45rem 0.9rem;
+                font-size: 0.82rem;
+                font-weight: 500;
+                cursor: pointer;
+                transition: var(--transition);
+                display: inline-flex;
+                align-items: center;
+                gap: 0.4rem;
+            }
+            .filter-tab-btn:hover {
+                background: rgba(255, 255, 255, 0.1);
+                color: var(--white);
+            }
+            .filter-tab-btn.active {
+                background: var(--primary);
+                border-color: var(--primary);
+                color: #070913;
+                font-weight: 600;
+            }
+            .template-badge {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.35rem;
+                padding: 0.25rem 0.6rem;
+                border-radius: 6px;
+                font-size: 0.75rem;
+                font-weight: 600;
+                white-space: nowrap;
+            }
+            .template-badge.restaurant {
+                background: rgba(255, 149, 0, 0.15);
+                color: #ffaa33;
+                border: 1px solid rgba(255, 149, 0, 0.3);
+            }
+            .template-badge.hardware {
+                background: rgba(245, 158, 11, 0.15);
+                color: #fbbf24;
+                border: 1px solid rgba(245, 158, 11, 0.3);
+            }
+            .template-badge.fashion {
+                background: rgba(236, 72, 153, 0.15);
+                color: #f472b6;
+                border: 1px solid rgba(236, 72, 153, 0.3);
+            }
+            .template-badge.tech {
+                background: rgba(6, 182, 212, 0.15);
+                color: #22d3ee;
+                border: 1px solid rgba(6, 182, 212, 0.3);
+            }
             .status-select {
                 background: rgba(15, 22, 42, 0.9);
                 border: 1px solid var(--border-color);
@@ -667,8 +730,8 @@
                             class="sidebar-link"
                             data-target="section-inventory"
                         >
-                            <i data-lucide="utensils"></i>
-                            <span>Menú / Platos</span>
+                            <i data-lucide="package"></i>
+                            <span>Catálogo / Productos</span>
                         </div>
                     </li>
                 </ul>
@@ -772,11 +835,11 @@
                         </div>
                         <div class="metric-card">
                             <div class="metric-info">
-                                <h3>Platos en Menú</h3>
+                                <h3>Total Productos</h3>
                                 <p id="metric-prod-count">0</p>
                             </div>
                             <div class="metric-icon pink">
-                                <i data-lucide="utensils"></i>
+                                <i data-lucide="package"></i>
                             </div>
                         </div>
                     </div>
@@ -912,17 +975,22 @@
                     </div>
                 </div>
 
-                <!-- SECCIÓN 3: INVENTARIO / MENÚ -->
+                <!-- SECCIÓN 3: INVENTARIO / CATÁLOGO MULTI-PLANTILLA -->
                 <div id="section-inventory" class="dashboard-section">
                     <div class="content-card">
                         <div class="card-header">
-                            <h2>Gestión del Menú / Platillos</h2>
+                            <div>
+                                <h2>Gestión de Catálogo Multinegocio</h2>
+                                <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:0.25rem;">
+                                    Catálogo separado por plantilla: Restaurante, Ferretería, Moda y Tecnología
+                                </p>
+                            </div>
                             <div class="card-actions">
                                 <button
                                     class="btn-action"
                                     id="btn-toggle-product-form"
                                 >
-                                    <i data-lucide="plus"></i> Nuevo Plato
+                                    <i data-lucide="plus"></i> Nuevo Producto
                                 </button>
                                 <button
                                     class="btn-action secondary"
@@ -943,7 +1011,7 @@
                                     id="form-product-title"
                                     style="font-family: 'Outfit', sans-serif; font-size: 1.1rem; margin-bottom: 1.5rem; color: var(--primary);"
                                 >
-                                    Añadir Nuevo Plato
+                                    Añadir Nuevo Producto
                                 </h3>
                                 <form id="product-form">
                                     <input
@@ -952,7 +1020,21 @@
                                         value="POST"
                                     />
 
-                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+                                        <div class="form-group">
+                                            <label for="prod-template">
+                                                Plantilla / Tipo de Negocio
+                                            </label>
+                                            <select
+                                                id="prod-template"
+                                                class="form-control"
+                                            >
+                                                <option value="restaurant">🍽️ Restaurante (Gastronomía)</option>
+                                                <option value="hardware">🔨 Ferretería (Herramientas/Construcción)</option>
+                                                <option value="fashion">👗 Moda & Ropa (Boutique/Calzado)</option>
+                                                <option value="tech">⚡ Tecnología (Gaming/PC/Equipos)</option>
+                                            </select>
+                                        </div>
                                         <div class="form-group">
                                             <label for="prod-id">
                                                 Slug / ID Único
@@ -961,7 +1043,7 @@
                                                 type="text"
                                                 id="prod-id"
                                                 class="form-control"
-                                                placeholder="ej: pabellon-criollo"
+                                                placeholder="ej: taladro-percutor-12v"
                                                 required
                                             />
                                             <span style="font-size:0.75rem; color:var(--text-secondary);">
@@ -970,13 +1052,13 @@
                                         </div>
                                         <div class="form-group">
                                             <label for="prod-name">
-                                                Nombre del Plato
+                                                Nombre del Producto
                                             </label>
                                             <input
                                                 type="text"
                                                 id="prod-name"
                                                 class="form-control"
-                                                placeholder="ej: Pabellón Criollo Especial"
+                                                placeholder="ej: Taladro Percutor 12V"
                                                 required
                                             />
                                         </div>
@@ -988,21 +1070,34 @@
                                                 id="prod-category"
                                                 class="form-control"
                                             >
-                                                <option value="entradas">
-                                                    🥗 Entradas
-                                                </option>
-                                                <option value="principales">
-                                                    🥩 Platos Principales
-                                                </option>
-                                                <option value="combos">
-                                                    🪙 Combos
-                                                </option>
-                                                <option value="postres">
-                                                    🍰 Postres
-                                                </option>
-                                                <option value="bebidas">
-                                                    🥤 Bebidas
-                                                </option>
+                                                <optgroup label="🍽️ Restaurante">
+                                                    <option value="entradas">🥗 Entradas</option>
+                                                    <option value="principales">🥩 Platos Principales</option>
+                                                    <option value="combos">🪙 Combos</option>
+                                                    <option value="postres">🍰 Postres</option>
+                                                    <option value="bebidas">🥤 Bebidas</option>
+                                                </optgroup>
+                                                <optgroup label="🔨 Ferretería">
+                                                    <option value="herramientas-electricas">⚡ Herramientas Eléctricas</option>
+                                                    <option value="herramientas-manuales">🔧 Herramientas Manuales</option>
+                                                    <option value="plomeria">🚰 Plomería</option>
+                                                    <option value="electricidad">💡 Electricidad</option>
+                                                    <option value="construccion-pinturas">🎨 Construcción & Pinturas</option>
+                                                </optgroup>
+                                                <optgroup label="👗 Moda">
+                                                    <option value="vestidos">👗 Vestidos & Enterizos</option>
+                                                    <option value="blusas-tops">👚 Blusas & Tops</option>
+                                                    <option value="pantalones-jeans">👖 Pantalones & Jeans</option>
+                                                    <option value="conjuntos">🧥 Conjuntos & Sets</option>
+                                                    <option value="accesorios-calzado">👜 Calzado & Accesorios</option>
+                                                </optgroup>
+                                                <optgroup label="⚡ Tecnología">
+                                                    <option value="laptops-pc">💻 Laptops & PC</option>
+                                                    <option value="componentes">💾 Componentes & Almacenamiento</option>
+                                                    <option value="perifericos">🎧 Periféricos & Audio</option>
+                                                    <option value="smartphones-tablets">📱 Smartphones & Tablets</option>
+                                                    <option value="accesorios-redes">📡 Redes & Conectividad</option>
+                                                </optgroup>
                                             </select>
                                         </div>
                                     </div>
@@ -1089,7 +1184,7 @@
                                             id="prod-description"
                                             class="form-control"
                                             rows="2"
-                                            placeholder="Describe los ingredientes y presentación del plato..."
+                                            placeholder="Describe las características, especificaciones y detalles del producto..."
                                         ></textarea>
                                     </div>
 
@@ -1108,12 +1203,35 @@
                                             id="btn-submit-product"
                                         >
                                             <i data-lucide="plus-circle"></i>{" "}
-                                            Guardar Plato
+                                            Guardar Producto
                                         </button>
                                     </div>
                                 </form>
                             </div>
                         </div>
+
+                        <!-- Barra de Filtros por Plantilla -->
+                        <div class="filter-tabs" id="template-filter-tabs">
+                            <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; gap: 0.35rem; margin-right: 0.5rem;">
+                                <i data-lucide="filter" style="width: 14px; height: 14px;"></i> Filtrar por Plantilla:
+                            </span>
+                            <button type="button" class="filter-tab-btn active" data-filter="all">
+                                📦 Todas (<span id="count-all">0</span>)
+                            </button>
+                            <button type="button" class="filter-tab-btn" data-filter="restaurant">
+                                🍽️ Restaurante (<span id="count-restaurant">0</span>)
+                            </button>
+                            <button type="button" class="filter-tab-btn" data-filter="hardware">
+                                🔨 Ferretería (<span id="count-hardware">0</span>)
+                            </button>
+                            <button type="button" class="filter-tab-btn" data-filter="fashion">
+                                👗 Moda (<span id="count-fashion">0</span>)
+                            </button>
+                            <button type="button" class="filter-tab-btn" data-filter="tech">
+                                ⚡ Tecnología (<span id="count-tech">0</span>)
+                            </button>
+                        </div>
+
                         <div class="table-responsive">
                             <table>
                                 <thead>
@@ -1121,6 +1239,7 @@
                                         <th>Imagen</th>
                                         <th>Slug</th>
                                         <th>Nombre</th>
+                                        <th>Plantilla</th>
                                         <th>Categoría</th>
                                         <th>Precio</th>
                                         <th>Opciones</th>
@@ -1131,10 +1250,10 @@
                                 <tbody id="table-products">
                                     <tr>
                                         <td
-                                            colspan="8"
-                                            style="text-align: center; color: var(--text-secondary);"
+                                            colspan="9"
+                                            style="text-align: center; color: var(--text-secondary); padding: 2rem;"
                                         >
-                                            Cargando platillos...
+                                            Cargando productos...
                                         </td>
                                     </tr>
                                 </tbody>

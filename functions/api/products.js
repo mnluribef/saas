@@ -13,6 +13,7 @@ export async function onRequestGet(context) {
     // Analizar parámetros URL
     const url = new URL(request.url);
     const isAdminMode = url.searchParams.get("admin") === "true";
+    const template = url.searchParams.get("template");
 
     try {
         let products;
@@ -22,11 +23,31 @@ export async function onRequestGet(context) {
             const user = await verifySession(context);
             if (!user) return unauthorizedResponse();
 
-            const { results } = await db.prepare("SELECT * FROM products ORDER BY created_at DESC").all();
+            let query = "SELECT * FROM products";
+            const params = [];
+            if (template && template !== "all") {
+                query += " WHERE template = ?";
+                params.push(template);
+            }
+            query += " ORDER BY created_at DESC";
+
+            const stmt = params.length > 0 ? db.prepare(query).bind(...params) : db.prepare(query);
+            const { results } = await stmt.all();
             products = results;
         } else {
-            // Catálogo público: solo activos
-            const { results } = await db.prepare("SELECT * FROM products WHERE active = 1 ORDER BY created_at ASC").all();
+            // Catálogo público: solo activos y filtrado por plantilla
+            let query = "SELECT * FROM products WHERE active = 1";
+            const params = [];
+            if (template && template !== "all") {
+                query += " AND template = ?";
+                params.push(template);
+            } else if (!template) {
+                query += " AND template = 'restaurant'";
+            }
+            query += " ORDER BY created_at ASC";
+
+            const stmt = params.length > 0 ? db.prepare(query).bind(...params) : db.prepare(query);
+            const { results } = await stmt.all();
             products = results;
         }
 
@@ -64,6 +85,7 @@ export async function onRequestGet(context) {
         for (const product of products) {
             product.type_id = product.type_id || product.category || 'principales';
             product.category = product.category || product.type_id;
+            product.template = product.template || 'restaurant';
             product.attributes = attrsMap[product.id] || [];
         }
 
@@ -99,7 +121,7 @@ export async function onRequestPost(context) {
     let productId = "";
     try {
         const data = await request.json();
-        const { id, name, description, price, category, icon, image_url, sizes, active } = data;
+        const { id, name, description, price, category, icon, image_url, sizes, template, active } = data;
 
         if (!id || !name) {
             return new Response(JSON.stringify({ error: "ID (slug) y Nombre son requeridos." }), {
@@ -110,6 +132,7 @@ export async function onRequestPost(context) {
 
         productId = id.toLowerCase().trim().replace(/[^a-z0-9_-]/g, '-');
         const cleanCategory = (category || 'principales').toLowerCase().trim();
+        const cleanTemplate = (template || 'restaurant').toLowerCase().trim();
 
         // Validar si el ID ya existe
         const existing = await db.prepare("SELECT id FROM products WHERE id = ?").bind(productId).first();
@@ -121,7 +144,7 @@ export async function onRequestPost(context) {
         }
 
         await db.prepare(
-            "INSERT INTO products (id, name, type_id, category, description, price, icon, image_url, sizes, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            "INSERT INTO products (id, name, type_id, category, description, price, icon, image_url, sizes, template, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         )
         .bind(
             productId,
@@ -130,20 +153,21 @@ export async function onRequestPost(context) {
             cleanCategory,
             (description || "").trim().slice(0, 500),
             parseFloat(price) || 0.0,
-            (icon || "utensils").trim().slice(0, 50),
+            (icon || "package").trim().slice(0, 50),
             (image_url || "assets/product_placeholder.png").trim().slice(0, 300),
             sizes ? String(sizes).trim().slice(0, 200) : null,
+            cleanTemplate,
             active !== undefined ? active : 1
         )
         .run();
 
-        return new Response(JSON.stringify({ success: true, message: "Plato creado exitosamente en el menú." }), {
+        return new Response(JSON.stringify({ success: true, message: "Producto creado exitosamente en el catálogo." }), {
             status: 201,
             headers: { "Content-Type": "application/json" }
         });
     } catch (err) {
         console.error("Error en POST /api/products:", err);
-        return new Response(JSON.stringify({ error: "Error al guardar el plato en la base de datos." }), {
+        return new Response(JSON.stringify({ error: "Error al guardar el producto en la base de datos." }), {
             status: 500,
             headers: { "Content-Type": "application/json" }
         });
@@ -162,7 +186,7 @@ export async function onRequestPut(context) {
 
     try {
         const data = await request.json();
-        const { id, name, description, price, category, icon, image_url, sizes, active } = data;
+        const { id, name, description, price, category, icon, image_url, sizes, template, active } = data;
 
         if (!id) {
             return new Response(JSON.stringify({ error: "ID de producto es requerido para actualizar." }), {
@@ -172,7 +196,7 @@ export async function onRequestPut(context) {
         }
 
         // Verificar si el producto existe
-        const existing = await db.prepare("SELECT id FROM products WHERE id = ?").bind(id).first();
+        const existing = await db.prepare("SELECT id, template, category FROM products WHERE id = ?").bind(id).first();
         if (!existing) {
             return new Response(JSON.stringify({ error: "Producto no encontrado." }), {
                 status: 404,
@@ -181,9 +205,10 @@ export async function onRequestPut(context) {
         }
 
         const cleanCategory = (category || existing.category || 'principales').toLowerCase().trim();
+        const cleanTemplate = (template || existing.template || 'restaurant').toLowerCase().trim();
 
         await db.prepare(
-            "UPDATE products SET name = ?, type_id = ?, category = ?, description = ?, price = ?, icon = ?, image_url = ?, sizes = ?, active = ? WHERE id = ?"
+            "UPDATE products SET name = ?, type_id = ?, category = ?, description = ?, price = ?, icon = ?, image_url = ?, sizes = ?, template = ?, active = ? WHERE id = ?"
         )
         .bind(
             name.trim().slice(0, 150),
@@ -191,9 +216,10 @@ export async function onRequestPut(context) {
             cleanCategory,
             (description || "").trim().slice(0, 500),
             parseFloat(price) || 0.0,
-            (icon || "utensils").trim().slice(0, 50),
+            (icon || "package").trim().slice(0, 50),
             (image_url || "assets/product_placeholder.png").trim().slice(0, 300),
             sizes ? String(sizes).trim().slice(0, 200) : null,
+            cleanTemplate,
             active !== undefined ? active : 1,
             id
         )

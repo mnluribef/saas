@@ -54,6 +54,9 @@ export function createStoreConfig(
     nav: { ...base.nav, ...(customOverrides.nav || {}) },
     seo: { ...base.seo, ...(customOverrides.seo || {}) },
     features: { ...base.features, ...(customOverrides.features || {}) },
+    payment: { ...base.payment, ...(customOverrides.payment || {}) },
+    labels: { ...base.labels, ...(customOverrides.labels || {}) },
+    categories: customOverrides.categories || base.categories,
   };
 }
 
