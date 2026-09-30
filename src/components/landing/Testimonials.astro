@@ -1,0 +1,44 @@
+---
+// Testimonials.astro - Reseñas y testimonios configurable
+import type { StoreConfig } from '../../types/store.types';
+import defaultStoreConfig from '../../config/store.config';
+
+export interface Props {
+  config?: StoreConfig;
+}
+
+const { config = defaultStoreConfig } = Astro.props;
+const { testimonials } = config.landing;
+
+const StarSVG = `<svg viewBox="0 0 24 24" class="star-svg"><path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z" /></svg>`;
+---
+
+<section id="testimonios">
+  <div class="container">
+    <div class="section-header reveal">
+      <h2>{testimonials.title} <span>{testimonials.titleHighlight}</span></h2>
+      <p>{testimonials.subtitle}</p>
+    </div>
+    <div class="testimonials-grid">
+      {testimonials.items.map((t) => {
+        const rating = t.rating || 5;
+        const starsHtml = StarSVG.repeat(rating);
+        return (
+          <div class="testimonial-card reveal">
+            <div class="stars" set:html={starsHtml} />
+            <p class="review">{t.review}</p>
+            <div class="client-info">
+              <div class="client-avatar">
+                <img src={t.avatar} alt={t.name} loading="lazy" />
+              </div>
+              <div>
+                <h4>{t.name}</h4>
+                <p>{t.role}</p>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+</section>

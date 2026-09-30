@@ -1,0 +1,27 @@
+---
+// src/pages/index.astro - Landing principal multi-tienda configurable
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Header from '../components/layout/Header.astro';
+import Footer from '../components/layout/Footer.astro';
+import Hero from '../components/landing/Hero.astro';
+import Benefits from '../components/landing/Benefits.astro';
+import ProductCatalog from '../components/landing/ProductCatalog.astro';
+import Process from '../components/landing/Process.astro';
+import Testimonials from '../components/landing/Testimonials.astro';
+import Faq from '../components/landing/Faq.astro';
+
+import storeConfig from '../config/store.config';
+---
+
+<BaseLayout config={storeConfig}>
+  <Header config={storeConfig} />
+  <main>
+    <Hero config={storeConfig} />
+    <ProductCatalog config={storeConfig} />
+    <Benefits config={storeConfig} />
+    <Process config={storeConfig} />
+    <Testimonials config={storeConfig} />
+    <Faq config={storeConfig} />
+  </main>
+  <Footer config={storeConfig} />
+</BaseLayout>

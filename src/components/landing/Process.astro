@@ -1,0 +1,30 @@
+---
+// Process.astro - Sección "¿Cómo hacer tu pedido / compra?" configurable
+import type { StoreConfig } from '../../types/store.types';
+import defaultStoreConfig from '../../config/store.config';
+
+export interface Props {
+  config?: StoreConfig;
+}
+
+const { config = defaultStoreConfig } = Astro.props;
+const { process } = config.landing;
+---
+
+<section id="como-pedir">
+  <div class="container">
+    <div class="section-header reveal">
+      <h2>{process.title} <span>{process.titleHighlight}</span></h2>
+      <p>{process.subtitle}</p>
+    </div>
+    <div class="process-grid">
+      {process.steps.map((step) => (
+        <div class="reveal process-step">
+          <div class="process-number">{step.number}</div>
+          <h3>{step.title}</h3>
+          <p>{step.description}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

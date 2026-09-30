@@ -1,0 +1,120 @@
+---
+// BaseLayout.astro - Layout principal configurable
+import type { StoreConfig } from '../types/store.types';
+import defaultStoreConfig from '../config/store.config';
+
+export interface Props {
+  title?: string;
+  description?: string;
+  ogImage?: string;
+  config?: StoreConfig;
+}
+
+const {
+  config = defaultStoreConfig,
+  title = config.seo.title,
+  description = config.seo.description,
+  ogImage = config.business.ogImage,
+} = Astro.props;
+
+const siteUrl = config.business.siteUrl || 'https://fogon.pages.dev';
+const canonicalUrl = new URL(Astro.url.pathname, siteUrl).toString();
+const fullOgImage = ogImage.startsWith('http') ? ogImage : new URL(ogImage, siteUrl).toString();
+
+// Generar Schema.org dinámico según el tipo de tienda
+const schemaOrgData = {
+  "@context": "https://schema.org",
+  "@type": config.seo.schemaType || "Store",
+  "name": config.business.name,
+  "description": config.business.description,
+  "url": siteUrl,
+  "telephone": config.contact.phone || `+${config.contact.whatsapp}`,
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": config.contact.address,
+    "addressLocality": config.contact.addressLocality || "La Victoria",
+    "addressRegion": config.contact.addressRegion || "Aragua",
+    "addressCountry": config.contact.addressCountry || "VE"
+  },
+  "openingHours": config.contact.hours,
+  "priceRange": config.seo.priceRange || "$$",
+  ...(config.seo.servesCuisine ? { "servesCuisine": config.seo.servesCuisine } : {}),
+  ...(config.template === 'restaurant' ? { "hasMenu": `${siteUrl}#menu` } : {})
+};
+---
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{title}</title>
+  <meta name="description" content={description}>
+  <meta name="keywords" content={config.seo.keywords}>
+  <meta name="author" content={config.business.name}>
+  <link rel="canonical" href={canonicalUrl}>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="apple-touch-icon" href="/assets/favicon.svg">
+
+  <!-- Open Graph / Social Media -->
+  <meta property="og:type" content={config.template === 'restaurant' ? 'restaurant' : 'website'}>
+  <meta property="og:url" content={canonicalUrl}>
+  <meta property="og:title" content={title}>
+  <meta property="og:description" content={description}>
+  <meta property="og:image" content={fullOgImage}>
+  <meta property="og:image:secure_url" content={fullOgImage}>
+  <meta property="og:image:width" content="1376">
+  <meta property="og:image:height" content="768">
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content={canonicalUrl}>
+  <meta property="twitter:title" content={title}>
+  <meta property="twitter:description" content={description}>
+  <meta property="twitter:image" content={fullOgImage}>
+
+  <!-- Structured Data Dinámico -->
+  <script is:inline type="application/ld+json" set:html={JSON.stringify(schemaOrgData)} />
+
+  <!-- Google Fonts Dinámico por Plantilla -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href={config.theme.googleFontsUrl} rel="stylesheet">
+
+  <!-- Variables de Tema Dinámicas -->
+  <style is:inline define:vars={{
+    themePrimary: config.theme.primaryColor,
+    themePrimaryHover: config.theme.primaryHover,
+    themePrimaryLight: config.theme.primaryLight,
+    themeAccent: config.theme.accentColor,
+    themeAccentHover: config.theme.accentHover || config.theme.accentColor,
+    themeBadgeBg: config.theme.badgeBg || 'rgba(212, 175, 55, 0.12)',
+    themeBadgeBorder: config.theme.badgeBorder || 'rgba(212, 175, 55, 0.35)',
+    themeBadgeText: config.theme.badgeText || '#D4AF37',
+    fontHeading: config.theme.fontHeading,
+    fontBody: config.theme.fontBody
+  }}>
+    :root {
+      --rose: var(--themePrimary);
+      --rose-deep: var(--themePrimaryHover);
+      --rose-dark: var(--themePrimaryHover);
+      --rose-light: var(--themePrimaryLight);
+      --gold: var(--themeAccent);
+      --gold-deep: var(--themeAccentHover);
+      --badge-bg: var(--themeBadgeBg);
+      --badge-border: var(--themeBadgeBorder);
+      --badge-text: var(--themeBadgeText);
+      --font-heading: var(--fontHeading);
+      --font-body: var(--fontBody);
+    }
+  </style>
+
+  <!-- Global CSS -->
+  <link rel="stylesheet" href="/style.css?v=6">
+</head>
+<body>
+  <slot />
+</body>
+</html>
