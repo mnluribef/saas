@@ -1,4 +1,4 @@
-// Controlador de Registro de Ventas - FOGÓN Restaurante
+// Controlador de Registro de Ventas - Vendly SaaS
 import { verifySession, unauthorizedResponse } from "./_auth.js";
 
 /**
@@ -9,12 +9,12 @@ export async function onRequestGet(context) {
     if (!user) return unauthorizedResponse();
 
     const { env } = context;
-    const db = env.DB || env.fogon;
+    const db = env.DB || env.vendly || env.fogon;
 
     try {
         // Consultar todas las ventas con información del pedido asociado (LEFT JOIN por robustez)
         const { results } = await db.prepare(`
-            SELECT s.*, COALESCE(o.client_name, 'Cliente FOGÓN') as client_name, COALESCE(o.client_phone, '') as client_phone 
+            SELECT s.*, COALESCE(o.client_name, 'Cliente Vendly') as client_name, COALESCE(o.client_phone, '') as client_phone 
             FROM sales s 
             LEFT JOIN orders o ON s.order_id = o.id 
             ORDER BY s.fecha DESC

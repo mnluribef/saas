@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "fogon",
+  "name": "vendly",
   "pages_build_output_dir": "./dist",
   "compatibility_date": "2026-05-02",
   "observability": {
@@ -11,9 +11,10 @@
   ],
   "d1_databases": [
     {
-      "binding": "fogon",
-      "database_name": "fogon",
-      "database_id": "f7524d1c-5139-45cd-af69-b156a54445c1"
+      "binding": "DB",
+      "database_name": "vendly-db",
+      "database_id": "TU_DATABASE_ID_AQUI"
     }
   ]
 }
+

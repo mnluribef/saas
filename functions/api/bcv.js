@@ -29,7 +29,7 @@ async function ensureSettingsTable(db) {
  */
 export async function onRequestGet(context) {
     const { env, request } = context;
-    const db = env.DB || env.fogon;
+    const db = env.DB || env.vendly || env.fogon;
 
     await ensureSettingsTable(db);
 
@@ -63,7 +63,7 @@ export async function onRequestGet(context) {
                 const res = await fetch(EXTERNAL_API_URL, {
                     headers: { 
                         'Accept': 'application/json',
-                        'User-Agent': 'FogonRestaurante/1.0'
+                        'User-Agent': 'VendlySaaS/1.0'
                     },
                     signal: controller.signal
                 });
@@ -122,7 +122,7 @@ export async function onRequestPut(context) {
     if (!user) return unauthorizedResponse();
 
     const { env, request } = context;
-    const db = env.DB || env.fogon;
+    const db = env.DB || env.vendly || env.fogon;
 
     await ensureSettingsTable(db);
 

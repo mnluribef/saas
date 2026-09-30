@@ -1,13 +1,13 @@
-// Controlador de Pedidos y Ventas - FOGÓN Restaurante
+// Controlador de Pedidos y Ventas - Vendly SaaS
 import { verifySession, unauthorizedResponse } from "./_auth.js";
 
 /**
- * Genera un ID de pedido único y legible (ej: FOG-X9F4E)
+ * Genera un ID de pedido único y legible (ej: VEN-X9F4E)
  */
-function generateOrderId() {
+function generateOrderId(prefix = "VEN") {
     const ts = Date.now().toString(36).toUpperCase();
     const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
-    return `FOG-${ts}${rand}`;
+    return `${prefix}-${ts}${rand}`;
 }
 
 /**
@@ -33,7 +33,7 @@ export async function onRequestGet(context) {
     if (!user) return unauthorizedResponse();
 
     const { env, request } = context;
-    const db = env.DB || env.fogon;
+    const db = env.DB || env.vendly || env.fogon;
 
     await ensureOrderColumns(db);
     
@@ -79,7 +79,7 @@ export async function onRequestGet(context) {
  */
 export async function onRequestPost(context) {
     const { env, request } = context;
-    const db = env.DB || env.fogon;
+    const db = env.DB || env.vendly || env.fogon;
 
     await ensureOrderColumns(db);
 
@@ -95,6 +95,7 @@ export async function onRequestPost(context) {
             paymentReference = '',
             paymentReceipt = null,
             bcvRate = null,
+            storePrefix = 'VEN',
             items
         } = data;
 
@@ -134,7 +135,10 @@ export async function onRequestPost(context) {
         }
 
         // Generar un ID de pedido y verificar que no exista (bucle de seguridad)
-        let orderId = generateOrderId();
+        const cleanPrefix = (typeof storePrefix === 'string' && /^[A-Z0-9]{2,5}$/i.test(storePrefix.trim()))
+            ? storePrefix.trim().toUpperCase()
+            : 'VEN';
+        let orderId = generateOrderId(cleanPrefix);
         let isUnique = false;
         let attempts = 0;
         
@@ -143,7 +147,7 @@ export async function onRequestPost(context) {
             if (!existing) {
                 isUnique = true;
             } else {
-                orderId = generateOrderId();
+                orderId = generateOrderId(cleanPrefix);
                 attempts++;
             }
         }
@@ -298,7 +302,7 @@ export async function onRequestPut(context) {
     if (!user) return unauthorizedResponse();
 
     const { env, request } = context;
-    const db = env.DB || env.fogon;
+    const db = env.DB || env.vendly || env.fogon;
 
     await ensureOrderColumns(db);
 
@@ -377,7 +381,7 @@ export async function onRequestDelete(context) {
     if (!user) return unauthorizedResponse();
 
     const { env, request } = context;
-    const db = env.DB || env.fogon;
+    const db = env.DB || env.vendly || env.fogon;
 
     try {
         const url = new URL(request.url);

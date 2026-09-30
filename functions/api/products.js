@@ -1,4 +1,4 @@
-// Controlador de Catálogo de Productos - FOGÓN Restaurante
+// Controlador de Catálogo de Productos - Vendly SaaS
 import { verifySession, unauthorizedResponse } from "./_auth.js";
 
 /**
@@ -8,7 +8,7 @@ import { verifySession, unauthorizedResponse } from "./_auth.js";
  */
 export async function onRequestGet(context) {
     const { request, env } = context;
-    const db = env.DB || env.fogon;
+    const db = env.DB || env.vendly || env.fogon;
     
     // Analizar parámetros URL
     const url = new URL(request.url);
@@ -94,7 +94,7 @@ export async function onRequestPost(context) {
     if (!user) return unauthorizedResponse();
 
     const { env, request } = context;
-    const db = env.DB || env.fogon;
+    const db = env.DB || env.vendly || env.fogon;
 
     let productId = "";
     try {
@@ -158,7 +158,7 @@ export async function onRequestPut(context) {
     if (!user) return unauthorizedResponse();
 
     const { env, request } = context;
-    const db = env.DB || env.fogon;
+    const db = env.DB || env.vendly || env.fogon;
 
     try {
         const data = await request.json();
@@ -219,7 +219,7 @@ export async function onRequestDelete(context) {
     if (!user) return unauthorizedResponse();
 
     const { env, request } = context;
-    const db = env.DB || env.fogon;
+    const db = env.DB || env.vendly || env.fogon;
 
     try {
         const url = new URL(request.url);

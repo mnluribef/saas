@@ -373,10 +373,10 @@ const { business, contact, features } = config;
             </p>
             <ul style="margin:0; padding-left:1.2rem; color:var(--text-light);">
                 <li>
-                    <strong>Correo:</strong> pagos@fogon.com
+                    <strong>Correo:</strong> {contact.email || "pagos@vendly.com"}
                 </li>
                 <li>
-                    <strong>Titular:</strong> Fogon Restaurante
+                    <strong>Titular:</strong> {business.name}
                 </li>
             </ul>
         </div>
@@ -566,6 +566,7 @@ const { business, contact, features } = config;
     data-whatsapp={contact.whatsapp}
     data-currency={features.currencySymbol}
     data-business-name={business.name}
+    data-store-prefix={business.shortName ? business.shortName.slice(0, 3).toUpperCase() : 'VEN'}
     style="display:none;"
 ></div>
 
@@ -623,14 +624,14 @@ const { business, contact, features } = config;
 
 <script>
     // ============================================================
-    // FOGÓN — Catálogo + Carrito
+    // Vendly — Catálogo + Carrito
     // ============================================================
 
     const storeMetaEl = document.getElementById("catalog-store-meta");
     const CONFIG = {
         WHATSAPP_NUMBER: storeMetaEl?.dataset.whatsapp || "584124756191",
         DEFAULT_CURRENCY: storeMetaEl?.dataset.currency || "$",
-        BUSINESS_NAME: storeMetaEl?.dataset.businessName || "FOGÓN"
+        BUSINESS_NAME: storeMetaEl?.dataset.businessName || "Vendly Store"
     };
 
     let currentBcvRate = 853.50;
@@ -729,18 +730,22 @@ const { business, contact, features } = config;
     };
 
     // --- CART ---
+    const STORE_KEY = storeMetaEl?.dataset.businessName
+        ? storeMetaEl.dataset.businessName.toLowerCase().replace(/[^a-z0-9]/g, '_')
+        : 'default';
+    const CART_STORAGE_KEY = `vendly_cart_${STORE_KEY}`;
     let cart: Array<{
         id: string;
-        key: string;
+        key?: string;
         name: string;
         price?: number;
         qty: number;
         icon: string;
         options: Record<string, string>;
-    }> = JSON.parse(localStorage.getItem("fogon_cart") || "[]");
+    }> = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || localStorage.getItem("fogon_cart") || "[]");
 
     const saveCart = () =>
-        localStorage.setItem("fogon_cart", JSON.stringify(cart));
+        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
 
     const updateCartCount = () => {
         const total = cart.reduce((s, i) => s + i.qty, 0);
@@ -1211,6 +1216,7 @@ const { business, contact, features } = config;
                         paymentReference,
                         paymentReceipt: uploadedReceiptBase64,
                         bcvRate: currentBcvRate,
+                        storePrefix: storeMetaEl?.dataset.storePrefix || "VEN",
                         items: cart,
                     }),
                 });

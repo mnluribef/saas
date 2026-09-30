@@ -17,7 +17,7 @@ const {
   ogImage = config.business.ogImage,
 } = Astro.props;
 
-const siteUrl = config.business.siteUrl || 'https://fogon.pages.dev';
+const siteUrl = config.business.siteUrl || 'https://vendly.pages.dev';
 const canonicalUrl = new URL(Astro.url.pathname, siteUrl).toString();
 const fullOgImage = ogImage.startsWith('http') ? ogImage : new URL(ogImage, siteUrl).toString();
 

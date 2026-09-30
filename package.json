@@ -1,5 +1,7 @@
 {
-  "name": "romaran",
+  "name": "vendly",
+  "version": "1.0.0",
+  "description": "Vendly — Plataforma SaaS multi-plantilla para catálogos y comercio digital ágil",
   "type": "module",
   "scripts": {
     "dev": "astro dev",
@@ -7,7 +9,10 @@
     "build": "astro build",
     "preview": "astro preview",
     "check": "astro check",
-    "deploy": "pnpm run build && wrangler pages deploy dist"
+    "deploy": "pnpm run build && wrangler pages deploy dist",
+    "db:init:local": "wrangler d1 execute vendly-db --local --file=schema.sql",
+    "db:seed:local": "wrangler d1 execute vendly-db --local --file=seed_templates.sql",
+    "create-admin": "node scripts/generate-admin.js"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.2.3",

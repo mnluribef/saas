@@ -1,7 +1,7 @@
 -- =====================================================
 -- SEMILLAS SQL PARA PLANTILLAS MULTI-TIENDA
 -- Ejecutar según la plantilla seleccionada en D1:
--- wrangler d1 execute fogon --local --file=seed_templates.sql
+-- wrangler d1 execute vendly-db --local --file=seed_templates.sql
 -- =====================================================
 
 -- =====================================================

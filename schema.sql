@@ -1,4 +1,5 @@
--- Esquema de Base de Datos - FOGÓN Restaurante Venezolano
+-- Esquema de Base de Datos - Vendly E-commerce SaaS
+-- Base de datos D1 estándar para catálogos, pedidos y control de ventas multi-plantilla
 
 -- Tabla de Tipos de Producto (Categorías del menú)
 CREATE TABLE IF NOT EXISTS product_types (
@@ -52,7 +53,7 @@ CREATE TABLE IF NOT EXISTS product_variants (
 
 -- Tabla de Pedidos
 CREATE TABLE IF NOT EXISTS orders (
-    id TEXT PRIMARY KEY, -- ID único del pedido (ej: FOG-XXXX)
+    id TEXT PRIMARY KEY, -- ID único del pedido (ej: VEN-XXXX o prefijo de tienda)
     client_name TEXT NOT NULL,
     client_phone TEXT NOT NULL,
     delivery_type TEXT NOT NULL DEFAULT 'delivery', -- 'delivery' o 'retiro'
@@ -155,6 +156,7 @@ INSERT OR IGNORE INTO products (id, name, type_id, category, price, icon, descri
 ('tres-leches', 'Torta Tres Leches', 'postres', 'postres', 4.50, 'cake', 'Bizcocho esponjoso empapado en nuestra mezcla especial de tres leches, coronado con merengue suave y canela.', 'assets/product_tresleches.webp', 'Porción individual', 1),
 ('papelon-limon', 'Papelón con Limón (500ml)', 'bebidas', 'bebidas', 2.50, 'cup-soda', 'La bebida criolla por excelencia. Panela de papelón disuelta con abundante jugo de limón fresco y mucho hielo.', 'assets/product_papelon.webp', 'Vaso 500ml, Jarra 1.5L (+3$)', 1);
 
--- Usuario Administrador por Defecto
+-- Usuario Administrador por Defecto (admin / admin)
+-- Para credenciales personalizadas de producción, usa: pnpm run create-admin <usuario> <clave>
 INSERT OR IGNORE INTO users (id, username, password_hash, password_salt) 
 VALUES (1, 'admin', '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', NULL);
