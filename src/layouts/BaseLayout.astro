@@ -41,6 +41,144 @@ const schemaOrgData = {
   ...(config.seo.servesCuisine ? { "servesCuisine": config.seo.servesCuisine } : {}),
   ...(config.template === 'restaurant' ? { "hasMenu": `${siteUrl}#menu` } : {})
 };
+
+// Generar CSS con todas las variables del tema de forma directa y garantizada
+const theme = config.theme;
+const themePrimaryHover = theme.primaryHover || theme.primaryColor;
+const themePrimaryDeep = theme.primaryDeep || themePrimaryHover;
+const themePrimaryLight = theme.primaryLight || 'rgba(0,0,0,0.1)';
+const themePrimaryPale = theme.primaryPale || themePrimaryLight;
+
+const themeAccentHover = theme.accentHover || theme.accentColor;
+const themeAccentLight = theme.accentLight || 'rgba(0,0,0,0.1)';
+const themeAccentPale = theme.accentPale || '#FFFFFF';
+
+const themeBgPage = theme.bgPage || '#FFFDF9';
+const themeBgSection = theme.bgSection || '#FFF5EE';
+const themeBgCard = theme.bgCard || '#FFFFFF';
+
+const themeBorderSubtle = theme.borderSubtle || 'rgba(0, 0, 0, 0.08)';
+const themeBorderFocus = theme.borderFocus || theme.primaryColor;
+
+const themeTextHeading = theme.textHeading || '#1C0A00';
+const themeTextBody = theme.textBody || '#3D2214';
+const themeTextMuted = theme.textMuted || '#7A523B';
+const themeTextLight = theme.textLight || '#A67C65';
+
+const themeHeroBg = theme.heroBg || '#1A0B02';
+const themeHeroOverlay = theme.heroOverlay || 'linear-gradient(to bottom right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 60%, transparent 100%)';
+const themeHeroFade = theme.heroFadeBottom || `linear-gradient(to top, ${themeBgPage} 0%, transparent 100%)`;
+
+const themeGradHero = theme.gradHero || `linear-gradient(135deg, ${themePrimaryHover} 0%, ${theme.primaryColor} 55%, ${theme.accentColor} 100%)`;
+const themeGradCta = theme.gradCta || `linear-gradient(135deg, ${themePrimaryHover} 0%, ${theme.primaryColor} 100%)`;
+const themeGradSection = theme.gradSection || `linear-gradient(160deg, ${themeBgPage} 0%, ${themeBgSection} 100%)`;
+const themeGradAccent = theme.gradAccent || `linear-gradient(135deg, ${themeAccentHover} 0%, ${theme.accentColor} 100%)`;
+
+const themeShadow = `0 12px 36px ${theme.shadowColor || 'rgba(0,0,0,0.18)'}`;
+const themeShadowCard = theme.shadowCard || '0 4px 20px rgba(0, 0, 0, 0.06)';
+
+const themeBadgeBg = theme.badgeBg || 'rgba(212, 175, 55, 0.14)';
+const themeBadgeBorder = theme.badgeBorder || 'rgba(212, 175, 55, 0.38)';
+const themeBadgeText = theme.badgeText || theme.accentColor;
+
+const themeCss = `
+  :root {
+    --theme-primary: ${theme.primaryColor} !important;
+    --theme-primary-hover: ${themePrimaryHover} !important;
+    --theme-primary-deep: ${themePrimaryDeep} !important;
+    --theme-primary-light: ${themePrimaryLight} !important;
+    --theme-primary-pale: ${themePrimaryPale} !important;
+
+    --theme-accent: ${theme.accentColor} !important;
+    --theme-accent-hover: ${themeAccentHover} !important;
+    --theme-accent-light: ${themeAccentLight} !important;
+    --theme-accent-pale: ${themeAccentPale} !important;
+
+    --theme-bg-page: ${themeBgPage} !important;
+    --theme-bg-section: ${themeBgSection} !important;
+    --theme-bg-card: ${themeBgCard} !important;
+
+    --theme-border-subtle: ${themeBorderSubtle} !important;
+    --theme-border-focus: ${themeBorderFocus} !important;
+
+    --theme-text-heading: ${themeTextHeading} !important;
+    --theme-text-body: ${themeTextBody} !important;
+    --theme-text-muted: ${themeTextMuted} !important;
+    --theme-text-light: ${themeTextLight} !important;
+
+    --theme-hero-bg: ${themeHeroBg} !important;
+    --theme-hero-overlay: ${themeHeroOverlay} !important;
+    --theme-hero-fade: ${themeHeroFade} !important;
+
+    --theme-grad-hero: ${themeGradHero} !important;
+    --theme-grad-cta: ${themeGradCta} !important;
+    --theme-grad-section: ${themeGradSection} !important;
+    --theme-grad-accent: ${themeGradAccent} !important;
+
+    --theme-shadow: ${themeShadow} !important;
+    --theme-shadow-card: ${themeShadowCard} !important;
+
+    --theme-badge-bg: ${themeBadgeBg} !important;
+    --theme-badge-border: ${themeBadgeBorder} !important;
+    --theme-badge-text: ${themeBadgeText} !important;
+
+    --theme-font-heading: ${theme.fontHeading} !important;
+    --theme-font-body: ${theme.fontBody} !important;
+
+    /* Compatibilidad directa con tokens de style.css */
+    --rose: ${theme.primaryColor} !important;
+    --rose-deep: ${themePrimaryHover} !important;
+    --rose-dark: ${themePrimaryDeep} !important;
+    --rose-light: ${themePrimaryLight} !important;
+    --rose-pale: ${themePrimaryPale} !important;
+
+    --gold: ${theme.accentColor} !important;
+    --gold-deep: ${themeAccentHover} !important;
+    --gold-light: ${themeAccentLight} !important;
+    --gold-pale: ${themeAccentPale} !important;
+
+    --cream: ${themeBgPage} !important;
+    --blush: ${themeBgSection} !important;
+    --bg-card: ${themeBgCard} !important;
+
+    --border-subtle: ${themeBorderSubtle} !important;
+    --border-focus: ${themeBorderFocus} !important;
+
+    --text-heading: ${themeTextHeading} !important;
+    --text-body: ${themeTextBody} !important;
+    --text-muted: ${themeTextMuted} !important;
+    --text-light: ${themeTextLight} !important;
+
+    --hero-bg: ${themeHeroBg} !important;
+    --hero-overlay: ${themeHeroOverlay} !important;
+    --hero-fade-bottom: ${themeHeroFade} !important;
+
+    --grad-hero: ${themeGradHero} !important;
+    --grad-cta: ${themeGradCta} !important;
+    --grad-section: ${themeGradSection} !important;
+    --grad-gold: ${themeGradAccent} !important;
+
+    --shadow-rose: ${themeShadow} !important;
+    --shadow-card: ${themeShadowCard} !important;
+
+    --badge-bg: ${themeBadgeBg} !important;
+    --badge-border: ${themeBadgeBorder} !important;
+    --badge-text: ${themeBadgeText} !important;
+
+    --font-heading: ${theme.fontHeading} !important;
+    --font-body: ${theme.fontBody} !important;
+  }
+
+  body {
+    background-color: var(--cream) !important;
+    color: var(--text-body) !important;
+    font-family: var(--font-body) !important;
+  }
+
+  h1, h2, h3, h4, .hero-content h1, .section-header h2, .logo, .product-header h3, .process-number {
+    font-family: var(--font-heading) !important;
+  }
+`;
 ---
 
 <!DOCTYPE html>
@@ -84,106 +222,10 @@ const schemaOrgData = {
   <link href={config.theme.googleFontsUrl} rel="stylesheet">
 
   <!-- Global CSS Base -->
-  <link rel="stylesheet" href="/style.css?v=8">
+  <link rel="stylesheet" href="/style.css?v=9">
 
   <!-- Variables de Tema Dinámicas del Template Activo -->
-  <style is:inline define:vars={{
-    themePrimary: config.theme.primaryColor,
-    themePrimaryHover: config.theme.primaryHover,
-    themePrimaryDeep: config.theme.primaryDeep || config.theme.primaryHover,
-    themePrimaryLight: config.theme.primaryLight,
-    themePrimaryPale: config.theme.primaryPale || config.theme.primaryLight,
-
-    themeAccent: config.theme.accentColor,
-    themeAccentHover: config.theme.accentHover || config.theme.accentColor,
-    themeAccentLight: config.theme.accentLight || 'rgba(0,0,0,0.1)',
-    themeAccentPale: config.theme.accentPale || '#FFFFFF',
-
-    themeBgPage: config.theme.bgPage || '#FFFDF9',
-    themeBgSection: config.theme.bgSection || '#FFF5EE',
-    themeBgCard: config.theme.bgCard || '#FFFFFF',
-
-    themeBorderSubtle: config.theme.borderSubtle || 'rgba(0, 0, 0, 0.08)',
-    themeBorderFocus: config.theme.borderFocus || config.theme.primaryColor,
-
-    themeTextHeading: config.theme.textHeading || '#1C0A00',
-    themeTextBody: config.theme.textBody || '#3D2214',
-    themeTextMuted: config.theme.textMuted || '#7A523B',
-    themeTextLight: config.theme.textLight || '#A67C65',
-
-    themeHeroBg: config.theme.heroBg || '#1A0B02',
-    themeHeroOverlay: config.theme.heroOverlay || 'linear-gradient(to bottom right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 60%, transparent 100%)',
-    themeHeroFade: config.theme.heroFadeBottom || `linear-gradient(to top, ${config.theme.bgPage || '#FFFDF9'} 0%, transparent 100%)`,
-
-    themeGradHero: config.theme.gradHero || `linear-gradient(135deg, ${config.theme.primaryHover} 0%, ${config.theme.primaryColor} 55%, ${config.theme.accentColor} 100%)`,
-    themeGradCta: config.theme.gradCta || `linear-gradient(135deg, ${config.theme.primaryHover} 0%, ${config.theme.primaryColor} 100%)`,
-    themeGradSection: config.theme.gradSection || `linear-gradient(160deg, ${config.theme.bgPage || '#FFFDF9'} 0%, ${config.theme.bgSection || '#FFF5EE'} 100%)`,
-    themeGradAccent: config.theme.gradAccent || `linear-gradient(135deg, ${config.theme.accentHover || config.theme.accentColor} 0%, ${config.theme.accentColor} 100%)`,
-
-    themeShadow: `0 12px 36px ${config.theme.shadowColor || 'rgba(0,0,0,0.18)'}`,
-    themeShadowCard: config.theme.shadowCard || '0 4px 20px rgba(0, 0, 0, 0.06)',
-
-    themeBadgeBg: config.theme.badgeBg || 'rgba(212, 175, 55, 0.14)',
-    themeBadgeBorder: config.theme.badgeBorder || 'rgba(212, 175, 55, 0.38)',
-    themeBadgeText: config.theme.badgeText || config.theme.accentColor,
-
-    fontHeading: config.theme.fontHeading,
-    fontBody: config.theme.fontBody
-  }}>
-    :root {
-      --rose: var(--themePrimary) !important;
-      --rose-deep: var(--themePrimaryHover) !important;
-      --rose-dark: var(--themePrimaryDeep) !important;
-      --rose-light: var(--themePrimaryLight) !important;
-      --rose-pale: var(--themePrimaryPale) !important;
-
-      --gold: var(--themeAccent) !important;
-      --gold-deep: var(--themeAccentHover) !important;
-      --gold-light: var(--themeAccentLight) !important;
-      --gold-pale: var(--themeAccentPale) !important;
-
-      --cream: var(--themeBgPage) !important;
-      --blush: var(--themeBgSection) !important;
-      --bg-card: var(--themeBgCard) !important;
-
-      --border-subtle: var(--themeBorderSubtle) !important;
-      --border-focus: var(--themeBorderFocus) !important;
-
-      --text-heading: var(--themeTextHeading) !important;
-      --text-body: var(--themeTextBody) !important;
-      --text-muted: var(--themeTextMuted) !important;
-      --text-light: var(--themeTextLight) !important;
-
-      --hero-bg: var(--themeHeroBg) !important;
-      --hero-overlay: var(--themeHeroOverlay) !important;
-      --hero-fade-bottom: var(--themeHeroFade) !important;
-
-      --grad-hero: var(--themeGradHero) !important;
-      --grad-cta: var(--themeGradCta) !important;
-      --grad-section: var(--themeGradSection) !important;
-      --grad-gold: var(--themeGradAccent) !important;
-
-      --shadow-rose: var(--themeShadow) !important;
-      --shadow-card: var(--themeShadowCard) !important;
-
-      --badge-bg: var(--themeBadgeBg) !important;
-      --badge-border: var(--themeBadgeBorder) !important;
-      --badge-text: var(--themeBadgeText) !important;
-
-      --font-heading: var(--fontHeading) !important;
-      --font-body: var(--fontBody) !important;
-    }
-
-    body {
-      background-color: var(--cream) !important;
-      color: var(--text-body) !important;
-      font-family: var(--font-body) !important;
-    }
-
-    h1, h2, h3, h4, .hero-content h1, .section-header h2, .logo, .product-header h3, .process-number {
-      font-family: var(--font-heading) !important;
-    }
-  </style>
+  <Fragment set:html={`<style id="vendly-theme-vars">\n${themeCss}\n</style>`} />
 </head>
 <body>
   <slot />
