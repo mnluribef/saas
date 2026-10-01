@@ -75,21 +75,56 @@ export interface StoreContactConfig {
 }
 
 export interface StoreThemeConfig {
-  primaryColor: string; // ej: '#D4AF37' o '#2563EB'
+  // Primarios (Botones, elementos activos, acentos principales)
+  primaryColor: string; // ej: '#0284C7' o '#BE185D'
   primaryHover: string;
+  primaryDeep?: string;
   primaryLight: string;
-  accentColor: string;
+  primaryPale?: string; // Fondo muy suave para tarjetas o chips
+
+  // Acentos (Detalles, estrellas, badges secundarios, contrastes)
+  accentColor: string; // ej: '#F97316' o '#06B6D4'
   accentHover?: string;
-  bgDark: string;
-  bgDarker: string;
-  bgCard: string;
-  textLight: string;
-  fontHeading: string;
-  fontBody: string;
-  googleFontsUrl: string;
+  accentLight?: string;
+  accentPale?: string;
+
+  // Superficies y Fondos
+  bgPage?: string;      // Fondo general del sitio (reemplaza --cream)
+  bgSection?: string;   // Fondo alternativo de secciones (reemplaza --blush)
+  bgCard?: string;      // Fondo de tarjetas
+  bgDark?: string;      // Fondo oscuro
+  bgDarker?: string;    // Fondo más oscuro
+  borderSubtle?: string; // Borde sutil de tarjetas y divisores
+  borderFocus?: string;  // Borde al enfocar o hover
+
+  // Tipografía y Textos
+  textHeading?: string; // Títulos principales h1, h2, h3
+  textBody?: string;    // Texto de párrafos
+  textMuted?: string;   // Texto secundario
+  textLight?: string;   // Texto terciario o atenuado
+
+  // Hero y Overlays
+  heroBg?: string;         // Fondo base del hero
+  heroOverlay?: string;    // Gradiente sobre la imagen del hero
+  heroFadeBottom?: string; // Difuminado inferior del hero hacia el contenido
+
+  // Gradientes
+  gradHero?: string;    // Gradiente decorativo hero
+  gradCta?: string;     // Gradiente botón principal
+  gradSection?: string; // Gradiente de fondo para catálogo/secciones
+  gradAccent?: string;  // Gradiente secundario
+  shadowColor?: string; // Tinte de sombra principal
+  shadowCard?: string;  // Sombra de tarjetas
+
+  // Badges y Pastillas
   badgeBg?: string;
   badgeBorder?: string;
   badgeText?: string;
+
+  // Fuentes
+  fontHeading: string;
+  fontBody: string;
+  googleFontsUrl: string;
 }
 
 export interface StoreLandingConfig {

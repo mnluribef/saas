@@ -27,21 +27,54 @@ export const fashionTemplate: StoreConfig = {
     hours: 'Lun – Sáb: 10:00 AM – 7:00 PM',
   },
   theme: {
-    primaryColor: '#BE185D', // Magenta/Rosa elegante
+    // Primario: Magenta Velvet Berry / Alta Costura
+    primaryColor: '#BE185D',
     primaryHover: '#9D174D',
-    primaryLight: 'rgba(190, 24, 93, 0.08)',
-    accentColor: '#F59E0B', // Acento dorado cálido
-    accentHover: '#D97706',
-    bgDark: '#181216', // Dark suave con tinte cálido
-    bgDarker: '#0F0B0E',
-    bgCard: '#241B21',
-    textLight: '#FDF2F8',
+    primaryDeep: '#831843',
+    primaryLight: 'rgba(190, 24, 93, 0.12)',
+    primaryPale: '#FDF2F8',
+
+    // Acento: Champagne Dorado & Oro Rosado
+    accentColor: '#D97706',
+    accentHover: '#B45309',
+    accentLight: 'rgba(217, 119, 6, 0.16)',
+    accentPale: '#FFFBEB',
+
+    // Superficies y Fondos Alta Gama
+    bgPage: '#FCFBFD',     // Blanco perla con sutil reflejo seda
+    bgSection: '#FDF2F8',  // Seda suave para contraste editorial
+    bgCard: '#FFFFFF',
+    borderSubtle: 'rgba(190, 24, 93, 0.10)',
+    borderFocus: '#BE185D',
+
+    // Tipografía & Contrastes Editoriales
+    textHeading: '#1F0C18', // Negro ciruela profundo
+    textBody: '#442336',    // Ciruela oscuro suave
+    textMuted: '#7A4B64',
+    textLight: '#A87B94',
+
+    // Hero & Overlays
+    heroBg: '#1A0A14',
+    heroOverlay: 'linear-gradient(to bottom right, rgba(26, 10, 20, 0.90) 0%, rgba(55, 15, 40, 0.70) 40%, rgba(190, 24, 93, 0.20) 75%, rgba(217, 119, 6, 0.14) 100%)',
+    heroFadeBottom: 'linear-gradient(to top, #FCFBFD 0%, transparent 100%)',
+
+    // Gradientes & Sombras
+    gradHero: 'linear-gradient(135deg, #9D174D 0%, #BE185D 55%, #D97706 100%)',
+    gradCta: 'linear-gradient(135deg, #9D174D 0%, #BE185D 100%)',
+    gradSection: 'linear-gradient(160deg, #FCFBFD 0%, #FDF2F8 60%, #FFFBEB 100%)',
+    gradAccent: 'linear-gradient(135deg, #B45309 0%, #D97706 100%)',
+    shadowColor: 'rgba(190, 24, 93, 0.20)',
+    shadowCard: '0 4px 22px rgba(44, 15, 34, 0.06)',
+
+    // Badges & Pastillas
+    badgeBg: 'rgba(190, 24, 93, 0.12)',
+    badgeBorder: 'rgba(190, 24, 93, 0.35)',
+    badgeText: '#BE185D',
+
+    // Fuentes
     fontHeading: "'Playfair Display', serif",
     fontBody: "'Outfit', 'Inter', sans-serif",
     googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400&family=Outfit:wght@300;400;500;600&display=swap',
-    badgeBg: 'rgba(190, 24, 93, 0.15)',
-    badgeBorder: 'rgba(190, 24, 93, 0.4)',
-    badgeText: '#F472B6',
   },
   landing: {
     hero: {

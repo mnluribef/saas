@@ -27,21 +27,54 @@ export const techTemplate: StoreConfig = {
     hours: 'Lun – Sáb: 9:00 AM – 6:30 PM',
   },
   theme: {
-    primaryColor: '#6366F1', // Indigo Cyber
+    // Primario: Indigo Eléctrico Cyber / Vanguardia Digital
+    primaryColor: '#6366F1',
     primaryHover: '#4F46E5',
-    primaryLight: 'rgba(99, 102, 241, 0.1)',
-    accentColor: '#06B6D4', // Cyan Neón
+    primaryDeep: '#3730A3',
+    primaryLight: 'rgba(99, 102, 241, 0.12)',
+    primaryPale: '#EEF2FF',
+
+    // Acento: Cyan Neón / Aqua Tech
+    accentColor: '#06B6D4',
     accentHover: '#0891B2',
-    bgDark: '#0B0F19', // Deep space dark
-    bgDarker: '#030712',
-    bgCard: '#111827',
-    textLight: '#F9FAFB',
+    accentLight: 'rgba(6, 182, 212, 0.16)',
+    accentPale: '#ECFEFF',
+
+    // Superficies y Fondos Tech
+    bgPage: '#F8FAFC',     // Tech Slate limpio de alto contraste
+    bgSection: '#EFF6FF',  // Azul hielo cuántico
+    bgCard: '#FFFFFF',
+    borderSubtle: 'rgba(99, 102, 241, 0.12)',
+    borderFocus: '#6366F1',
+
+    // Tipografía & Contrastes
+    textHeading: '#090D1A', // Deep Cyber Slate
+    textBody: '#1E293B',    // Slate técnico profundo
+    textMuted: '#475569',
+    textLight: '#94A3B8',
+
+    // Hero & Overlays
+    heroBg: '#070A14',
+    heroOverlay: 'linear-gradient(to bottom right, rgba(7, 10, 20, 0.94) 0%, rgba(15, 23, 50, 0.78) 45%, rgba(99, 102, 241, 0.22) 80%, rgba(6, 182, 212, 0.16) 100%)',
+    heroFadeBottom: 'linear-gradient(to top, #F8FAFC 0%, transparent 100%)',
+
+    // Gradientes & Sombras
+    gradHero: 'linear-gradient(135deg, #4F46E5 0%, #6366F1 50%, #06B6D4 100%)',
+    gradCta: 'linear-gradient(135deg, #4F46E5 0%, #6366F1 100%)',
+    gradSection: 'linear-gradient(160deg, #F8FAFC 0%, #EFF6FF 60%, #EEF2FF 100%)',
+    gradAccent: 'linear-gradient(135deg, #0891B2 0%, #06B6D4 100%)',
+    shadowColor: 'rgba(99, 102, 241, 0.24)',
+    shadowCard: '0 4px 22px rgba(15, 23, 42, 0.07)',
+
+    // Badges & Pastillas
+    badgeBg: 'rgba(6, 182, 212, 0.14)',
+    badgeBorder: 'rgba(6, 182, 212, 0.40)',
+    badgeText: '#0E7490',
+
+    // Fuentes
     fontHeading: "'Outfit', sans-serif",
     fontBody: "'Inter', sans-serif",
     googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Inter:wght@300;400;500;600&display=swap',
-    badgeBg: 'rgba(6, 182, 212, 0.12)',
-    badgeBorder: 'rgba(6, 182, 212, 0.35)',
-    badgeText: '#22D3EE',
   },
   landing: {
     hero: {

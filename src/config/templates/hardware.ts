@@ -27,21 +27,54 @@ export const hardwareTemplate: StoreConfig = {
     hours: 'Lun – Sáb: 7:30 AM – 5:30 PM',
   },
   theme: {
-    primaryColor: '#0284C7', // Azul industrial moderno
+    // Primario: Azul Zafiro Industrial (Bosch / Makita / Herramientas)
+    primaryColor: '#0284C7',
     primaryHover: '#0369A1',
-    primaryLight: 'rgba(2, 132, 199, 0.1)',
-    accentColor: '#F97316', // Naranja seguridad/construcción
+    primaryDeep: '#075985',
+    primaryLight: 'rgba(2, 132, 199, 0.12)',
+    primaryPale: '#F0F9FF',
+
+    // Acento: Naranja Seguridad & Construcción (DeWalt / Obra)
+    accentColor: '#F97316',
     accentHover: '#EA580C',
-    bgDark: '#0F172A', // Slate dark
-    bgDarker: '#020617',
-    bgCard: '#1E293B',
-    textLight: '#F8FAFC',
+    accentLight: 'rgba(249, 115, 22, 0.16)',
+    accentPale: '#FFF7ED',
+
+    // Superficies y Fondos Técnicos
+    bgPage: '#F8FAFC',     // Slate 50 - Limpio, técnico y moderno
+    bgSection: '#F1F5F9',  // Slate 100 - Textura de acero ligero
+    bgCard: '#FFFFFF',
+    borderSubtle: 'rgba(2, 132, 199, 0.12)',
+    borderFocus: '#0284C7',
+
+    // Tipografía & Contrastes Técnicos
+    textHeading: '#0F172A', // Slate 900 - Titanio industrial
+    textBody: '#334155',    // Slate 700 - Alta legibilidad
+    textMuted: '#64748B',   // Slate 500
+    textLight: '#94A3B8',
+
+    // Hero & Overlays
+    heroBg: '#0A1120',
+    heroOverlay: 'linear-gradient(to bottom right, rgba(10, 17, 32, 0.92) 0%, rgba(15, 30, 56, 0.75) 45%, rgba(2, 132, 199, 0.18) 80%, rgba(249, 115, 22, 0.12) 100%)',
+    heroFadeBottom: 'linear-gradient(to top, #F8FAFC 0%, transparent 100%)',
+
+    // Gradientes & Sombras
+    gradHero: 'linear-gradient(135deg, #0369A1 0%, #0284C7 55%, #F97316 100%)',
+    gradCta: 'linear-gradient(135deg, #0369A1 0%, #0284C7 100%)',
+    gradSection: 'linear-gradient(160deg, #F8FAFC 0%, #F1F5F9 60%, #E2E8F0 100%)',
+    gradAccent: 'linear-gradient(135deg, #EA580C 0%, #F97316 100%)',
+    shadowColor: 'rgba(2, 132, 199, 0.22)',
+    shadowCard: '0 4px 20px rgba(15, 23, 42, 0.06)',
+
+    // Badges & Pastillas
+    badgeBg: 'rgba(249, 115, 22, 0.14)',
+    badgeBorder: 'rgba(249, 115, 22, 0.40)',
+    badgeText: '#C2410C',
+
+    // Fuentes
     fontHeading: "'Outfit', sans-serif",
     fontBody: "'Inter', sans-serif",
     googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Inter:wght@300;400;500;600&display=swap',
-    badgeBg: 'rgba(249, 115, 22, 0.15)',
-    badgeBorder: 'rgba(249, 115, 22, 0.4)',
-    badgeText: '#FB923C',
   },
   landing: {
     hero: {

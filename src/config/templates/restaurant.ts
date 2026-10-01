@@ -27,21 +27,54 @@ export const restaurantTemplate: StoreConfig = {
     hours: 'Lun – Dom: 11:00 AM – 10:00 PM',
   },
   theme: {
+    // Primario: Naranja Fuego Vivo & Brasas
     primaryColor: '#E65100',
-    primaryHover: '#BF360C',
-    primaryLight: 'rgba(230, 81, 0, 0.08)',
+    primaryHover: '#C43D00',
+    primaryDeep: '#9C2C00',
+    primaryLight: 'rgba(230, 81, 0, 0.12)',
+    primaryPale: '#FFF3EC',
+
+    // Acento: Dorado Maíz & Ámbar Tostado
     accentColor: '#D4AF37',
-    accentHover: '#B5942E',
-    bgDark: '#121212',
-    bgDarker: '#0A0A0A',
-    bgCard: '#1E1E1E',
-    textLight: '#F5F5F5',
+    accentHover: '#B8942A',
+    accentLight: 'rgba(212, 175, 55, 0.18)',
+    accentPale: '#FFFDF5',
+
+    // Superficies y Fondos Cálidos
+    bgPage: '#FFFDF9',     // Crema cálido base
+    bgSection: '#FFF5EE',  // Melocotón crema para secciones
+    bgCard: '#FFFFFF',
+    borderSubtle: 'rgba(230, 81, 0, 0.10)',
+    borderFocus: '#E65100',
+
+    // Tipografía & Contrastes
+    textHeading: '#1C0A00', // Marrón café espresso
+    textBody: '#3D2214',    // Marrón oscuro
+    textMuted: '#7A523B',
+    textLight: '#A67C65',
+
+    // Hero & Overlays
+    heroBg: '#1A0B02',
+    heroOverlay: 'linear-gradient(to bottom right, rgba(28, 10, 0, 0.90) 0%, rgba(65, 22, 6, 0.65) 40%, rgba(0, 0, 0, 0.18) 75%, rgba(212, 175, 55, 0.15) 100%)',
+    heroFadeBottom: 'linear-gradient(to top, #FFFDF9 0%, transparent 100%)',
+
+    // Gradientes & Sombras
+    gradHero: 'linear-gradient(135deg, #C43D00 0%, #E65100 55%, #D4AF37 100%)',
+    gradCta: 'linear-gradient(135deg, #C43D00 0%, #E65100 100%)',
+    gradSection: 'linear-gradient(160deg, #FFFDF9 0%, #FFF5EE 60%, #FFFDF5 100%)',
+    gradAccent: 'linear-gradient(135deg, #B8942A 0%, #D4AF37 100%)',
+    shadowColor: 'rgba(230, 81, 0, 0.20)',
+    shadowCard: '0 4px 20px rgba(60, 20, 0, 0.06)',
+
+    // Badges & Pastillas
+    badgeBg: 'rgba(212, 175, 55, 0.14)',
+    badgeBorder: 'rgba(212, 175, 55, 0.38)',
+    badgeText: '#B8860B',
+
+    // Fuentes
     fontHeading: "'Playfair Display', serif",
     fontBody: "'Outfit', 'Inter', sans-serif",
     googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500&display=swap',
-    badgeBg: 'rgba(212, 175, 55, 0.12)',
-    badgeBorder: 'rgba(212, 175, 55, 0.35)',
-    badgeText: '#D4AF37',
   },
   landing: {
     hero: {
