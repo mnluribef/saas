@@ -14,16 +14,19 @@ const { hero } = config.landing;
 <!-- Hero Section -->
 <section class="hero-full">
   <div class="hero-slider">
-    {hero.slides.map((slide, index) => (
-      <div class={`slide ${index === 0 ? 'active' : ''}`}>
-        <img
-          src={slide.image}
-          alt={slide.alt}
-          loading={index === 0 ? 'eager' : 'lazy'}
-          fetchpriority={index === 0 ? 'high' : 'auto'}
-        />
-      </div>
-    ))}
+    {hero.slides.map((slide, index) => {
+      const slideImg = slide.image && (slide.image.startsWith('http') || slide.image.startsWith('/')) ? slide.image : `/${slide.image || 'assets/favicon.svg'}`;
+      return (
+        <div class={`slide ${index === 0 ? 'active' : ''}`}>
+          <img
+            src={slideImg}
+            alt={slide.alt}
+            loading={index === 0 ? 'eager' : 'lazy'}
+            fetchpriority={index === 0 ? 'high' : 'auto'}
+          />
+        </div>
+      );
+    })}
   </div>
   <div class="hero-full-container">
     <div class="hero-content">

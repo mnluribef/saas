@@ -23,13 +23,14 @@ const StarSVG = `<svg viewBox="0 0 24 24" class="star-svg"><path d="M12 .587l3.6
       {testimonials.items.map((t) => {
         const rating = t.rating || 5;
         const starsHtml = StarSVG.repeat(rating);
+        const avatarImg = t.avatar && (t.avatar.startsWith('http') || t.avatar.startsWith('/')) ? t.avatar : `/${t.avatar || 'assets/favicon.svg'}`;
         return (
           <div class="testimonial-card reveal">
             <div class="stars" set:html={starsHtml} />
             <p class="review">{t.review}</p>
             <div class="client-info">
               <div class="client-avatar">
-                <img src={t.avatar} alt={t.name} loading="lazy" />
+                <img src={avatarImg} alt={t.name} loading="lazy" />
               </div>
               <div>
                 <h4>{t.name}</h4>

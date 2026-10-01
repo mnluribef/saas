@@ -936,7 +936,7 @@ function renderProductsTable() {
         return `
             <tr>
                 <td>
-                    <img src="${escapeHtml(p.image_url)}" alt="${escapeHtml(p.name)}" style="width:44px; height:44px; object-fit:cover; border-radius:8px; border:1px solid var(--border-color);">
+                    <img src="${escapeHtml((p.image_url && (p.image_url.startsWith('http') || p.image_url.startsWith('/'))) ? p.image_url : `/${p.image_url || 'assets/favicon.svg'}`)}" alt="${escapeHtml(p.name)}" onerror="this.onerror=null; this.src='/assets/favicon.svg';" style="width:44px; height:44px; object-fit:cover; border-radius:8px; border:1px solid var(--border-color);">
                 </td>
                 <td><code>${escapeHtml(p.id)}</code></td>
                 <td><strong>${escapeHtml(p.name)}</strong></td>

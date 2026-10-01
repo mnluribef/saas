@@ -1,6 +1,15 @@
 // Controlador de Catálogo de Productos - Vendly SaaS
 import { verifySession, unauthorizedResponse } from "./_auth.js";
 
+function normalizeImageUrl(url) {
+    if (!url) return '/assets/favicon.svg';
+    const trimmed = String(url).trim();
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('/')) {
+        return trimmed;
+    }
+    return '/' + trimmed;
+}
+
 /**
  * GET /api/products - Listar productos
  * - Clientes: Retorna productos activos (active = 1)
@@ -80,13 +89,13 @@ export async function onRequestGet(context) {
                 required: attr.required === 1
             });
         }
-
         // Adjuntar atributos y normalizar categorías a cada producto
         for (const product of products) {
             product.type_id = product.type_id || product.category || 'principales';
             product.category = product.category || product.type_id;
             product.template = product.template || 'restaurant';
             product.attributes = attrsMap[product.id] || [];
+            product.image_url = normalizeImageUrl(product.image_url);
         }
 
         const cacheControl = isAdminMode 
@@ -154,7 +163,7 @@ export async function onRequestPost(context) {
             (description || "").trim().slice(0, 500),
             parseFloat(price) || 0.0,
             (icon || "package").trim().slice(0, 50),
-            (image_url || "assets/product_placeholder.png").trim().slice(0, 300),
+            normalizeImageUrl(image_url),
             sizes ? String(sizes).trim().slice(0, 200) : null,
             cleanTemplate,
             active !== undefined ? active : 1
@@ -217,7 +226,7 @@ export async function onRequestPut(context) {
             (description || "").trim().slice(0, 500),
             parseFloat(price) || 0.0,
             (icon || "package").trim().slice(0, 50),
-            (image_url || "assets/product_placeholder.png").trim().slice(0, 300),
+            normalizeImageUrl(image_url),
             sizes ? String(sizes).trim().slice(0, 200) : null,
             cleanTemplate,
             active !== undefined ? active : 1,

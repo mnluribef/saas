@@ -1496,9 +1496,13 @@ const { business, contact, features } = config;
                               .join("")}</div></div>`
                         : "";
 
+                const productImg = p.image_url
+                    ? (p.image_url.startsWith('http') || p.image_url.startsWith('/') ? p.image_url : `/${p.image_url}`)
+                    : '/assets/favicon.svg';
+
                 return `
       <div class="product-card reveal">
-        <div class="product-img"><img src="${p.image_url}" alt="${p.name}" loading="lazy"></div>
+        <div class="product-img"><img src="${productImg}" alt="${p.name}" loading="lazy" onerror="this.onerror=null; this.src='/assets/favicon.svg';"></div>
         <div class="product-info">
           <div class="product-header"><h3>${p.name}</h3></div>
           <div class="product-price" style="font-size:1.3rem;font-weight:700;color:var(--accent);margin:.5rem 0 .8rem;font-family:'Outfit',sans-serif;">${p.price > 0 ? `${parseFloat(p.price).toFixed(2)} <span style="font-size:0.85rem; font-weight:normal; color:var(--text-light); margin-left:4px;">(~Bs. ${(p.price * currentBcvRate).toFixed(2)})</span>` : "A consultar"}</div>
