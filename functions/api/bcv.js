@@ -29,7 +29,7 @@ async function ensureSettingsTable(db) {
  */
 export async function onRequestGet(context) {
     const { env, request } = context;
-    const db = env.DB || env.vendly || env.fogon;
+    const db = env.DB || env.vendly;
 
     await ensureSettingsTable(db);
 
@@ -122,7 +122,7 @@ export async function onRequestPut(context) {
     if (!user) return unauthorizedResponse();
 
     const { env, request } = context;
-    const db = env.DB || env.vendly || env.fogon;
+    const db = env.DB || env.vendly;
 
     await ensureSettingsTable(db);
 

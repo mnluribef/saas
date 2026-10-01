@@ -47,7 +47,7 @@ export async function onRequestGet(context) {
     // Limpieza oportunista de sesiones expiradas
     try {
         const { env } = context;
-        const db = env.DB || env.vendly || env.fogon;
+        const db = env.DB || env.vendly;
         const now = Math.floor(Date.now() / 1000);
         context.waitUntil?.(
             db.prepare("DELETE FROM sessions WHERE expires_at < ?").bind(now).run()
@@ -76,7 +76,7 @@ export async function onRequestGet(context) {
  */
 export async function onRequestPost(context) {
     const { request, env } = context;
-    const db = env.DB || env.vendly || env.fogon;
+    const db = env.DB || env.vendly;
     const clientIp = request.headers.get("CF-Connecting-IP") || request.headers.get("x-real-ip") || "unknown";
 
     // 1. Verificar Rate Limit
@@ -181,7 +181,7 @@ export async function onRequestPut(context) {
     if (!username) return unauthorizedResponse();
 
     const { request, env } = context;
-    const db = env.DB || env.vendly || env.fogon;
+    const db = env.DB || env.vendly;
 
     try {
         const { currentPasswordHash, newPasswordHash } = await request.json();
@@ -244,7 +244,7 @@ export async function onRequestPut(context) {
  */
 export async function onRequestDelete(context) {
     const { request, env } = context;
-    const db = env.DB || env.vendly || env.fogon;
+    const db = env.DB || env.vendly;
 
     const cookieHeader = request.headers.get("Cookie");
     let token = null;
@@ -254,7 +254,7 @@ export async function onRequestDelete(context) {
             acc[key] = value;
             return acc;
         }, {});
-        token = cookies["vendly_session"] || cookies["fogon_session"];
+        token = cookies["vendly_session"];
     }
 
     if (token) {
@@ -265,15 +265,13 @@ export async function onRequestDelete(context) {
         }
     }
 
-    // Limpiar cookies de sesión (actual y legacy)
+    // Limpiar cookie de sesión de Vendly
     const clearVendlyCookie = `vendly_session=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Strict`;
-    const clearFogonCookie = `fogon_session=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Strict`;
 
     const headers = new Headers({
         "Content-Type": "application/json"
     });
     headers.append("Set-Cookie", clearVendlyCookie);
-    headers.append("Set-Cookie", clearFogonCookie);
 
     return new Response(JSON.stringify({ success: true }), {
         headers

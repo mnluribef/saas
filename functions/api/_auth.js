@@ -11,7 +11,7 @@ function getTokenFromRequest(request) {
         return authHeader.substring(7);
     }
 
-    // 2. Intentar desde las Cookies: vendly_session=<token> (o fogon_session para compatibilidad)
+    // 2. Intentar desde las Cookies: vendly_session=<token>
     const cookieHeader = request.headers.get("Cookie");
     if (cookieHeader) {
         const cookies = cookieHeader.split(";").reduce((acc, cookie) => {
@@ -19,7 +19,7 @@ function getTokenFromRequest(request) {
             acc[key] = value;
             return acc;
         }, {});
-        return cookies["vendly_session"] || cookies["fogon_session"];
+        return cookies["vendly_session"];
     }
 
     return null;
@@ -32,7 +32,7 @@ function getTokenFromRequest(request) {
  */
 export async function verifySession(context) {
     const { request, env } = context;
-    const db = env.DB || env.vendly || env.fogon;
+    const db = env.DB || env.vendly;
 
     const token = getTokenFromRequest(request);
     if (!token) return null;

@@ -36,7 +36,7 @@ export async function onRequestGet(context) {
     if (!user) return unauthorizedResponse();
 
     const { env, request } = context;
-    const db = env.DB || env.vendly || env.fogon;
+    const db = env.DB || env.vendly;
 
     await ensureOrderColumns(db);
     
@@ -92,7 +92,7 @@ export async function onRequestGet(context) {
  */
 export async function onRequestPost(context) {
     const { env, request } = context;
-    const db = env.DB || env.vendly || env.fogon;
+    const db = env.DB || env.vendly;
 
     await ensureOrderColumns(db);
 
@@ -318,7 +318,7 @@ export async function onRequestPut(context) {
     if (!user) return unauthorizedResponse();
 
     const { env, request } = context;
-    const db = env.DB || env.vendly || env.fogon;
+    const db = env.DB || env.vendly;
 
     await ensureOrderColumns(db);
 
@@ -397,7 +397,7 @@ export async function onRequestDelete(context) {
     if (!user) return unauthorizedResponse();
 
     const { env, request } = context;
-    const db = env.DB || env.vendly || env.fogon;
+    const db = env.DB || env.vendly;
 
     try {
         const url = new URL(request.url);

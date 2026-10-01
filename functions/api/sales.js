@@ -9,7 +9,7 @@ export async function onRequestGet(context) {
     if (!user) return unauthorizedResponse();
 
     const { env } = context;
-    const db = env.DB || env.vendly || env.fogon;
+    const db = env.DB || env.vendly;
 
     try {
         // Consultar todas las ventas con información del pedido asociado (LEFT JOIN por robustez)

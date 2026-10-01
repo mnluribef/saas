@@ -4,7 +4,6 @@
 type D1DatabaseEnv = {
   DB: D1Database;
   vendly?: D1Database;
-  fogon?: D1Database;
 };
 
 type Runtime = import('@astrojs/cloudflare').Runtime<D1DatabaseEnv>;
