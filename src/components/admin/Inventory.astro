@@ -1,0 +1,305 @@
+---
+// src/components/admin/Inventory.astro
+---
+<div id="section-inventory" class="dashboard-section">
+    <div class="content-card">
+        <div class="card-header">
+            <div>
+                <h2>Gestión de Catálogo Multinegocio</h2>
+                <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:0.25rem;">
+                    Catálogo separado por plantilla: Restaurante, Ferretería, Moda y Tecnología
+                </p>
+            </div>
+            <div class="card-actions">
+                <button
+                    class="btn-action"
+                    id="btn-toggle-product-form"
+                >
+                    <i data-lucide="plus"></i> Nuevo Producto
+                </button>
+                <button
+                    class="btn-action secondary"
+                    id="btn-refresh-products"
+                >
+                    <i data-lucide="refresh-cw"></i> Actualizar
+                </button>
+            </div>
+        </div>
+        <!-- Formulario Añadir/Editar Producto (colapsable) -->
+        <div
+            id="product-form-collapse"
+            class="collapsible-content"
+            style="padding: 0 2rem;"
+        >
+            <div style="padding: 2rem 0; border-bottom: 1px solid var(--border-color);">
+                <h3
+                    id="form-product-title"
+                    style="font-family: 'Outfit', sans-serif; font-size: 1.1rem; margin-bottom: 1.5rem; color: var(--primary);"
+                >
+                    Añadir Nuevo Producto
+                </h3>
+                <form id="product-form">
+                    <input
+                        type="hidden"
+                        id="prod-method"
+                        value="POST"
+                    />
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+                        <div class="form-group">
+                            <label for="prod-template">
+                                Plantilla / Tipo de Negocio
+                            </label>
+                            <select
+                                id="prod-template"
+                                class="form-control"
+                            >
+                                <option value="restaurant">🍽️ Restaurante (Gastronomía)</option>
+                                <option value="hardware">🔨 Ferretería (Herramientas/Construcción)</option>
+                                <option value="fashion">👗 Moda & Ropa (Boutique/Calzado)</option>
+                                <option value="tech">⚡ Tecnología (Gaming/PC/Equipos)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="prod-id">
+                                Slug / ID Único
+                            </label>
+                            <input
+                                type="text"
+                                id="prod-id"
+                                class="form-control"
+                                placeholder="ej: taladro-percutor-12v"
+                                required
+                            />
+                            <span style="font-size:0.75rem; color:var(--text-secondary);">
+                                Minúsculas, números o guiones.
+                            </span>
+                        </div>
+                        <div class="form-group">
+                            <label for="prod-name">
+                                Nombre del Producto
+                            </label>
+                            <input
+                                type="text"
+                                id="prod-name"
+                                class="form-control"
+                                placeholder="ej: Taladro Percutor 12V"
+                                required
+                            />
+                        </div>
+                        <div class="form-group">
+                            <label for="prod-category">
+                                Categoría
+                            </label>
+                            <select
+                                id="prod-category"
+                                class="form-control"
+                            >
+                                <optgroup label="🍽️ Restaurante">
+                                    <option value="entradas">🥗 Entradas</option>
+                                    <option value="principales">🥩 Platos Principales</option>
+                                    <option value="combos">🪙 Combos</option>
+                                    <option value="postres">🍰 Postres</option>
+                                    <option value="bebidas">🥤 Bebidas</option>
+                                </optgroup>
+                                <optgroup label="🔨 Ferretería">
+                                    <option value="herramientas-electricas">⚡ Herramientas Eléctricas</option>
+                                    <option value="herramientas-manuales">🔧 Herramientas Manuales</option>
+                                    <option value="plomeria">🚰 Plomería</option>
+                                    <option value="electricidad">💡 Electricidad</option>
+                                    <option value="construccion-pinturas">🎨 Construcción & Pinturas</option>
+                                </optgroup>
+                                <optgroup label="👗 Moda">
+                                    <option value="vestidos">👗 Vestidos & Enterizos</option>
+                                    <option value="blusas-tops">👚 Blusas & Tops</option>
+                                    <option value="pantalones-jeans">👖 Pantalones & Jeans</option>
+                                    <option value="conjuntos">🧥 Conjuntos & Sets</option>
+                                    <option value="accesorios-calzado">👜 Calzado & Accesorios</option>
+                                </optgroup>
+                                <optgroup label="⚡ Tecnología">
+                                    <option value="laptops-pc">💻 Laptops & PC</option>
+                                    <option value="componentes">💾 Componentes & Almacenamiento</option>
+                                    <option value="perifericos">🎧 Periféricos & Audio</option>
+                                    <option value="smartphones-tablets">📱 Smartphones & Tablets</option>
+                                    <option value="accesorios-redes">📡 Redes & Conectividad</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+                        <div class="form-group">
+                            <label for="prod-price">
+                                Precio en USD ($)
+                            </label>
+                            <input
+                                type="number"
+                                id="prod-price"
+                                class="form-control"
+                                step="0.01"
+                                min="0"
+                                placeholder="0.00"
+                                required
+                            />
+                        </div>
+                        <div class="form-group">
+                            <label for="prod-icon">
+                                Icono (Lucide)
+                            </label>
+                            <input
+                                type="text"
+                                id="prod-icon"
+                                class="form-control"
+                                placeholder="ej: utensils, salad, cake, cup-soda"
+                            />
+                        </div>
+                        <div class="form-group">
+                            <label for="prod-image">
+                                URL de Imagen (Unsplash o externa)
+                            </label>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <input
+                                    type="text"
+                                    id="prod-image"
+                                    class="form-control"
+                                    placeholder="https://images.unsplash.com/... o /assets/..."
+                                />
+                                <div id="prod-image-preview" style="width: 42px; height: 42px; border-radius: 8px; border: 1px solid var(--border-color); background-size: cover; background-position: center; display: none; flex-shrink: 0;"></div>
+                            </div>
+                            <span style="font-size:0.75rem; color:var(--text-secondary); margin-top: 4px; display:block;">
+                                Pega un enlace directo de imagen para el demo.
+                            </span>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+                        <div class="form-group">
+                            <label for="prod-sizes">
+                                Opciones Rápidas (Separadas por comas)
+                            </label>
+                            <input
+                                type="text"
+                                id="prod-sizes"
+                                class="form-control"
+                                placeholder="ej: Res, Pollo, Mixto (o dejar vacío)"
+                            />
+                        </div>
+                        <div class="form-group">
+                            <label for="prod-active">
+                                Disponibilidad en Menú
+                            </label>
+                            <select
+                                id="prod-active"
+                                class="form-control"
+                            >
+                                <option value="1">
+                                    Disponible (Activo)
+                                </option>
+                                <option value="0">
+                                    Agotado / Pausado (Oculto)
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div
+                        class="form-group"
+                        style="margin-bottom: 1.5rem;"
+                    >
+                        <label for="prod-description">
+                            Descripción
+                        </label>
+                        <textarea
+                            id="prod-description"
+                            class="form-control"
+                            rows="2"
+                            placeholder="Describe las características, especificaciones y detalles del producto..."
+                        ></textarea>
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+                        <button
+                            type="button"
+                            class="btn-action secondary"
+                            id="btn-cancel-edit"
+                            style="display: none;"
+                        >
+                            Cancelar Edición
+                        </button>
+                        <button
+                            type="submit"
+                            class="btn-action"
+                            id="btn-submit-product"
+                        >
+                            <i data-lucide="plus-circle"></i>{" "}
+                            Guardar Producto
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Barra de Filtros por Plantilla -->
+        <div class="filter-tabs" id="template-filter-tabs">
+            <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; gap: 0.35rem; margin-right: 0.5rem;">
+                <i data-lucide="filter" style="width: 14px; height: 14px;"></i> Filtrar por Plantilla:
+            </span>
+            <button type="button" class="filter-tab-btn active" data-filter="all">
+                📦 Todas (<span id="count-all">0</span>)
+            </button>
+            <button type="button" class="filter-tab-btn" data-filter="restaurant">
+                🍽️ Restaurante (<span id="count-restaurant">0</span>)
+            </button>
+            <button type="button" class="filter-tab-btn" data-filter="hardware">
+                🔨 Ferretería (<span id="count-hardware">0</span>)
+            </button>
+            <button type="button" class="filter-tab-btn" data-filter="fashion">
+                👗 Moda (<span id="count-fashion">0</span>)
+            </button>
+            <button type="button" class="filter-tab-btn" data-filter="tech">
+                ⚡ Tecnología (<span id="count-tech">0</span>)
+            </button>
+        </div>
+
+        <!-- Barra de Búsqueda de Productos -->
+        <div style="padding: 0.5rem 1.5rem 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
+            <div style="flex: 1; max-width: 380px;">
+                <input
+                    type="text"
+                    id="products-search-input"
+                    class="form-control"
+                    placeholder="🔍 Buscar producto por nombre o slug..."
+                    style="font-size: 0.85rem;"
+                />
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Imagen</th>
+                        <th>Slug</th>
+                        <th>Nombre</th>
+                        <th>Plantilla</th>
+                        <th>Categoría</th>
+                        <th>Precio</th>
+                        <th>Opciones</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="table-products">
+                    <tr>
+                        <td
+                            colspan="9"
+                            style="text-align: center; color: var(--text-secondary); padding: 2rem;"
+                        >
+                            Cargando productos...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

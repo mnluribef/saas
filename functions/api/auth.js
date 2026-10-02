@@ -42,7 +42,7 @@ function clearRateLimit(ip) {
  * GET /api/auth - Verifica el estado de la sesión actual
  */
 export async function onRequestGet(context) {
-    const username = await verifySession(context);
+    const user = await verifySession(context);
     
     // Limpieza oportunista de sesiones expiradas
     try {
@@ -54,8 +54,8 @@ export async function onRequestGet(context) {
         );
     } catch (_) {}
 
-    if (username) {
-        return new Response(JSON.stringify({ authenticated: true, username }), {
+    if (user) {
+        return new Response(JSON.stringify({ authenticated: true, username: user.username, role: user.role }), {
             headers: { 
                 "Content-Type": "application/json",
                 "Cache-Control": "no-store, no-cache, must-revalidate"
@@ -158,7 +158,7 @@ export async function onRequestPost(context) {
         // Cookie segura HTTP-only para Vendly SaaS
         const cookie = `vendly_session=${sessionToken}; Path=/; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Strict`;
         
-        return new Response(JSON.stringify({ success: true, username: user.username }), {
+        return new Response(JSON.stringify({ success: true, username: user.username, role: user.role }), {
             headers: {
                 "Content-Type": "application/json",
                 "Set-Cookie": cookie
@@ -177,8 +177,8 @@ export async function onRequestPost(context) {
  * PUT /api/auth - Cambiar contraseña del administrador (Requiere sesión activa)
  */
 export async function onRequestPut(context) {
-    const username = await verifySession(context);
-    if (!username) return unauthorizedResponse();
+    const sessionUser = await verifySession(context);
+    if (!sessionUser) return unauthorizedResponse();
 
     const { request, env } = context;
     const db = env.DB || env.vendly;
@@ -194,7 +194,7 @@ export async function onRequestPut(context) {
         }
 
         const user = await db.prepare("SELECT * FROM users WHERE username = ?")
-            .bind(username.toLowerCase().trim())
+            .bind(sessionUser.username.toLowerCase().trim())
             .first();
 
         if (!user) {

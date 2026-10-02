@@ -1,0 +1,92 @@
+---
+// src/components/admin/Orders.astro
+---
+<div id="section-orders" class="dashboard-section">
+    <div class="content-card">
+        <div class="card-header">
+            <h2>
+                Todos los Pedidos Recibidos{" "}
+                <span
+                    id="orders-total-summary"
+                    style="font-size: 0.95rem; color: var(--accent); margin-left: 1rem; font-weight: 500;"
+                ></span>
+            </h2>
+            <div class="card-actions">
+                <button
+                    class="btn-action secondary"
+                    id="btn-toggle-sound"
+                    title="Alternar alertas de sonido para nuevos pedidos"
+                    style="padding: 0.55rem 0.85rem;"
+                >
+                    <i data-lucide="volume-2" id="sound-icon"></i>
+                </button>
+                <button
+                    class="btn-action secondary"
+                    id="btn-export-orders"
+                    title="Exportar pedidos a archivo CSV / Excel"
+                >
+                    <i data-lucide="download"></i> Exportar CSV
+                </button>
+                <button
+                    class="btn-action secondary"
+                    id="btn-refresh-orders"
+                >
+                    <i data-lucide="refresh-cw"></i> Actualizar
+                </button>
+            </div>
+        </div>
+
+        <!-- Barra de Búsqueda y Filtros de Pedidos -->
+        <div style="padding: 0 1.5rem 1.25rem 1.5rem; display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color);">
+            <div style="flex: 1; min-width: 260px; max-width: 480px; position: relative;">
+                <input
+                    type="text"
+                    id="orders-search-input"
+                    class="form-control"
+                    placeholder="🔍 Buscar por cliente, teléfono o #pedido..."
+                    style="padding-left: 1rem; font-size: 0.9rem;"
+                />
+            </div>
+            <div style="display: flex; gap: 0.75rem; align-items: center;">
+                <label for="orders-status-filter" style="font-size: 0.85rem; color: var(--text-secondary); white-space: nowrap;">
+                    Filtrar por estado:
+                </label>
+                <select id="orders-status-filter" class="form-control" style="width: auto; padding: 0.45rem 1rem; font-size: 0.85rem;">
+                    <option value="">⚡ Todos los estados</option>
+                    <option value="pendiente">🟡 Pendiente</option>
+                    <option value="en_produccion">🔵 En Producción</option>
+                    <option value="listo_entrega">🟢 Listo para Entrega</option>
+                    <option value="completado">✅ Completado</option>
+                    <option value="cancelado">❌ Cancelado</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID Pedido</th>
+                        <th>Cliente</th>
+                        <th>Teléfono</th>
+                        <th>Artículos</th>
+                        <th>Total</th>
+                        <th>Fecha</th>
+                        <th>Cambiar Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="table-all-orders">
+                    <tr>
+                        <td
+                            colspan="8"
+                            style="text-align: center; color: var(--text-secondary);"
+                        >
+                            No hay pedidos registrados en el sistema.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

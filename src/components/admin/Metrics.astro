@@ -1,0 +1,94 @@
+---
+// src/components/admin/Metrics.astro
+---
+<div id="section-metrics" class="dashboard-section active">
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <div class="metric-info">
+                <h3>Ingresos Hoy</h3>
+                <p id="metric-revenue">Bs 0.00</p>
+            </div>
+            <div class="metric-icon green">
+                <i data-lucide="dollar-sign"></i>
+            </div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-info">
+                <h3>Ventas Registradas</h3>
+                <p id="metric-sales-count">0</p>
+            </div>
+            <div class="metric-icon blue">
+                <i data-lucide="trending-up"></i>
+            </div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-info">
+                <h3>Pedidos Pendientes</h3>
+                <p id="metric-pending-orders">0</p>
+            </div>
+            <div class="metric-icon yellow">
+                <i data-lucide="clock"></i>
+            </div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-info">
+                <h3>En Preparación</h3>
+                <p id="metric-prod-orders">0</p>
+            </div>
+            <div class="metric-icon blue">
+                <i data-lucide="cooking-pot"></i>
+            </div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-info">
+                <h3>Total Productos</h3>
+                <p id="metric-prod-count">0</p>
+            </div>
+            <div class="metric-icon pink">
+                <i data-lucide="package"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="content-card" style="padding: 1.5rem; margin-bottom: 2rem;">
+        <h2 style="font-size: 1.25rem; font-family: 'Outfit', sans-serif; font-weight: 600; color: var(--white); margin-bottom: 1rem;">Tendencia de Ventas (7 Días)</h2>
+        <div style="width: 100%; height: 300px; position: relative;">
+            <canvas id="salesChart"></canvas>
+        </div>
+    </div>
+
+    <div class="content-card">
+        <div class="card-header">
+            <h2>Pedidos Recientes</h2>
+            <button class="btn-action secondary view-all-orders-btn">
+                Ver todos
+            </button>
+        </div>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID Pedido</th>
+                        <th>Cliente</th>
+                        <th>Teléfono</th>
+                        <th>Artículos</th>
+                        <th>Total</th>
+                        <th>Fecha</th>
+                        <th>Estado</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="table-recent-orders">
+                    <tr>
+                        <td
+                            colspan="8"
+                            style="text-align: center; color: var(--text-secondary);"
+                        >
+                            Cargando pedidos recientes...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

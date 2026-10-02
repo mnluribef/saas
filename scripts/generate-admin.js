@@ -46,7 +46,9 @@ async function main() {
   // 3. Generar hash PBKDF2 (100,000 iteraciones con SHA-256)
   const pbkdf2Hash = await hashPBKDF2(clientHash, saltHex);
 
-  const sqlInsert = `INSERT OR REPLACE INTO users (id, username, password_hash, password_salt) VALUES (1, '${username}', '${pbkdf2Hash}', '${saltHex}');`;
+  const role = args[2] || 'admin';
+
+  const sqlInsert = `INSERT OR REPLACE INTO users (id, username, password_hash, password_salt, role) VALUES (1, '${username}', '${pbkdf2Hash}', '${saltHex}', '${role}');`;
 
   console.log('\n======================================================');
   console.log('       🛡️  VENDLY SAAS — CREDENCIALES ADMIN');

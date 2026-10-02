@@ -63,7 +63,7 @@ CREATE TABLE IF NOT EXISTS orders (
     delivery_notes TEXT,
     payment_method TEXT,
     payment_reference TEXT,
-    payment_receipt TEXT, -- Imagen del comprobante (Base64 o URL segura)
+    payment_receipt_url TEXT, -- URL de la imagen en R2
     bcv_rate REAL DEFAULT 0.0, -- Tasa oficial BCV al momento del pedido
     total_bs REAL DEFAULT 0.0, -- Monto equivalente en Bolívares
     status TEXT NOT NULL DEFAULT 'pendiente', -- pendiente, en_produccion, listo_entrega, completado, cancelado
@@ -102,6 +102,7 @@ CREATE TABLE IF NOT EXISTS users (
     username TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     password_salt TEXT, -- Salt para PBKDF2 (Nulo indica que requiere migración desde SHA-256)
+    role TEXT NOT NULL DEFAULT 'admin', -- 'admin', 'manager', 'viewer'
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 

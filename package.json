@@ -12,12 +12,15 @@
     "deploy": "pnpm run build && wrangler pages deploy dist",
     "db:init:local": "wrangler d1 execute vendly-db --local --file=schema.sql",
     "db:seed:local": "wrangler d1 execute vendly-db --local --file=seed_templates.sql",
+    "db:migrate:local": "wrangler d1 migrations apply vendly-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply vendly-db --remote",
     "create-admin": "node scripts/generate-admin.js"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.2.3",
     "astro": "^7.2.4",
-    "lucide-astro": "^0.556.0"
+    "lucide-astro": "^0.556.0",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",

@@ -1,5 +1,6 @@
 // Controlador de Catálogo de Productos - Vendly SaaS
-import { verifySession, unauthorizedResponse } from "./_auth.js";
+import { verifySession, unauthorizedResponse, forbiddenResponse } from "./_auth.js";
+import { z } from "zod";
 
 function normalizeImageUrl(url) {
     if (!url) return '/assets/favicon.svg';
@@ -10,99 +11,100 @@ function normalizeImageUrl(url) {
     return '/' + trimmed;
 }
 
+// Zod schemas para validación
+const productSchema = z.object({
+    id: z.string().min(2, "ID demasiado corto").max(100, "ID demasiado largo").regex(/^[a-z0-9_-]+$/, "ID inválido. Solo minúsculas, números y guiones."),
+    name: z.string().min(2, "Nombre requerido").max(150),
+    description: z.string().max(500).optional().default(""),
+    price: z.number().min(0, "El precio no puede ser negativo").or(z.string().transform(v => parseFloat(v))),
+    category: z.string().default("principales"),
+    icon: z.string().max(50).optional().default("package"),
+    image_url: z.string().url("Debe ser una URL válida").or(z.string().startsWith("/")).optional().default("/assets/favicon.svg"),
+    sizes: z.string().max(200).optional().nullable(),
+    template: z.string().default("restaurant"),
+    active: z.number().int().min(0).max(1).optional().default(1)
+});
+
 /**
- * GET /api/products - Listar productos
- * - Clientes: Retorna productos activos (active = 1)
- * - Admin (con admin=true en URL y sesión activa): Retorna todos los productos
+ * GET /api/products - Listar productos (con Paginación)
  */
 export async function onRequestGet(context) {
     const { request, env } = context;
     const db = env.DB || env.vendly;
     
-    // Analizar parámetros URL
     const url = new URL(request.url);
     const isAdminMode = url.searchParams.get("admin") === "true";
     const template = url.searchParams.get("template");
+    
+    // Paginación
+    const page = Math.max(1, parseInt(url.searchParams.get("page") || "1"));
+    const limit = Math.max(1, Math.min(100, parseInt(url.searchParams.get("limit") || "50")));
+    const offset = (page - 1) * limit;
 
     try {
-        let products;
+        let conditions = [];
+        let params = [];
+
+        if (!isAdminMode) {
+            conditions.push("active = 1");
+            if (!template) conditions.push("template = 'restaurant'");
+        }
         
-        if (isAdminMode) {
-            // Verificar sesión para mostrar inactivos y permitir administración
-            const user = await verifySession(context);
-            if (!user) return unauthorizedResponse();
-
-            let query = "SELECT * FROM products";
-            const params = [];
-            if (template && template !== "all") {
-                query += " WHERE template = ?";
-                params.push(template);
-            }
-            query += " ORDER BY created_at DESC";
-
-            const stmt = params.length > 0 ? db.prepare(query).bind(...params) : db.prepare(query);
-            const { results } = await stmt.all();
-            products = results;
-        } else {
-            // Catálogo público: solo activos y filtrado por plantilla
-            let query = "SELECT * FROM products WHERE active = 1";
-            const params = [];
-            if (template && template !== "all") {
-                query += " AND template = ?";
-                params.push(template);
-            } else if (!template) {
-                query += " AND template = 'restaurant'";
-            }
-            query += " ORDER BY created_at ASC";
-
-            const stmt = params.length > 0 ? db.prepare(query).bind(...params) : db.prepare(query);
-            const { results } = await stmt.all();
-            products = results;
+        if (template && template !== "all") {
+            conditions.push("template = ?");
+            params.push(template);
         }
 
-        // Cargar y agrupar atributos dinámicos
-        const { results: allAttributes } = await db.prepare("SELECT * FROM product_attributes").all();
-        const attrsMap = {};
-        for (const attr of allAttributes) {
-            if (!attrsMap[attr.product_id]) {
-                attrsMap[attr.product_id] = [];
+        const whereClause = conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
+        const countQuery = `SELECT COUNT(*) as total FROM products ${whereClause}`;
+        const dataQuery = `SELECT * FROM products ${whereClause} ORDER BY created_at ${isAdminMode ? 'DESC' : 'ASC'} LIMIT ? OFFSET ?`;
+
+        const countStmt = params.length > 0 ? db.prepare(countQuery).bind(...params) : db.prepare(countQuery);
+        const { total } = await countStmt.first();
+
+        const dataParams = [...params, limit, offset];
+        const { results: products } = await db.prepare(dataQuery).bind(...dataParams).all();
+
+        // Cargar atributos (optimización: solo para los productos de esta página)
+        if (products.length > 0) {
+            const productIds = products.map(p => `'${p.id}'`).join(',');
+            const { results: allAttributes } = await db.prepare(`SELECT * FROM product_attributes WHERE product_id IN (${productIds})`).all();
+            
+            const attrsMap = {};
+            for (const attr of allAttributes) {
+                if (!attrsMap[attr.product_id]) attrsMap[attr.product_id] = [];
+                let parsedValues = [];
+                try { parsedValues = JSON.parse(attr.attr_values); } catch (e) { parsedValues = attr.attr_values ? attr.attr_values.split(",") : []; }
+                let parsedPriceMatrix = {};
+                try { parsedPriceMatrix = JSON.parse(attr.price_matrix); } catch (e) { parsedPriceMatrix = {}; }
+                attrsMap[attr.product_id].push({
+                    id: attr.id, key: attr.attr_key, label: attr.attr_label, values: parsedValues,
+                    type: attr.attr_type || 'select', price_matrix: parsedPriceMatrix, required: attr.required === 1
+                });
             }
-            let parsedValues = [];
-            try {
-                parsedValues = JSON.parse(attr.attr_values);
-            } catch (e) {
-                parsedValues = attr.attr_values ? attr.attr_values.split(",") : [];
+
+            for (const product of products) {
+                product.type_id = product.type_id || product.category || 'principales';
+                product.category = product.category || product.type_id;
+                product.template = product.template || 'restaurant';
+                product.attributes = attrsMap[product.id] || [];
+                product.image_url = normalizeImageUrl(product.image_url);
             }
-            let parsedPriceMatrix = {};
-            try {
-                parsedPriceMatrix = JSON.parse(attr.price_matrix);
-            } catch (e) {
-                parsedPriceMatrix = {};
-            }
-            attrsMap[attr.product_id].push({
-                id: attr.id,
-                key: attr.attr_key,
-                label: attr.attr_label,
-                values: parsedValues,
-                type: attr.attr_type || 'select',
-                price_matrix: parsedPriceMatrix,
-                required: attr.required === 1
-            });
-        }
-        // Adjuntar atributos y normalizar categorías a cada producto
-        for (const product of products) {
-            product.type_id = product.type_id || product.category || 'principales';
-            product.category = product.category || product.type_id;
-            product.template = product.template || 'restaurant';
-            product.attributes = attrsMap[product.id] || [];
-            product.image_url = normalizeImageUrl(product.image_url);
         }
 
         const cacheControl = isAdminMode 
             ? "no-store, no-cache, must-revalidate" 
             : "public, max-age=10";
 
-        return new Response(JSON.stringify(products), {
+        return new Response(JSON.stringify({
+            data: products,
+            meta: {
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit)
+            }
+        }), {
             headers: { 
                 "Content-Type": "application/json",
                 "Cache-Control": cacheControl
@@ -123,25 +125,25 @@ export async function onRequestGet(context) {
 export async function onRequestPost(context) {
     const user = await verifySession(context);
     if (!user) return unauthorizedResponse();
+    if (user.role !== 'admin') return forbiddenResponse();
 
     const { env, request } = context;
     const db = env.DB || env.vendly;
 
-    let productId = "";
     try {
-        const data = await request.json();
-        const { id, name, description, price, category, icon, image_url, sizes, template, active } = data;
-
-        if (!id || !name) {
-            return new Response(JSON.stringify({ error: "ID (slug) y Nombre son requeridos." }), {
+        const rawData = await request.json();
+        
+        // Validación con Zod
+        const result = productSchema.safeParse(rawData);
+        if (!result.success) {
+            return new Response(JSON.stringify({ error: "Datos inválidos", details: result.error.issues }), {
                 status: 400,
                 headers: { "Content-Type": "application/json" }
             });
         }
 
-        productId = id.toLowerCase().trim().replace(/[^a-z0-9_-]/g, '-');
-        const cleanCategory = (category || 'principales').toLowerCase().trim();
-        const cleanTemplate = (template || 'restaurant').toLowerCase().trim();
+        const { id, name, description, price, category, icon, image_url, sizes, template, active } = result.data;
+        const productId = id.toLowerCase().trim();
 
         // Validar si el ID ya existe
         const existing = await db.prepare("SELECT id FROM products WHERE id = ?").bind(productId).first();
@@ -156,27 +158,17 @@ export async function onRequestPost(context) {
             "INSERT INTO products (id, name, type_id, category, description, price, icon, image_url, sizes, template, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         )
         .bind(
-            productId,
-            name.trim().slice(0, 150),
-            cleanCategory,
-            cleanCategory,
-            (description || "").trim().slice(0, 500),
-            parseFloat(price) || 0.0,
-            (icon || "package").trim().slice(0, 50),
-            normalizeImageUrl(image_url),
-            sizes ? String(sizes).trim().slice(0, 200) : null,
-            cleanTemplate,
-            active !== undefined ? active : 1
-        )
-        .run();
+            productId, name, category, category, description,
+            price, icon, image_url, sizes, template, active
+        ).run();
 
-        return new Response(JSON.stringify({ success: true, message: "Producto creado exitosamente en el catálogo." }), {
+        return new Response(JSON.stringify({ success: true, message: "Producto creado exitosamente." }), {
             status: 201,
             headers: { "Content-Type": "application/json" }
         });
     } catch (err) {
         console.error("Error en POST /api/products:", err);
-        return new Response(JSON.stringify({ error: "Error al guardar el producto en la base de datos." }), {
+        return new Response(JSON.stringify({ error: "Error al guardar el producto." }), {
             status: 500,
             headers: { "Content-Type": "application/json" }
         });
@@ -189,23 +181,27 @@ export async function onRequestPost(context) {
 export async function onRequestPut(context) {
     const user = await verifySession(context);
     if (!user) return unauthorizedResponse();
+    if (user.role !== 'admin') return forbiddenResponse();
 
     const { env, request } = context;
     const db = env.DB || env.vendly;
 
     try {
-        const data = await request.json();
-        const { id, name, description, price, category, icon, image_url, sizes, template, active } = data;
-
-        if (!id) {
-            return new Response(JSON.stringify({ error: "ID de producto es requerido para actualizar." }), {
+        const rawData = await request.json();
+        
+        // Validación con Zod
+        const result = productSchema.safeParse(rawData);
+        if (!result.success) {
+            return new Response(JSON.stringify({ error: "Datos inválidos", details: result.error.issues }), {
                 status: 400,
                 headers: { "Content-Type": "application/json" }
             });
         }
 
+        const { id, name, description, price, category, icon, image_url, sizes, template, active } = result.data;
+
         // Verificar si el producto existe
-        const existing = await db.prepare("SELECT id, template, category FROM products WHERE id = ?").bind(id).first();
+        const existing = await db.prepare("SELECT id FROM products WHERE id = ?").bind(id).first();
         if (!existing) {
             return new Response(JSON.stringify({ error: "Producto no encontrado." }), {
                 status: 404,
@@ -213,33 +209,20 @@ export async function onRequestPut(context) {
             });
         }
 
-        const cleanCategory = (category || existing.category || 'principales').toLowerCase().trim();
-        const cleanTemplate = (template || existing.template || 'restaurant').toLowerCase().trim();
-
         await db.prepare(
             "UPDATE products SET name = ?, type_id = ?, category = ?, description = ?, price = ?, icon = ?, image_url = ?, sizes = ?, template = ?, active = ? WHERE id = ?"
         )
         .bind(
-            name.trim().slice(0, 150),
-            cleanCategory,
-            cleanCategory,
-            (description || "").trim().slice(0, 500),
-            parseFloat(price) || 0.0,
-            (icon || "package").trim().slice(0, 50),
-            normalizeImageUrl(image_url),
-            sizes ? String(sizes).trim().slice(0, 200) : null,
-            cleanTemplate,
-            active !== undefined ? active : 1,
-            id
-        )
-        .run();
+            name, category, category, description, price, icon,
+            image_url, sizes, template, active, id
+        ).run();
 
-        return new Response(JSON.stringify({ success: true, message: "Plato actualizado exitosamente." }), {
+        return new Response(JSON.stringify({ success: true, message: "Producto actualizado exitosamente." }), {
             headers: { "Content-Type": "application/json" }
         });
     } catch (err) {
         console.error("Error en PUT /api/products:", err);
-        return new Response(JSON.stringify({ error: "Error al actualizar plato en base de datos." }), {
+        return new Response(JSON.stringify({ error: "Error al actualizar producto." }), {
             status: 500,
             headers: { "Content-Type": "application/json" }
         });
@@ -252,6 +235,7 @@ export async function onRequestPut(context) {
 export async function onRequestDelete(context) {
     const user = await verifySession(context);
     if (!user) return unauthorizedResponse();
+    if (user.role !== 'admin') return forbiddenResponse();
 
     const { env, request } = context;
     const db = env.DB || env.vendly;
@@ -261,7 +245,7 @@ export async function onRequestDelete(context) {
         const id = url.searchParams.get("id");
 
         if (!id) {
-            return new Response(JSON.stringify({ error: "ID de producto es requerido." }), {
+            return new Response(JSON.stringify({ error: "ID de producto requerido." }), {
                 status: 400,
                 headers: { "Content-Type": "application/json" }
             });
@@ -277,12 +261,12 @@ export async function onRequestDelete(context) {
             });
         }
 
-        return new Response(JSON.stringify({ success: true, message: "Plato eliminado del menú." }), {
+        return new Response(JSON.stringify({ success: true, message: "Producto eliminado." }), {
             headers: { "Content-Type": "application/json" }
         });
     } catch (err) {
         console.error("Error en DELETE /api/products:", err);
-        return new Response(JSON.stringify({ error: "Error interno al eliminar plato." }), {
+        return new Response(JSON.stringify({ error: "Error al eliminar producto." }), {
             status: 500,
             headers: { "Content-Type": "application/json" }
         });

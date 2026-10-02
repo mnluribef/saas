@@ -40,13 +40,16 @@ export async function verifySession(context) {
     try {
         const now = Math.floor(Date.now() / 1000);
         const session = await db.prepare(
-            "SELECT username FROM sessions WHERE token = ? AND expires_at > ?"
+            `SELECT s.username, u.role 
+             FROM sessions s
+             JOIN users u ON s.username = u.username
+             WHERE s.token = ? AND s.expires_at > ?`
         )
         .bind(token, now)
         .first();
 
         if (session) {
-            return session.username;
+            return { username: session.username, role: session.role };
         }
     } catch (err) {
         console.error("Error verificando sesión:", err);
@@ -113,6 +116,18 @@ export async function hashPasswordPBKDF2(passwordHash, saltHex) {
 export function unauthorizedResponse() {
     return new Response(JSON.stringify({ error: "No autorizado. Sesión inválida o expirada." }), {
         status: 401,
+        headers: {
+            "Content-Type": "application/json"
+        }
+    });
+}
+
+/**
+ * Retorna una respuesta de error 403 Forbidden
+ */
+export function forbiddenResponse() {
+    return new Response(JSON.stringify({ error: "Prohibido. No tienes permisos para realizar esta acción." }), {
+        status: 403,
         headers: {
             "Content-Type": "application/json"
         }

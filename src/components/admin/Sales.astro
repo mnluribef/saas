@@ -1,0 +1,70 @@
+---
+// src/components/admin/Sales.astro
+---
+<div id="section-sales" class="dashboard-section">
+    <div class="content-card">
+        <div class="card-header">
+            <h2>
+                Registro Histórico de Ventas{" "}
+                <span
+                    id="sales-total-amount"
+                    style="font-size: 0.95rem; color: var(--success); margin-left: 1rem; font-weight: 500;"
+                ></span>
+            </h2>
+            <div class="card-actions">
+                <button
+                    class="btn-action secondary"
+                    id="btn-export-sales"
+                    title="Exportar registro de ventas a archivo CSV / Excel"
+                >
+                    <i data-lucide="download"></i> Exportar CSV
+                </button>
+                <button
+                    class="btn-action secondary"
+                    id="btn-refresh-sales"
+                >
+                    <i data-lucide="refresh-cw"></i> Sincronizar
+                </button>
+            </div>
+        </div>
+
+        <!-- Barra de Búsqueda de Ventas -->
+        <div style="padding: 0 1.5rem 1.25rem 1.5rem; display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color);">
+            <div style="flex: 1; min-width: 260px; max-width: 480px;">
+                <input
+                    type="text"
+                    id="sales-search-input"
+                    class="form-control"
+                    placeholder="🔍 Buscar venta por cliente, método o #pedido..."
+                    style="padding-left: 1rem; font-size: 0.9rem;"
+                />
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID Venta</th>
+                        <th>ID Pedido</th>
+                        <th>Cliente</th>
+                        <th>Teléfono</th>
+                        <th>Monto</th>
+                        <th>Método de Pago</th>
+                        <th>Fecha de Pago</th>
+                    </tr>
+                </thead>
+                <tbody id="table-all-sales">
+                    <tr>
+                        <td
+                            colspan="7"
+                            style="text-align: center; color: var(--text-secondary);"
+                        >
+                            Cargando registro de ventas...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

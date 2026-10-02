@@ -1,0 +1,48 @@
+---
+// src/components/admin/Sidebar.astro
+---
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <div class="login-logo" style="margin-bottom: 0; justify-content: flex-start; font-size: 1.4rem; display: flex; align-items: center; gap: 0.5rem; font-family: 'Outfit', sans-serif; font-weight: 700;">
+            <i data-lucide="sparkles" style="color: var(--primary);"></i>
+            <span class="logo-text">Vend<span style="color: var(--accent);">ly</span></span>
+        </div>
+    </div>
+    <ul class="sidebar-menu">
+        <li>
+            <div class="sidebar-link active" data-target="section-metrics">
+                <i data-lucide="layout-dashboard"></i>
+                <span>Métricas Generales</span>
+            </div>
+        </li>
+        <li>
+            <div class="sidebar-link" data-target="section-orders">
+                <i data-lucide="shopping-bag"></i>
+                <span>Gestión Pedidos</span>
+                <span id="sidebar-badge-orders" style="display: none; background: var(--danger); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; margin-left: auto; font-weight: bold;">0</span>
+            </div>
+        </li>
+        <li>
+            <div class="sidebar-link" data-target="section-sales">
+                <i data-lucide="trending-up"></i>
+                <span>Registro Ventas</span>
+            </div>
+        </li>
+        <li>
+            <div class="sidebar-link" data-target="section-inventory">
+                <i data-lucide="package"></i>
+                <span>Catálogo / Productos</span>
+            </div>
+        </li>
+    </ul>
+    <div class="sidebar-footer">
+        <button class="btn-action secondary" id="btn-open-change-password" style="width: 100%; justify-content: center; margin-bottom: 0.5rem;">
+            <i data-lucide="key"></i>
+            <span>Cambiar Clave</span>
+        </button>
+        <div class="sidebar-link" id="btn-logout" style="color: var(--danger); background: rgba(239, 68, 68, 0.05);">
+            <i data-lucide="log-out"></i>
+            <span>Cerrar Sesión</span>
+        </div>
+    </div>
+</aside>

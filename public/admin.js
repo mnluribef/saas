@@ -7,6 +7,14 @@ let productsList = [];
 let salesList = [];
 let currentBcvRate = 853.50;
 let currentBcvAuto = true;
+let lastBcvUpdated = '';
+let lastBcvSource = '';
+let ordersSearchQuery = '';
+let ordersStatusFilter = '';
+let salesSearchQuery = '';
+let productsSearchQuery = '';
+let lastKnownOrderCount = null;
+let soundEnabled = localStorage.getItem('admin_sound_enabled') !== 'false';
 
 // Elementos del DOM
 const loader = document.getElementById('page-loader');
@@ -117,6 +125,7 @@ async function checkSession() {
 
         if (data.authenticated) {
             currentAdmin = data.username;
+            window.currentUserRole = data.role || 'viewer';
             showDashboard();
         } else {
             showLogin();
@@ -148,6 +157,12 @@ function showDashboard() {
     if (badge && badgeName && currentAdmin) {
         badge.style.display = 'block';
         badgeName.textContent = currentAdmin.charAt(0).toUpperCase() + currentAdmin.slice(1);
+        
+        // Actualizar rol en la UI si el elemento existe
+        const roleEl = document.querySelector('.user-role');
+        if (roleEl && window.currentUserRole) {
+            roleEl.textContent = window.currentUserRole.toUpperCase();
+        }
     }
 
     // Cargar datos
@@ -350,16 +365,20 @@ async function loadBcvRate() {
             const data = await res.json();
             currentBcvRate = parseFloat(data.rate) || 853.50;
             currentBcvAuto = data.autoUpdate !== false;
+            lastBcvUpdated = data.lastUpdated || '';
+            lastBcvSource = data.source || 'bcv_api';
+
             const display = document.getElementById('admin-bcv-val');
             if (display) display.textContent = `${currentBcvRate.toFixed(2)} Bs.`;
             
             const input = document.getElementById('bcv-rate-input');
             const toggle = document.getElementById('bcv-auto-toggle');
-            const syncText = document.getElementById('bcv-last-sync-text');
+            const syncLabel = document.getElementById('bcv-last-sync-label') || document.getElementById('bcv-last-sync-text');
             if (input) input.value = currentBcvRate.toFixed(2);
             if (toggle) toggle.checked = currentBcvAuto;
-            if (syncText) {
-                syncText.textContent = data.updatedAt ? `Última actualización: ${data.updatedAt}` : `Fuente: ${data.source || 'BCV'}`;
+            if (syncLabel) {
+                const dateStr = lastBcvUpdated ? new Date(lastBcvUpdated).toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' }) : 'reciente';
+                syncLabel.textContent = `Última sincronización: ${dateStr} (${lastBcvSource === 'bcv_api' ? 'Oficial BCV' : 'Manual'})`;
             }
         }
     } catch (e) {
@@ -372,7 +391,8 @@ async function refreshAllData() {
         loadBcvRate(),
         loadOrders(),
         loadProducts(),
-        loadSales()
+        loadSales(),
+        loadStats()
     ]);
     renderMetrics();
 }
@@ -382,8 +402,22 @@ async function loadOrders() {
     try {
         const res = await fetch('/api/orders');
         if (!res.ok) throw new Error('No autorizado');
-        ordersList = await res.json();
+        const responseData = await res.json();
+        const incomingOrders = responseData.data || responseData;
+
+        // Detección de nuevo pedido para reproducir sonido y notificar
+        if (lastKnownOrderCount !== null && incomingOrders.length > lastKnownOrderCount) {
+            const hasNewPending = incomingOrders.some(o => o.status === 'pendiente');
+            if (hasNewPending) {
+                playOrderChime();
+                flashPageTitle();
+                showToast('🔔 ¡Has recibido un nuevo pedido!', 'info');
+            }
+        }
+        lastKnownOrderCount = incomingOrders.length;
+        ordersList = incomingOrders;
         renderOrders();
+        renderMetrics();
     } catch (err) {
         console.error(err);
         showToast('Error al cargar pedidos del servidor.', 'error');
@@ -395,7 +429,8 @@ async function loadProducts() {
     try {
         const res = await fetch('/api/products?admin=true');
         if (!res.ok) throw new Error('No autorizado');
-        productsList = await res.json();
+        const responseData = await res.json();
+        productsList = responseData.data || responseData;
         renderProductsTable();
     } catch (err) {
         console.error(err);
@@ -408,12 +443,122 @@ async function loadSales() {
     try {
         const res = await fetch('/api/sales');
         if (!res.ok) throw new Error('No autorizado');
-        salesList = await res.json();
+        const responseData = await res.json();
+        salesList = responseData.data || responseData;
         renderSales();
     } catch (err) {
         console.error(err);
         showToast('Error al cargar ventas del servidor.', 'error');
     }
+}
+
+// 2.6 Cargar Estadísticas (Ingresos y Gráfica)
+let salesChartInstance = null;
+async function loadStats() {
+    try {
+        const res = await fetch('/api/sales?stats=true');
+        if (!res.ok) throw new Error('No autorizado');
+        const data = await res.json();
+        
+        // Actualizar métrica de ingresos de hoy
+        const metricRevenue = document.getElementById('metric-revenue');
+        if (metricRevenue) {
+            const revenue = parseFloat(data.revenueToday) || 0;
+            metricRevenue.textContent = `Bs ${(Math.round(revenue * 100) / 100).toLocaleString('es-VE')}`;
+        }
+        
+        // Renderizar gráfica
+        renderChart(data.chartData || []);
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+function renderChart(chartData) {
+    const ctx = document.getElementById('salesChart');
+    if (!ctx) return;
+    
+    // Preparar etiquetas (fechas) y datos (totales)
+    // Si no hay datos, mostrar 7 días vacíos
+    const labels = [];
+    const totals = [];
+    
+    // Asegurar 7 días
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const dateStr = d.toISOString().split('T')[0];
+        
+        labels.push(d.toLocaleDateString('es-VE', { weekday: 'short', day: 'numeric' }));
+        
+        const dayData = chartData.find(c => c.date === dateStr);
+        totals.push(dayData ? parseFloat(dayData.total) : 0);
+    }
+
+    if (salesChartInstance) {
+        salesChartInstance.destroy();
+    }
+    
+    if (typeof Chart === 'undefined') return;
+
+    salesChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Ingresos (Bs)',
+                data: totals,
+                borderColor: '#c9748a',
+                backgroundColor: 'rgba(201, 116, 138, 0.2)',
+                borderWidth: 3,
+                pointBackgroundColor: '#b8860b',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 22, 42, 0.9)',
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    borderColor: 'rgba(255,255,255,0.1)',
+                    borderWidth: 1,
+                    padding: 12,
+                    displayColors: false,
+                    callbacks: {
+                        label: function(context) {
+                            return 'Bs ' + context.parsed.y.toLocaleString('es-VE');
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { display: false, drawBorder: false },
+                    ticks: { color: 'rgba(255,255,255,0.5)', font: { family: 'Inter' } }
+                },
+                y: {
+                    grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
+                    ticks: {
+                        color: 'rgba(255,255,255,0.5)',
+                        font: { family: 'Inter' },
+                        callback: function(value) {
+                            return 'Bs ' + value.toLocaleString('es-VE');
+                        }
+                    },
+                    beginAtZero: true
+                }
+            }
+        }
+    });
 }
 
 function renderSales() {
@@ -427,12 +572,23 @@ function renderSales() {
 
     if (!tableSales) return;
 
-    if (salesList.length === 0) {
-        tableSales.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-secondary);">No se han registrado ventas completadas todavía.</td></tr>`;
+    let filteredSales = salesList;
+    if (salesSearchQuery) {
+        const q = salesSearchQuery.toLowerCase();
+        filteredSales = filteredSales.filter(s => 
+            (s.client_name && s.client_name.toLowerCase().includes(q)) ||
+            (s.order_id && s.order_id.toLowerCase().includes(q)) ||
+            (s.client_phone && s.client_phone.toLowerCase().includes(q)) ||
+            (s.metodo_pago && s.metodo_pago.toLowerCase().includes(q))
+        );
+    }
+
+    if (filteredSales.length === 0) {
+        tableSales.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-secondary);">${salesSearchQuery ? 'No se encontraron ventas que coincidan con la búsqueda.' : 'No se han registrado ventas completadas todavía.'}</td></tr>`;
         return;
     }
 
-    tableSales.innerHTML = salesList.map(s => {
+    tableSales.innerHTML = filteredSales.map(s => {
         const dateObj = new Date(s.fecha);
         const dateString = dateObj.toLocaleDateString('es-VE', {
             day: '2-digit',
@@ -478,8 +634,18 @@ function renderMetrics() {
     const metricSalesCount = document.getElementById('metric-sales-count');
     
     if (metricSalesCount) {
-        const totalSalesSum = completedOrders.reduce((sum, o) => sum + (parseFloat(o.total_price) || 0), 0);
-        metricSalesCount.textContent = `$${totalSalesSum.toFixed(2)}`;
+        metricSalesCount.textContent = salesList.length;
+    }
+    
+    // Actualizar badge del sidebar
+    const badgeOrders = document.getElementById('sidebar-badge-orders');
+    if (badgeOrders) {
+        if (pendingOrders.length > 0) {
+            badgeOrders.textContent = pendingOrders.length;
+            badgeOrders.style.display = 'inline-block';
+        } else {
+            badgeOrders.style.display = 'none';
+        }
     }
 }
 
@@ -498,12 +664,26 @@ function renderOrders() {
         summarySpan.textContent = `(Monto Total: $${totalOrdersSum.toFixed(2)} | Activos: $${activeOrdersSum.toFixed(2)})`;
     }
 
+    // Filtrar pedidos según búsqueda y estado
+    let filteredOrders = ordersList;
+    if (ordersStatusFilter) {
+        filteredOrders = filteredOrders.filter(o => o.status === ordersStatusFilter);
+    }
+    if (ordersSearchQuery) {
+        const q = ordersSearchQuery.toLowerCase();
+        filteredOrders = filteredOrders.filter(o =>
+            (o.id && o.id.toLowerCase().includes(q)) ||
+            (o.client_name && o.client_name.toLowerCase().includes(q)) ||
+            (o.client_phone && o.client_phone.toLowerCase().includes(q))
+        );
+    }
+
     // 1. Render en tabla general
     if (tableAll) {
-        if (ordersList.length === 0) {
-            tableAll.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-secondary);">No hay pedidos en la base de datos.</td></tr>`;
+        if (filteredOrders.length === 0) {
+            tableAll.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-secondary);">${(ordersSearchQuery || ordersStatusFilter) ? 'No hay pedidos que coincidan con los filtros aplicados.' : 'No hay pedidos en la base de datos.'}</td></tr>`;
         } else {
-            tableAll.innerHTML = ordersList.map(o => createOrderRowMarkup(o)).join('');
+            tableAll.innerHTML = filteredOrders.map(o => createOrderRowMarkup(o)).join('');
         }
     }
 
@@ -554,7 +734,8 @@ function createOrderRowMarkup(order, includeStatusSelector = true) {
             <td><strong>#${escapeHtml(order.id)}</strong>${receiptBadge}</td>
             <td>${escapeHtml(order.client_name)}</td>
             <td>${escapeHtml(order.client_phone)}</td>
-            <td>${escapeHtml(order.total_items)} items (${priceText})</td>
+            <td>${escapeHtml(order.total_items)}</td>
+            <td style="font-weight: 600; color: var(--primary);">${priceText}</td>
             <td style="font-size:0.8rem; color:var(--text-secondary);">${dateString}</td>
             <td>${statusSelector}</td>
             <td>
@@ -915,12 +1096,21 @@ function renderProductsTable() {
     if (countTech) countTech.textContent = productsList.filter(p => p.template === 'tech').length;
 
     // Filtrar lista según pestaña activa
-    const filteredProducts = activeProductTemplateFilter === 'all'
+    let filteredProducts = activeProductTemplateFilter === 'all'
         ? productsList
         : productsList.filter(p => (p.template || 'restaurant') === activeProductTemplateFilter);
 
+    if (productsSearchQuery) {
+        const q = productsSearchQuery.toLowerCase();
+        filteredProducts = filteredProducts.filter(p =>
+            (p.name && p.name.toLowerCase().includes(q)) ||
+            (p.id && p.id.toLowerCase().includes(q)) ||
+            (p.category && p.category.toLowerCase().includes(q))
+        );
+    }
+
     if (filteredProducts.length === 0) {
-        tableProducts.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-secondary); padding: 2rem;">No hay productos registrados en esta plantilla. Agrega uno nuevo arriba.</td></tr>`;
+        tableProducts.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-secondary); padding: 2rem;">${productsSearchQuery ? 'No se encontraron productos que coincidan con la búsqueda.' : 'No hay productos registrados en esta plantilla. Agrega uno nuevo arriba.'}</td></tr>`;
         return;
     }
 
@@ -1007,10 +1197,12 @@ if (productForm) {
         const category = document.getElementById('prod-category')?.value.trim();
         const price = parseFloat(document.getElementById('prod-price')?.value) || 0.0;
         const icon = document.getElementById('prod-icon')?.value.trim();
-        const image_url = document.getElementById('prod-image')?.value.trim();
+        let image_url = document.getElementById('prod-image')?.value.trim();
         const sizes = document.getElementById('prod-sizes')?.value.trim();
         const active = parseInt(document.getElementById('prod-active')?.value) || 1;
         const description = document.getElementById('prod-description')?.value.trim();
+        
+        const imageFile = document.getElementById('prod-image-file')?.files[0];
 
         const btnSave = document.getElementById('btn-submit-product');
         if (btnSave) {
@@ -1020,6 +1212,19 @@ if (productForm) {
         }
 
         try {
+            // Subir imagen a R2 primero si hay archivo
+            if (imageFile) {
+                const formData = new FormData();
+                formData.append("file", imageFile);
+                const uploadRes = await fetch('/api/upload?type=product', { method: 'POST', body: formData });
+                const uploadData = await uploadRes.json();
+                if (uploadRes.ok && uploadData.success) {
+                    image_url = uploadData.url;
+                } else {
+                    throw new Error(uploadData.error || "Error al subir la imagen a R2");
+                }
+            }
+
             const response = await fetch('/api/products', {
                 method: method,
                 headers: { 'Content-Type': 'application/json' },
@@ -1063,6 +1268,8 @@ function startEditProduct(productId) {
     const priceEl = document.getElementById('prod-price');
     const iconEl = document.getElementById('prod-icon');
     const imageEl = document.getElementById('prod-image');
+    const imageFileEl = document.getElementById('prod-image-file');
+    const imagePreviewEl = document.getElementById('prod-image-preview');
     const sizesEl = document.getElementById('prod-sizes');
     const activeEl = document.getElementById('prod-active');
     const descEl = document.getElementById('prod-description');
@@ -1077,7 +1284,17 @@ function startEditProduct(productId) {
     if (categoryEl) categoryEl.value = product.category || product.type_id || 'principales';
     if (priceEl) priceEl.value = product.price;
     if (iconEl) iconEl.value = product.icon || '';
-    if (imageEl) imageEl.value = product.image_url;
+    
+    if (imageEl) imageEl.value = product.image_url || '';
+    if (imageFileEl) imageFileEl.value = ''; // Reset file input
+    if (imagePreviewEl && product.image_url) {
+        const url = (product.image_url.startsWith('http') || product.image_url.startsWith('/')) ? product.image_url : `/${product.image_url}`;
+        imagePreviewEl.style.backgroundImage = `url('${url}')`;
+        imagePreviewEl.style.display = 'block';
+    } else if (imagePreviewEl) {
+        imagePreviewEl.style.display = 'none';
+    }
+
     if (sizesEl) sizesEl.value = product.sizes || '';
     if (activeEl) activeEl.value = product.active !== undefined ? product.active : 1;
     if (descEl) descEl.value = product.description || '';
@@ -1104,9 +1321,15 @@ function resetProductForm() {
     const methodEl = document.getElementById('prod-method');
     const idEl = document.getElementById('prod-id');
     const templateEl = document.getElementById('prod-template');
+    const imagePreviewEl = document.getElementById('prod-image-preview');
+    const imageFileEl = document.getElementById('prod-image-file');
+    
     if (methodEl) methodEl.value = 'POST';
     if (idEl) idEl.disabled = false;
     if (templateEl) templateEl.value = 'restaurant';
+    if (imagePreviewEl) imagePreviewEl.style.display = 'none';
+    if (imageFileEl) imageFileEl.value = '';
+    
     if (formProductTitle) formProductTitle.textContent = 'Añadir Nuevo Producto';
     if (btnSubmitProduct) btnSubmitProduct.innerHTML = '<i data-lucide="plus-circle"></i> Guardar Producto';
     if (btnCancelEdit) btnCancelEdit.style.display = 'none';
@@ -1149,6 +1372,23 @@ if (btnToggleProductForm) {
             collapseEl.classList.toggle('expanded');
             if (collapseEl.classList.contains('expanded')) {
                 document.getElementById('prod-template')?.focus();
+            }
+        }
+    });
+}
+
+// Live preview de imagen por URL
+const prodImageInput = document.getElementById('prod-image');
+if (prodImageInput) {
+    prodImageInput.addEventListener('input', (e) => {
+        const val = e.target.value.trim();
+        const preview = document.getElementById('prod-image-preview');
+        if (preview) {
+            if (val) {
+                preview.style.backgroundImage = `url('${val}')`;
+                preview.style.display = 'block';
+            } else {
+                preview.style.display = 'none';
             }
         }
     });
@@ -1313,3 +1553,253 @@ if (receiptModal) {
         if (e.target === receiptModal) closeReceiptModal();
     });
 }
+
+// --- SINCRONIZACIÓN EN VIVO DESDE MODAL BCV ---
+const btnForceBcvSync = document.getElementById('btn-force-bcv-sync');
+if (btnForceBcvSync) {
+    btnForceBcvSync.addEventListener('click', async () => {
+        btnForceBcvSync.disabled = true;
+        const originalHTML = btnForceBcvSync.innerHTML;
+        btnForceBcvSync.innerHTML = '<i data-lucide="loader" class="spin"></i> Sincronizando...';
+        if (window.lucide) lucide.createIcons();
+
+        try {
+            const res = await fetch('/api/bcv?force=true');
+            const data = await res.json();
+            if (res.ok && data.rate) {
+                currentBcvRate = parseFloat(data.rate);
+                currentBcvAuto = data.autoUpdate !== false;
+                lastBcvUpdated = data.lastUpdated || '';
+                lastBcvSource = data.source || 'bcv_api';
+
+                const input = document.getElementById('bcv-rate-input');
+                if (input) input.value = currentBcvRate.toFixed(2);
+                const display = document.getElementById('admin-bcv-val');
+                if (display) display.textContent = `${currentBcvRate.toFixed(2)} Bs.`;
+                const syncLabel = document.getElementById('bcv-last-sync-label') || document.getElementById('bcv-last-sync-text');
+                if (syncLabel) {
+                    const dateStr = lastBcvUpdated ? new Date(lastBcvUpdated).toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' }) : 'reciente';
+                    syncLabel.textContent = `Última sincronización: ${dateStr} (Oficial BCV)`;
+                }
+                showToast(`✅ Tasa oficial actualizada: ${currentBcvRate.toFixed(2)} Bs.`, 'success');
+            } else {
+                showToast('No se pudo obtener la tasa oficial en vivo.', 'warning');
+            }
+        } catch (err) {
+            console.error(err);
+            showToast('Error de conexión al sincronizar con BCV.', 'error');
+        } finally {
+            btnForceBcvSync.disabled = false;
+            btnForceBcvSync.innerHTML = originalHTML;
+            if (window.lucide) lucide.createIcons();
+        }
+    });
+}
+
+// --- SISTEMA DE AUDIO Y ALERTAS PARA NUEVOS PEDIDOS ---
+function playOrderChime() {
+    if (!soundEnabled) return;
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+        const now = ctx.currentTime;
+
+        // Tono 1: Nota D5 (587.33 Hz)
+        const osc1 = ctx.createOscillator();
+        const gain1 = ctx.createGain();
+        osc1.type = 'triangle';
+        osc1.frequency.setValueAtTime(587.33, now);
+        gain1.gain.setValueAtTime(0.18, now);
+        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+        osc1.connect(gain1);
+        gain1.connect(ctx.destination);
+        osc1.start(now);
+        osc1.stop(now + 0.35);
+
+        // Tono 2: Nota A5 (880 Hz) con micro-retardo
+        const osc2 = ctx.createOscillator();
+        const gain2 = ctx.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(880, now + 0.12);
+        gain2.gain.setValueAtTime(0.22, now + 0.12);
+        gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.65);
+        osc2.connect(gain2);
+        gain2.connect(ctx.destination);
+        osc2.start(now + 0.12);
+        osc2.stop(now + 0.65);
+    } catch (e) {
+        console.warn('Alerta de audio no reproducible en este contexto:', e);
+    }
+}
+
+let originalPageTitle = document.title;
+let titleFlashTimer = null;
+
+function flashPageTitle() {
+    if (titleFlashTimer || document.hasFocus()) return;
+    let isAlert = false;
+    titleFlashTimer = setInterval(() => {
+        document.title = isAlert ? '🔔 (1) ¡Nuevo Pedido!' : originalPageTitle;
+        isAlert = !isAlert;
+    }, 1000);
+
+    const stopFlashing = () => {
+        if (titleFlashTimer) {
+            clearInterval(titleFlashTimer);
+            titleFlashTimer = null;
+            document.title = originalPageTitle;
+        }
+        window.removeEventListener('focus', stopFlashing);
+    };
+    window.addEventListener('focus', stopFlashing);
+}
+
+// Botón de alternar audio
+const btnToggleSound = document.getElementById('btn-toggle-sound');
+function updateSoundIcon() {
+    const icon = document.getElementById('sound-icon');
+    if (!icon) return;
+    if (soundEnabled) {
+        icon.setAttribute('data-lucide', 'volume-2');
+        if (btnToggleSound) btnToggleSound.title = 'Alertas de sonido activadas (clic para silenciar)';
+    } else {
+        icon.setAttribute('data-lucide', 'volume-x');
+        if (btnToggleSound) btnToggleSound.title = 'Alertas de sonido silenciadas (clic para activar)';
+    }
+    if (window.lucide) lucide.createIcons();
+}
+
+if (btnToggleSound) {
+    updateSoundIcon();
+    btnToggleSound.addEventListener('click', () => {
+        soundEnabled = !soundEnabled;
+        localStorage.setItem('admin_sound_enabled', String(soundEnabled));
+        updateSoundIcon();
+        if (soundEnabled) {
+            playOrderChime();
+            showToast('Sonido de pedidos activado.', 'info');
+        } else {
+            showToast('Sonido de pedidos silenciado.', 'info');
+        }
+    });
+}
+
+// --- BÚSQUEDA Y FILTRADO REACTIVO EN TABLAS ---
+
+// Buscador de Pedidos
+const ordersSearchInput = document.getElementById('orders-search-input');
+if (ordersSearchInput) {
+    ordersSearchInput.addEventListener('input', (e) => {
+        ordersSearchQuery = e.target.value.trim();
+        renderOrders();
+    });
+}
+
+// Filtro de Estado de Pedidos
+const ordersStatusFilterEl = document.getElementById('orders-status-filter');
+if (ordersStatusFilterEl) {
+    ordersStatusFilterEl.addEventListener('change', (e) => {
+        ordersStatusFilter = e.target.value;
+        renderOrders();
+    });
+}
+
+// Buscador de Ventas
+const salesSearchInput = document.getElementById('sales-search-input');
+if (salesSearchInput) {
+    salesSearchInput.addEventListener('input', (e) => {
+        salesSearchQuery = e.target.value.trim();
+        renderSales();
+    });
+}
+
+// Buscador de Productos
+const productsSearchInput = document.getElementById('products-search-input');
+if (productsSearchInput) {
+    productsSearchInput.addEventListener('input', (e) => {
+        productsSearchQuery = e.target.value.trim();
+        renderProductsTable();
+    });
+}
+
+// --- EXPORTACIÓN DE REPORTES A CSV (EXCEL FRIENDLY) ---
+
+function downloadCSV(filename, csvContent) {
+    const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+function exportOrdersToCSV() {
+    if (!ordersList || ordersList.length === 0) {
+        showToast('No hay pedidos registrados para exportar.', 'warning');
+        return;
+    }
+    const headers = ['ID Pedido', 'Cliente', 'Telefono', 'Tipo Entrega', 'Direccion', 'Notas', 'Metodo Pago', 'Referencia', 'Articulos', 'Total USD', 'Tasa BCV', 'Total Bs', 'Estado', 'Fecha'];
+    const rows = ordersList.map(o => [
+        `"${o.id || ''}"`,
+        `"${(o.client_name || '').replace(/"/g, '""')}"`,
+        `"${(o.client_phone || '').replace(/"/g, '""')}"`,
+        `"${o.delivery_type || ''}"`,
+        `"${(o.delivery_address || '').replace(/"/g, '""')}"`,
+        `"${(o.delivery_notes || '').replace(/"/g, '""')}"`,
+        `"${(o.payment_method || '').replace(/"/g, '""')}"`,
+        `"${(o.payment_reference || '').replace(/"/g, '""')}"`,
+        o.total_items || 0,
+        (parseFloat(o.total_price) || 0).toFixed(2),
+        (parseFloat(o.bcv_rate) || 0).toFixed(2),
+        (parseFloat(o.total_bs) || 0).toFixed(2),
+        `"${o.status || ''}"`,
+        `"${o.created_at || ''}"`
+    ]);
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
+    const dateStr = new Date().toISOString().split('T')[0];
+    downloadCSV(`pedidos_vendly_${dateStr}.csv`, csv);
+    showToast('Archivo CSV de pedidos generado.', 'success');
+}
+
+function exportSalesToCSV() {
+    if (!salesList || salesList.length === 0) {
+        showToast('No hay ventas registradas para exportar.', 'warning');
+        return;
+    }
+    const headers = ['ID Venta', 'ID Pedido', 'Cliente', 'Telefono', 'Monto USD', 'Metodo Pago', 'Fecha'];
+    const rows = salesList.map(s => [
+        `"V-${s.id || ''}"`,
+        `"${s.order_id || ''}"`,
+        `"${(s.client_name || '').replace(/"/g, '""')}"`,
+        `"${(s.client_phone || '').replace(/"/g, '""')}"`,
+        (parseFloat(s.monto) || 0).toFixed(2),
+        `"${(s.metodo_pago || '').replace(/"/g, '""')}"`,
+        `"${s.fecha || ''}"`
+    ]);
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
+    const dateStr = new Date().toISOString().split('T')[0];
+    downloadCSV(`ventas_vendly_${dateStr}.csv`, csv);
+    showToast('Archivo CSV de ventas generado.', 'success');
+}
+
+const btnExportOrders = document.getElementById('btn-export-orders');
+if (btnExportOrders) {
+    btnExportOrders.addEventListener('click', exportOrdersToCSV);
+}
+
+const btnExportSales = document.getElementById('btn-export-sales');
+if (btnExportSales) {
+    btnExportSales.addEventListener('click', exportSalesToCSV);
+}
+
+// --- POLLING AUTOMÁTICO EN TIEMPO REAL (CADA 15s) ---
+setInterval(() => {
+    if (currentAdmin && document.visibilityState === 'visible') {
+        loadOrders();
+    }
+}, 15000);
+
