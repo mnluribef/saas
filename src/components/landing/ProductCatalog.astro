@@ -1528,7 +1528,8 @@ const { business, contact, features } = config;
         try {
             const res = await fetch(`/api/products?template=${encodeURIComponent(CONFIG.TEMPLATE)}`);
             if (!res.ok) throw new Error();
-            const products = (await res.json()) as any[];
+            const responseData = await res.json();
+            const products = Array.isArray(responseData) ? responseData : (responseData.data || []);
             catalogProducts = products;
             renderCategoryFilters(products);
             renderProducts(products);
@@ -1536,7 +1537,7 @@ const { business, contact, features } = config;
             const container = document.getElementById("catalog-container");
             if (container) {
                 container.innerHTML =
-                    '<div style="grid-column:1/-1;text-align:center;padding:3rem 0;color:#ff007f"><p>Error al cargar el catálogo. Por favor recarga la página.</p></div>';
+                    '<div style="grid-column:1/-1;text-align:center;padding:4rem 2rem;background:var(--bg-section);border-radius:12px;border:1px solid var(--border-subtle);"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:1rem;opacity:0.8;"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg><h3 style="color:var(--text-heading);margin-bottom:0.5rem;font-family:var(--font-heading);">No pudimos cargar el catálogo</h3><p style="color:var(--text-muted);margin-bottom:1.5rem;">Hubo un error de conexión con el servidor. Por favor, intenta de nuevo.</p><button onclick="window.location.reload()" style="background:var(--primary);color:var(--bg-card);border:none;padding:0.75rem 1.5rem;border-radius:50px;font-weight:600;cursor:pointer;transition:all 0.2s;">Recargar Página</button></div>';
             }
         }
     };

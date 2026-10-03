@@ -668,6 +668,49 @@ import Header from '../components/admin/Header.astro';
             .toast.error {
                 border-left-color: var(--danger);
             }
+
+            /* --- MODO IMPRESIÓN (PRINT) --- */
+            @media print {
+                @page { margin: 0; }
+                body * {
+                    visibility: hidden;
+                }
+                .modal.active .modal-content,
+                .modal.active .modal-content * {
+                    visibility: visible;
+                }
+                .modal.active .modal-content {
+                    position: absolute;
+                    left: 0;
+                    top: 0;
+                    margin: 0;
+                    padding: 0;
+                    width: 100%;
+                    box-shadow: none;
+                    background: white;
+                    color: black;
+                }
+                .modal-header h3 {
+                    color: black;
+                }
+                .modal-close,
+                .modal-footer {
+                    display: none !important;
+                }
+                .order-meta-info {
+                    background: white;
+                    border: 1px solid #ccc;
+                    border-radius: 0;
+                }
+                .order-meta-info p strong, .order-meta-info > div > strong,
+                .detail-item-name h4, .detail-item-name span, .detail-item-qty,
+                .order-meta-info p {
+                    color: black !important;
+                }
+                .detail-item {
+                    border-bottom: 1px solid #ddd;
+                }
+            }
         </style>
     </head>
     <body>

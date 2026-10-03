@@ -79,17 +79,17 @@ export const techTemplate: StoreConfig = {
   landing: {
     hero: {
       badgeText: '⚡ Hardware de Nueva Generación · Garantía Oficial',
-      headline: 'Potencia tu mundo con',
-      headlineHighlight: 'tecnología real.',
+      headline: 'Rendimiento sin',
+      headlineHighlight: 'límites.',
       subheadline: 'Equipos sellados, procesadores, tarjetas gráficas, laptops de alto rendimiento y periféricos gamer. Asesoría técnica especializada y envíos asegurados a todo el país.',
       ctaPrimaryText: 'Explorar Equipos',
       ctaPrimaryLink: '#menu',
       ctaSecondaryText: 'Consultar Stock',
       ctaSecondaryLink: 'https://wa.me/584124756191',
       slides: [
-        { image: '/assets/product_laptop.jpg', alt: 'Laptops y computadoras de alto rendimiento' },
-        { image: '/assets/product_monitor.jpg', alt: 'Monitores gamer y pantallas profesionales' },
-        { image: '/assets/product_teclado.jpg', alt: 'Periféricos y componentes gamer' },
+        { image: '/assets/product_laptop.webp', alt: 'Laptops y computadoras de alto rendimiento' },
+        { image: '/assets/product_monitor.webp', alt: 'Monitores gamer y pantallas profesionales' },
+        { image: '/assets/product_teclado.webp', alt: 'Periféricos y componentes gamer' },
       ],
       stats: [
         { value: '100%', label: 'Equipos Nuevos y Sellados' },

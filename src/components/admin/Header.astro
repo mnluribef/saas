@@ -18,6 +18,11 @@
             </button>
         </div>
 
+        <div id="connection-status" class="status-indicator online" style="display: flex; align-items: center; gap: 0.5rem; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); padding: 0.4rem 0.8rem; border-radius: 12px; transition: all 0.3s;">
+            <div class="status-dot" style="width: 8px; height: 8px; background: var(--success); border-radius: 50%; box-shadow: 0 0 8px var(--success);"></div>
+            <span id="connection-status-text" style="font-size: 0.75rem; color: var(--success); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">En línea</span>
+        </div>
+
         <div class="user-badge" id="user-info-badge" style="display: flex; align-items: center; gap: 0.8rem; background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); padding: 0.4rem 1rem 0.4rem 0.4rem; border-radius: 50px; display: none;">
             <div class="user-avatar" style="width: 36px; height: 36px; background: var(--primary); color: var(--dark-bg); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
                 <i data-lucide="shield" style="width: 18px; height: 18px;"></i>

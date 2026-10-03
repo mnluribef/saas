@@ -39,6 +39,17 @@
                     style="padding-left: 1rem; font-size: 0.9rem;"
                 />
             </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <label for="sales-date-from" style="font-size: 0.85rem; color: var(--text-secondary);">Desde:</label>
+                <input type="date" id="sales-date-from" class="form-control" style="width: auto; padding: 0.35rem; font-size: 0.85rem;" />
+                
+                <label for="sales-date-to" style="font-size: 0.85rem; color: var(--text-secondary); margin-left: 0.5rem;">Hasta:</label>
+                <input type="date" id="sales-date-to" class="form-control" style="width: auto; padding: 0.35rem; font-size: 0.85rem;" />
+                
+                <button class="btn-action" id="btn-filter-sales-dates" style="padding: 0.45rem 0.8rem; font-size: 0.85rem; margin-left: 0.5rem;">
+                    Filtrar
+                </button>
+            </div>
         </div>
 
         <div class="table-responsive">
@@ -65,6 +76,12 @@
                     </tr>
                 </tbody>
             </table>
+        </div>
+        
+        <div class="pagination-controls" style="display: flex; justify-content: center; gap: 1rem; padding: 1rem; border-top: 1px solid var(--border-color);">
+            <button class="btn-action secondary" id="btn-sales-prev" disabled style="padding: 0.4rem 0.8rem;"><i data-lucide="chevron-left" style="width: 16px; height: 16px;"></i> Anterior</button>
+            <span id="sales-page-info" style="align-self: center; font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;">Página 1</span>
+            <button class="btn-action secondary" id="btn-sales-next" disabled style="padding: 0.4rem 0.8rem;">Siguiente <i data-lucide="chevron-right" style="width: 16px; height: 16px;"></i></button>
         </div>
     </div>
 </div>

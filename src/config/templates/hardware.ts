@@ -79,17 +79,17 @@ export const hardwareTemplate: StoreConfig = {
   landing: {
     hero: {
       badgeText: '🛠️ Ferretería y Materiales Industriales · Envíos a Obra',
-      headline: 'Solidez y precisión',
-      headlineHighlight: 'para tus proyectos.',
+      headline: 'Tu mejor aliado',
+      headlineHighlight: 'en cada obra.',
       subheadline: 'Herramientas de alto rendimiento, materiales para construcción, plomería y electricidad. Atención inmediata por WhatsApp y despacho express a tu obra o taller.',
       ctaPrimaryText: 'Ver Catálogo',
       ctaPrimaryLink: '#menu',
       ctaSecondaryText: 'Cotizar por WhatsApp',
       ctaSecondaryLink: 'https://wa.me/584124756191',
       slides: [
-        { image: '/assets/product_taladro.jpg', alt: 'Herramientas eléctricas y manuales' },
-        { image: '/assets/product_esmeril.jpg', alt: 'Materiales para construcción y herrería' },
-        { image: '/assets/product_pintura.jpg', alt: 'Pinturas, plomería y electricidad' },
+        { image: '/assets/product_taladro.webp', alt: 'Herramientas eléctricas y manuales' },
+        { image: '/assets/product_esmeril.webp', alt: 'Materiales para construcción y herrería' },
+        { image: '/assets/product_pintura.webp', alt: 'Pinturas, plomería y electricidad' },
       ],
       stats: [
         { value: '+5,000', label: 'Artículos en Stock' },

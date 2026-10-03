@@ -94,7 +94,7 @@ export async function onRequestGet(context) {
 
         const cacheControl = isAdminMode 
             ? "no-store, no-cache, must-revalidate" 
-            : "public, max-age=10";
+            : "public, max-age=60, s-maxage=3600, stale-while-revalidate=86400";
 
         return new Response(JSON.stringify({
             data: products,

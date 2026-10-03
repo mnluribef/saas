@@ -16,6 +16,14 @@ let productsSearchQuery = '';
 let lastKnownOrderCount = null;
 let soundEnabled = localStorage.getItem('admin_sound_enabled') !== 'false';
 
+// Paginación State
+let ordersPage = 1;
+let ordersTotalPages = 1;
+let productsPage = 1;
+let productsTotalPages = 1;
+let salesPage = 1;
+let salesTotalPages = 1;
+
 // Elementos del DOM
 const loader = document.getElementById('page-loader');
 const loginContainer = document.getElementById('login-container');
@@ -155,7 +163,7 @@ function showDashboard() {
     const badge = document.getElementById('user-info-badge');
     const badgeName = document.getElementById('admin-user-name');
     if (badge && badgeName && currentAdmin) {
-        badge.style.display = 'block';
+        badge.style.display = 'flex';
         badgeName.textContent = currentAdmin.charAt(0).toUpperCase() + currentAdmin.slice(1);
         
         // Actualizar rol en la UI si el elemento existe
@@ -398,26 +406,35 @@ async function refreshAllData() {
 }
 
 // 1. Cargar Pedidos de la API
-async function loadOrders() {
+async function loadOrders(page = 1) {
     try {
-        const res = await fetch('/api/orders');
+        ordersPage = page;
+        const res = await fetch(`/api/orders?page=${page}&limit=50`);
         if (!res.ok) throw new Error('No autorizado');
         const responseData = await res.json();
-        const incomingOrders = responseData.data || responseData;
+        
+        if (responseData.meta) {
+            ordersTotalPages = responseData.meta.totalPages || 1;
+            ordersList = responseData.data || [];
+        } else {
+            ordersTotalPages = 1;
+            ordersList = responseData;
+        }
 
         // Detección de nuevo pedido para reproducir sonido y notificar
-        if (lastKnownOrderCount !== null && incomingOrders.length > lastKnownOrderCount) {
-            const hasNewPending = incomingOrders.some(o => o.status === 'pendiente');
+        if (lastKnownOrderCount !== null && ordersList.length > lastKnownOrderCount && page === 1) {
+            const hasNewPending = ordersList.some(o => o.status === 'pendiente');
             if (hasNewPending) {
                 playOrderChime();
                 flashPageTitle();
                 showToast('🔔 ¡Has recibido un nuevo pedido!', 'info');
             }
         }
-        lastKnownOrderCount = incomingOrders.length;
-        ordersList = incomingOrders;
+        if (page === 1) lastKnownOrderCount = ordersList.length;
+        
         renderOrders();
         renderMetrics();
+        updatePaginationUI('orders', ordersPage, ordersTotalPages);
     } catch (err) {
         console.error(err);
         showToast('Error al cargar pedidos del servidor.', 'error');
@@ -425,13 +442,23 @@ async function loadOrders() {
 }
 
 // 2. Cargar Productos de la API (incluye inactivos)
-async function loadProducts() {
+async function loadProducts(page = 1) {
     try {
-        const res = await fetch('/api/products?admin=true');
+        productsPage = page;
+        const res = await fetch(`/api/products?admin=true&page=${page}&limit=50`);
         if (!res.ok) throw new Error('No autorizado');
         const responseData = await res.json();
-        productsList = responseData.data || responseData;
+        
+        if (responseData.meta) {
+            productsTotalPages = responseData.meta.totalPages || 1;
+            productsList = responseData.data || [];
+        } else {
+            productsTotalPages = 1;
+            productsList = responseData;
+        }
+        
         renderProductsTable();
+        updatePaginationUI('products', productsPage, productsTotalPages);
     } catch (err) {
         console.error(err);
         showToast('Error al cargar menú del servidor.', 'error');
@@ -439,13 +466,34 @@ async function loadProducts() {
 }
 
 // 2.5 Cargar Registro de Ventas de la API
-async function loadSales() {
+async function loadSales(dateFrom = null, dateTo = null, page = 1) {
     try {
-        const res = await fetch('/api/sales');
+        salesPage = page;
+        let url = '/api/sales';
+        const params = new URLSearchParams();
+        if (dateFrom) params.append('date_from', dateFrom);
+        if (dateTo) params.append('date_to', dateTo);
+        params.append('page', page);
+        params.append('limit', 50);
+        
+        if (params.toString()) {
+            url += '?' + params.toString();
+        }
+        
+        const res = await fetch(url);
         if (!res.ok) throw new Error('No autorizado');
         const responseData = await res.json();
-        salesList = responseData.data || responseData;
+        
+        if (responseData.meta) {
+            salesTotalPages = responseData.meta.totalPages || 1;
+            salesList = responseData.data || [];
+        } else {
+            salesTotalPages = 1;
+            salesList = responseData;
+        }
+        
         renderSales();
+        updatePaginationUI('sales', salesPage, salesTotalPages);
     } catch (err) {
         console.error(err);
         showToast('Error al cargar ventas del servidor.', 'error');
@@ -1686,14 +1734,25 @@ if (btnToggleSound) {
 }
 
 // --- BÚSQUEDA Y FILTRADO REACTIVO EN TABLAS ---
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
 
 // Buscador de Pedidos
 const ordersSearchInput = document.getElementById('orders-search-input');
 if (ordersSearchInput) {
-    ordersSearchInput.addEventListener('input', (e) => {
+    ordersSearchInput.addEventListener('input', debounce((e) => {
         ordersSearchQuery = e.target.value.trim();
         renderOrders();
-    });
+    }, 300));
 }
 
 // Filtro de Estado de Pedidos
@@ -1708,22 +1767,66 @@ if (ordersStatusFilterEl) {
 // Buscador de Ventas
 const salesSearchInput = document.getElementById('sales-search-input');
 if (salesSearchInput) {
-    salesSearchInput.addEventListener('input', (e) => {
+    salesSearchInput.addEventListener('input', debounce((e) => {
         salesSearchQuery = e.target.value.trim();
         renderSales();
+    }, 300));
+}
+
+const btnFilterSalesDates = document.getElementById('btn-filter-sales-dates');
+if (btnFilterSalesDates) {
+    btnFilterSalesDates.addEventListener('click', () => {
+        const dateFrom = document.getElementById('sales-date-from').value;
+        const dateTo = document.getElementById('sales-date-to').value;
+        loadSales(dateFrom, dateTo);
     });
 }
 
 // Buscador de Productos
 const productsSearchInput = document.getElementById('products-search-input');
 if (productsSearchInput) {
-    productsSearchInput.addEventListener('input', (e) => {
+    productsSearchInput.addEventListener('input', debounce((e) => {
         productsSearchQuery = e.target.value.trim();
         renderProductsTable();
-    });
+    }, 300));
 }
 
 // --- EXPORTACIÓN DE REPORTES A CSV (EXCEL FRIENDLY) ---
+
+// --- PAGINATION UI & EVENTS ---
+function updatePaginationUI(type, currentPage, totalPages) {
+    const btnPrev = document.getElementById(`btn-${type}-prev`);
+    const btnNext = document.getElementById(`btn-${type}-next`);
+    const pageInfo = document.getElementById(`${type}-page-info`);
+    
+    if (btnPrev && btnNext && pageInfo) {
+        pageInfo.textContent = `Página ${currentPage} de ${totalPages}`;
+        btnPrev.disabled = currentPage <= 1;
+        btnNext.disabled = currentPage >= totalPages;
+    }
+}
+
+document.addEventListener('click', (e) => {
+    // Orders Pagination
+    if (e.target.closest('#btn-orders-prev') && ordersPage > 1) loadOrders(ordersPage - 1);
+    if (e.target.closest('#btn-orders-next') && ordersPage < ordersTotalPages) loadOrders(ordersPage + 1);
+    
+    // Products Pagination
+    if (e.target.closest('#btn-products-prev') && productsPage > 1) loadProducts(productsPage - 1);
+    if (e.target.closest('#btn-products-next') && productsPage < productsTotalPages) loadProducts(productsPage + 1);
+    
+    // Sales Pagination
+    if (e.target.closest('#btn-sales-prev') && salesPage > 1) {
+        const dFrom = document.getElementById('sales-date-from')?.value;
+        const dTo = document.getElementById('sales-date-to')?.value;
+        loadSales(dFrom, dTo, salesPage - 1);
+    }
+    if (e.target.closest('#btn-sales-next') && salesPage < salesTotalPages) {
+        const dFrom = document.getElementById('sales-date-from')?.value;
+        const dTo = document.getElementById('sales-date-to')?.value;
+        loadSales(dFrom, dTo, salesPage + 1);
+    }
+});
 
 function downloadCSV(filename, csvContent) {
     const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -1798,8 +1901,44 @@ if (btnExportSales) {
 
 // --- POLLING AUTOMÁTICO EN TIEMPO REAL (CADA 15s) ---
 setInterval(() => {
-    if (currentAdmin && document.visibilityState === 'visible') {
+    if (currentAdmin && document.visibilityState === 'visible' && navigator.onLine) {
         loadOrders();
     }
 }, 15000);
+
+// --- ESTADO DE CONEXIÓN (OFFLINE/ONLINE) ---
+const connectionStatus = document.getElementById('connection-status');
+const connectionStatusText = document.getElementById('connection-status-text');
+
+function updateConnectionStatus() {
+    if (!connectionStatus || !connectionStatusText) return;
+    
+    if (navigator.onLine) {
+        connectionStatus.classList.remove('offline');
+        connectionStatus.classList.add('online');
+        connectionStatus.style.background = 'rgba(34, 197, 94, 0.1)';
+        connectionStatus.style.borderColor = 'rgba(34, 197, 94, 0.3)';
+        connectionStatus.querySelector('.status-dot').style.background = 'var(--success)';
+        connectionStatus.querySelector('.status-dot').style.boxShadow = '0 0 8px var(--success)';
+        connectionStatusText.style.color = 'var(--success)';
+        connectionStatusText.textContent = 'En línea';
+        // Refrescar al reconectar
+        if (currentAdmin) refreshAllData();
+    } else {
+        connectionStatus.classList.remove('online');
+        connectionStatus.classList.add('offline');
+        connectionStatus.style.background = 'rgba(239, 68, 68, 0.1)';
+        connectionStatus.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+        connectionStatus.querySelector('.status-dot').style.background = 'var(--danger)';
+        connectionStatus.querySelector('.status-dot').style.boxShadow = '0 0 8px var(--danger)';
+        connectionStatusText.style.color = 'var(--danger)';
+        connectionStatusText.textContent = 'Sin Conexión';
+    }
+}
+
+window.addEventListener('online', updateConnectionStatus);
+window.addEventListener('offline', updateConnectionStatus);
+
+// Set initial state
+updateConnectionStatus();
 

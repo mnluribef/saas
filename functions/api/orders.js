@@ -219,6 +219,27 @@ export async function onRequestPost(context) {
 
         await db.batch(statements);
 
+        // --- WEBHOOK INTEGRATION (ZAPIER / MAKE / N8N) ---
+        if (env.WEBHOOK_URL) {
+            try {
+                context.waitUntil(
+                    fetch(env.WEBHOOK_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            event: 'new_order_created', 
+                            orderId, 
+                            clientName: data.clientName, 
+                            totalPrice, 
+                            deliveryType: data.deliveryType 
+                        })
+                    })
+                );
+            } catch (e) {
+                console.error("Webhook error:", e);
+            }
+        }
+
         return new Response(JSON.stringify({ success: true, orderId, totalItems, totalPrice, totalBs, bcvRate: finalBcvRate }), {
             status: 201, headers: { "Content-Type": "application/json" }
         });
@@ -266,6 +287,22 @@ export async function onRequestPut(context) {
         }
 
         await db.batch(statements);
+
+        // --- WEBHOOK INTEGRATION (ZAPIER / MAKE / N8N) ---
+        if (env.WEBHOOK_URL) {
+            try {
+                // Ejecutar asíncronamente para no bloquear la respuesta
+                context.waitUntil(
+                    fetch(env.WEBHOOK_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ event: 'order_status_updated', orderId: id, newStatus: status, order })
+                    })
+                );
+            } catch (e) {
+                console.error("Webhook error:", e);
+            }
+        }
 
         return new Response(JSON.stringify({ success: true }), { headers: { "Content-Type": "application/json" } });
 

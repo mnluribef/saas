@@ -441,12 +441,14 @@ nav {
 }
 
 .hero-content h1 em {
-    font-style: italic;
-    font-weight: 300;
-    background: linear-gradient(135deg in oklch, var(--rose-light) 0%, var(--gold-light) 100%);
+    font-style: normal;
+    font-weight: 700;
+    background: var(--grad-hero);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    display: inline-block;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
 }
 
 .hero-content p {

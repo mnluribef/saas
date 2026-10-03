@@ -123,11 +123,15 @@
             </div>
         </div>
 
-        <div class="modal-footer">
-            <button
-                class="btn-action secondary"
-                id="btn-modal-close-footer"
-            >
+        <div class="modal-footer" style="justify-content: space-between;">
+            <button type="button" class="btn-action secondary" onclick="window.print()" title="Imprimir ticket para cocina">
+                <i data-lucide="printer"></i> Imprimir Comanda
+            </button>
+            <div style="display: flex; gap: 0.5rem;">
+                <button
+                    class="btn-action secondary"
+                    id="btn-modal-close-footer"
+                >
                 Cerrar
             </button>
             <a
@@ -140,6 +144,7 @@
                 <i data-lucide="message-circle"></i> Chatear por
                 WhatsApp
             </a>
+            </div>
         </div>
     </div>
 </div>

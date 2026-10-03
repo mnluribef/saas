@@ -87,9 +87,9 @@ export const fashionTemplate: StoreConfig = {
       ctaSecondaryText: 'Consultar Tallas',
       ctaSecondaryLink: 'https://wa.me/584124756191',
       slides: [
-        { image: '/assets/product_vestido.jpg', alt: 'Colección de temporada AURA' },
-        { image: '/assets/product_blazer.jpg', alt: 'Prendas urbanas y chic' },
-        { image: '/assets/product_jeans.jpg', alt: 'Prendas denim y básicos de autor' },
+        { image: '/assets/product_vestido.webp', alt: 'Colección de temporada AURA' },
+        { image: '/assets/product_blazer.webp', alt: 'Prendas urbanas y chic' },
+        { image: '/assets/product_jeans.webp', alt: 'Prendas denim y básicos de autor' },
       ],
       stats: [
         { value: '+1,200', label: 'Outfits Enviados' },
