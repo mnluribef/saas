@@ -351,6 +351,10 @@ sidebarLinks.forEach(link => {
         } else if (targetId === 'section-inventory') {
             if (dashboardTitle) dashboardTitle.textContent = 'Gestión del Menú';
             if (dashboardSubtitle) dashboardSubtitle.textContent = 'Agrega, edita precios y administra los platillos ofrecidos.';
+        } else if (targetId === 'section-billing') {
+            if (dashboardTitle) dashboardTitle.textContent = 'Plan y Facturación';
+            if (dashboardSubtitle) dashboardSubtitle.textContent = 'Gestiona los límites de tu cuenta y pagos de suscripción.';
+            loadBillingData();
         }
     });
 });
@@ -394,13 +398,64 @@ async function loadBcvRate() {
     }
 }
 
+async function loadBillingData() {
+    try {
+        const res = await fetch('/api/billing');
+        if (res.ok) {
+            const data = await res.json();
+            
+            // Info de Plan
+            const elPlanName = document.getElementById('billing-plan-name');
+            if (elPlanName) elPlanName.textContent = data.tenant.plan;
+            
+            const elTenantDomain = document.getElementById('billing-tenant-domain');
+            if (elTenantDomain) elTenantDomain.textContent = data.tenant.domain;
+            
+            const elStatus = document.getElementById('billing-status');
+            if (elStatus) elStatus.textContent = data.tenant.status;
+            
+            // Consumo de Pedidos
+            const elOrdCurrent = document.getElementById('billing-orders-current');
+            if (elOrdCurrent) {
+                elOrdCurrent.textContent = data.usage.ordersThisMonth.current;
+                document.getElementById('billing-orders-limit').textContent = data.usage.ordersThisMonth.limit;
+                document.getElementById('billing-orders-bar').style.width = data.usage.ordersThisMonth.percentage + '%';
+                document.getElementById('billing-orders-percent').textContent = data.usage.ordersThisMonth.percentage + '% utilizado';
+            }
+            
+            // Consumo de Productos
+            const elProdCurrent = document.getElementById('billing-products-current');
+            if (elProdCurrent) {
+                elProdCurrent.textContent = data.usage.products.current;
+                document.getElementById('billing-products-limit').textContent = data.usage.products.limit;
+                document.getElementById('billing-products-bar').style.width = data.usage.products.percentage + '%';
+                document.getElementById('billing-products-percent').textContent = data.usage.products.percentage + '% utilizado';
+            }
+            
+            // Pagos
+            const elBank = document.getElementById('pay-bank');
+            if (elBank) {
+                elBank.textContent = data.billing.bank;
+                document.getElementById('pay-phone').textContent = data.billing.phone;
+                document.getElementById('pay-id').textContent = data.billing.id;
+                document.getElementById('pay-binance').textContent = data.billing.binancePay;
+                document.getElementById('pay-zelle').textContent = data.billing.zelle;
+                document.getElementById('pay-amount').textContent = data.billing.monthlyPriceUsd;
+            }
+        }
+    } catch (e) {
+        console.error("Error cargando billing:", e);
+    }
+}
+
 async function refreshAllData() {
     await Promise.all([
         loadBcvRate(),
         loadOrders(),
         loadProducts(),
         loadSales(),
-        loadStats()
+        loadStats(),
+        loadBillingData()
     ]);
     renderMetrics();
 }

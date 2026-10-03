@@ -28,9 +28,10 @@ function getTokenFromRequest(request) {
 /**
  * Verifica si la sesión es válida y está activa en la base de datos D1
  * @param {object} context - Contexto de la función de Cloudflare Pages
- * @returns {Promise<string|null>} Retorna el nombre de usuario si es válida, o null.
+ * @param {string|null} tenantId - ID del tenant para validación cruzada (opcional)
+ * @returns {Promise<{username: string, role: string, tenant_id: string}|null>}
  */
-export async function verifySession(context) {
+export async function verifySession(context, tenantId = null) {
     const { request, env } = context;
     const db = env.DB || env.vendly;
 
@@ -39,17 +40,22 @@ export async function verifySession(context) {
 
     try {
         const now = Math.floor(Date.now() / 1000);
-        const session = await db.prepare(
-            `SELECT s.username, u.role 
+        let query = `SELECT s.username, s.tenant_id, u.role 
              FROM sessions s
-             JOIN users u ON s.username = u.username
-             WHERE s.token = ? AND s.expires_at > ?`
-        )
-        .bind(token, now)
-        .first();
+             JOIN users u ON s.username = u.username AND s.tenant_id = u.tenant_id
+             WHERE s.token = ? AND s.expires_at > ?`;
+        const bindings = [token, now];
+
+        // Si se pasa tenantId, aseguramos que la sesión pertenezca a ese tenant
+        if (tenantId) {
+            query += ' AND s.tenant_id = ?';
+            bindings.push(tenantId);
+        }
+
+        const session = await db.prepare(query).bind(...bindings).first();
 
         if (session) {
-            return { username: session.username, role: session.role };
+            return { username: session.username, role: session.role, tenant_id: session.tenant_id };
         }
     } catch (err) {
         console.error("Error verificando sesión:", err);
@@ -57,6 +63,7 @@ export async function verifySession(context) {
 
     return null;
 }
+
 
 /**
  * Convierte un string hexadecimal a Uint8Array

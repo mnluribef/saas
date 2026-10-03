@@ -1,4 +1,5 @@
 import { verifySession, unauthorizedResponse, generateSalt, hashPasswordPBKDF2 } from "./_auth.js";
+import { resolveTenant } from "./_tenant.js";
 
 // Rate limiting simple en memoria por IP para mitigar fuerza bruta
 const loginAttempts = new Map();
@@ -78,6 +79,7 @@ export async function onRequestPost(context) {
     const { request, env } = context;
     const db = env.DB || env.vendly;
     const clientIp = request.headers.get("CF-Connecting-IP") || request.headers.get("x-real-ip") || "unknown";
+    const { id: tenantId } = await resolveTenant(request, db);
 
     // 1. Verificar Rate Limit
     const rateCheck = checkRateLimit(clientIp);
@@ -100,9 +102,9 @@ export async function onRequestPost(context) {
             });
         }
 
-        // Buscar usuario en base de datos
-        const user = await db.prepare("SELECT * FROM users WHERE username = ?")
-            .bind(username.toLowerCase().trim())
+        // Buscar usuario en base de datos (scoped al tenant)
+        const user = await db.prepare("SELECT * FROM users WHERE username = ? AND tenant_id = ?")
+            .bind(username.toLowerCase().trim(), tenantId)
             .first();
 
         if (!user) {
@@ -150,9 +152,9 @@ export async function onRequestPost(context) {
         const maxAge = 7 * 24 * 60 * 60; // 7 días en segundos
         const expiresAt = Math.floor(Date.now() / 1000) + maxAge;
 
-        // Registrar la sesión en la base de datos
-        await db.prepare("INSERT INTO sessions (token, username, expires_at) VALUES (?, ?, ?)")
-            .bind(sessionToken, user.username, expiresAt)
+        // Registrar la sesión en la base de datos (con tenant_id)
+        await db.prepare("INSERT INTO sessions (token, username, expires_at, tenant_id) VALUES (?, ?, ?, ?)")
+            .bind(sessionToken, user.username, expiresAt, tenantId)
             .run();
 
         // Cookie segura HTTP-only para Vendly SaaS

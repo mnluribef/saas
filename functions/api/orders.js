@@ -1,17 +1,16 @@
-// Controlador de Pedidos y Ventas - Vendly SaaS
+// functions/api/orders.js
+// Controlador de Pedidos y Ventas - Vendly SaaS (Multi-Tenant)
 import { verifySession, unauthorizedResponse, forbiddenResponse } from "./_auth.js";
+import { resolveTenant } from "./_tenant.js";
+import { checkOrderLimit } from "./_plans.js";
 import { z } from "zod";
 
-/**
- * Genera un ID de pedido único y legible (ej: VEN-X9F4E)
- */
 function generateOrderId(prefix = "VEN") {
     const ts = Date.now().toString(36).toUpperCase();
     const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
     return `${prefix}-${ts}${rand}`;
 }
 
-// Esquemas Zod para Validación
 const orderItemSchema = z.object({
     id: z.string().optional(),
     key: z.string().optional(),
@@ -24,8 +23,8 @@ const orderItemSchema = z.object({
 });
 
 const createOrderSchema = z.object({
-    clientName: z.string().min(2, "Nombre requerido").max(100),
-    clientPhone: z.string().min(6, "Teléfono requerido").max(30),
+    clientName: z.string().min(2).max(100),
+    clientPhone: z.string().min(6).max(30),
     deliveryType: z.enum(['delivery', 'retiro']).default('retiro'),
     deliveryAddress: z.string().max(300).optional().default(""),
     deliveryNotes: z.string().max(500).optional().default(""),
@@ -36,8 +35,8 @@ const createOrderSchema = z.object({
     bcvRate: z.number().optional().nullable(),
     storePrefix: z.string().max(5).optional().default("VEN"),
     template: z.string().default("restaurant"),
-    items: z.array(orderItemSchema).min(1, "Debe incluir al menos un producto"),
-    turnstileToken: z.string().optional() // Token de captcha
+    items: z.array(orderItemSchema).min(1),
+    turnstileToken: z.string().optional()
 });
 
 async function verifyTurnstile(token, secret, ip) {
@@ -46,68 +45,73 @@ async function verifyTurnstile(token, secret, ip) {
     formData.append('secret', secret);
     formData.append('response', token);
     formData.append('remoteip', ip);
-    
     try {
         const result = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-            body: formData,
-            method: 'POST',
+            body: formData, method: 'POST'
         });
         const outcome = await result.json();
         return outcome.success;
-    } catch (e) {
+    } catch {
         return false;
     }
 }
 
 /**
- * GET /api/orders - Listar pedidos (Paginado) o ver detalle (Admin Only)
+ * GET /api/orders - Admin only, filtrado por tenant
  */
 export async function onRequestGet(context) {
-    const user = await verifySession(context);
-    if (!user) return unauthorizedResponse();
-
     const { env, request } = context;
     const db = env.DB || env.vendly;
-    
+    const { id: tenantId } = await resolveTenant(request, db);
+
+    const user = await verifySession(context, tenantId);
+    if (!user) return unauthorizedResponse();
+
     const url = new URL(request.url);
     const orderId = url.searchParams.get("id");
-    const template = url.searchParams.get("template");
 
     try {
         if (orderId) {
-            const order = await db.prepare("SELECT * FROM orders WHERE id = ?").bind(orderId).first();
+            const order = await db.prepare(
+                "SELECT * FROM orders WHERE id = ? AND tenant_id = ?"
+            ).bind(orderId, tenantId).first();
+
             if (!order) {
                 return new Response(JSON.stringify({ error: "Pedido no encontrado." }), { status: 404 });
             }
-            const { results: items } = await db.prepare("SELECT * FROM order_items WHERE order_id = ?").bind(orderId).all();
-            return new Response(JSON.stringify({ ...order, items }), { headers: { "Content-Type": "application/json" } });
-        } else {
-            // Listado paginado
-            const page = Math.max(1, parseInt(url.searchParams.get("page") || "1"));
-            const limit = Math.max(1, Math.min(100, parseInt(url.searchParams.get("limit") || "50")));
-            const offset = (page - 1) * limit;
-
-            let conditions = [];
-            let params = [];
-            
-            if (template && template !== "all") {
-                conditions.push("template = ?");
-                params.push(template);
-            }
-
-            const whereClause = conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
-            
-            const countQuery = `SELECT COUNT(*) as total FROM orders ${whereClause}`;
-            const { total } = await (params.length ? db.prepare(countQuery).bind(...params) : db.prepare(countQuery)).first();
-
-            const dataQuery = `SELECT * FROM orders ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`;
-            const { results: orders } = await db.prepare(dataQuery).bind(...params, limit, offset).all();
-            
-            return new Response(JSON.stringify({
-                data: orders,
-                meta: { total, page, limit, totalPages: Math.ceil(total / limit) }
-            }), { headers: { "Content-Type": "application/json" } });
+            const { results: items } = await db.prepare(
+                "SELECT * FROM order_items WHERE order_id = ?"
+            ).bind(orderId).all();
+            return new Response(JSON.stringify({ ...order, items }), {
+                headers: { "Content-Type": "application/json" }
+            });
         }
+
+        // Listado paginado
+        const page = Math.max(1, parseInt(url.searchParams.get("page") || "1"));
+        const limit = Math.max(1, Math.min(100, parseInt(url.searchParams.get("limit") || "50")));
+        const offset = (page - 1) * limit;
+        const statusFilter = url.searchParams.get("status");
+
+        const conditions = ["tenant_id = ?"];
+        const params = [tenantId];
+
+        if (statusFilter && statusFilter !== "all") {
+            conditions.push("status = ?");
+            params.push(statusFilter);
+        }
+
+        const whereClause = "WHERE " + conditions.join(" AND ");
+        const { total } = await db.prepare(`SELECT COUNT(*) as total FROM orders ${whereClause}`).bind(...params).first();
+        const { results: orders } = await db.prepare(
+            `SELECT * FROM orders ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`
+        ).bind(...params, limit, offset).all();
+
+        return new Response(JSON.stringify({
+            data: orders,
+            meta: { total, page, limit, totalPages: Math.ceil(total / limit) }
+        }), { headers: { "Content-Type": "application/json" } });
+
     } catch (err) {
         console.error("Error en GET /api/orders:", err);
         return new Response(JSON.stringify({ error: "Error interno" }), { status: 500 });
@@ -115,17 +119,24 @@ export async function onRequestGet(context) {
 }
 
 /**
- * POST /api/orders - Crear un nuevo pedido (Público)
+ * POST /api/orders - Público, pero siempre ligado al tenant resuelto
  */
 export async function onRequestPost(context) {
     const { env, request } = context;
     const db = env.DB || env.vendly;
     const clientIp = request.headers.get("CF-Connecting-IP") || "unknown";
+    const { id: tenantId, tenant } = await resolveTenant(request, db);
+
+    // Verificación de Límite de Pedidos Mensuales
+    const limitCheck = await checkOrderLimit(db, tenant);
+    if (!limitCheck.allowed) {
+        return new Response(JSON.stringify({ 
+            error: `El negocio ha alcanzado su límite de ${limitCheck.limit} pedidos permitidos este mes. Por favor, comunícate con el administrador.` 
+        }), { status: 403, headers: { "Content-Type": "application/json" } });
+    }
 
     try {
         const rawData = await request.json();
-        
-        // Validación Zod
         const result = createOrderSchema.safeParse(rawData);
         if (!result.success) {
             return new Response(JSON.stringify({ error: "Datos inválidos", details: result.error.issues }), { status: 400 });
@@ -133,10 +144,9 @@ export async function onRequestPost(context) {
 
         const data = result.data;
 
-        // Validación Turnstile (solo si está configurado en env)
         if (env.TURNSTILE_SECRET_KEY) {
             if (!data.turnstileToken) {
-                return new Response(JSON.stringify({ error: "Verificación de seguridad requerida (Captcha)." }), { status: 400 });
+                return new Response(JSON.stringify({ error: "Verificación de seguridad requerida." }), { status: 400 });
             }
             const isHuman = await verifyTurnstile(data.turnstileToken, env.TURNSTILE_SECRET_KEY, clientIp);
             if (!isHuman) {
@@ -151,22 +161,27 @@ export async function onRequestPost(context) {
         const prefix = data.storePrefix.toUpperCase();
         let orderId = generateOrderId(prefix);
         let isUnique = false, attempts = 0;
-        
         while (!isUnique && attempts < 5) {
             const existing = await db.prepare("SELECT id FROM orders WHERE id = ?").bind(orderId).first();
             if (!existing) isUnique = true;
             else { orderId = generateOrderId(prefix); attempts++; }
         }
 
-        const { results: dbProducts } = await db.prepare("SELECT id, name, price FROM products").all();
+        // Productos solo del tenant actual
+        const { results: dbProducts } = await db.prepare(
+            "SELECT id, name, price FROM products WHERE tenant_id = ?"
+        ).bind(tenantId).all();
         const productMap = new Map(dbProducts.map(p => [p.id, p]));
 
+        // Leer tasa BCV del tenant
         let finalBcvRate = 36.50;
         try {
-            const bcvSetting = await db.prepare("SELECT value FROM settings WHERE key = 'bcv_rate'").first();
+            const bcvSetting = await db.prepare(
+                "SELECT value FROM settings WHERE key = 'bcv_rate' AND tenant_id = ?"
+            ).bind(tenantId).first();
             if (bcvSetting && parseFloat(bcvSetting.value) > 0) finalBcvRate = parseFloat(bcvSetting.value);
             else if (data.bcvRate && data.bcvRate > 0) finalBcvRate = data.bcvRate;
-        } catch (e) {
+        } catch {
             if (data.bcvRate && data.bcvRate > 0) finalBcvRate = data.bcvRate;
         }
 
@@ -175,10 +190,12 @@ export async function onRequestPost(context) {
 
         statements.push(
             db.prepare(
-                "INSERT INTO orders (id, client_name, client_phone, delivery_type, delivery_address, delivery_notes, payment_method, payment_reference, payment_receipt_url, bcv_rate, total_bs, status, total_items, total_price, template) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                "INSERT INTO orders (id, client_name, client_phone, delivery_type, delivery_address, delivery_notes, payment_method, payment_reference, payment_receipt_url, bcv_rate, total_bs, status, total_items, total_price, template, tenant_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
             ).bind(
-                orderId, data.clientName, data.clientPhone, data.deliveryType, data.deliveryAddress, data.deliveryNotes,
-                data.paymentMethod, data.paymentReference, data.paymentReceiptUrl || data.paymentReceipt || null, finalBcvRate, 0.0, "pendiente", 0, 0.0, data.template
+                orderId, data.clientName, data.clientPhone, data.deliveryType,
+                data.deliveryAddress, data.deliveryNotes, data.paymentMethod,
+                data.paymentReference, data.paymentReceiptUrl || data.paymentReceipt || null,
+                finalBcvRate, 0.0, "pendiente", 0, 0.0, data.template, tenantId
             )
         );
 
@@ -186,13 +203,13 @@ export async function onRequestPost(context) {
             let matchedProduct = null;
             if (item.id && productMap.has(item.id)) matchedProduct = productMap.get(item.id);
             else if (item.key && productMap.has(item.key)) matchedProduct = productMap.get(item.key);
-            else matchedProduct = dbProducts.find(p => (item.key && p.id === item.key) || p.name === item.name);
+            else matchedProduct = dbProducts.find(p => p.name === item.name);
 
-            const prodId = matchedProduct ? matchedProduct.id : (item.id || item.key || 'item').slice(0, 50);
+            const prodId = (matchedProduct ? matchedProduct.id : (item.id || item.key || 'item')).slice(0, 50);
             const price = matchedProduct ? parseFloat(matchedProduct.price) : item.price;
             const qty = item.qty;
-            const prodName = (matchedProduct ? matchedProduct.name : (item.name || 'Plato')).slice(0, 150);
-            
+            const prodName = (matchedProduct ? matchedProduct.name : (item.name || 'Producto')).slice(0, 150);
+
             let size = null;
             if (item.options) {
                 const entries = Object.entries(item.options).filter(([_, v]) => v);
@@ -209,7 +226,7 @@ export async function onRequestPost(context) {
             );
         }
 
-        if (data.deliveryType === 'delivery') totalPrice += 5.0; // Costo de envío estático por ahora
+        if (data.deliveryType === 'delivery') totalPrice += 5.0;
         const totalBs = Math.round((totalPrice * finalBcvRate) * 100) / 100;
 
         statements.push(
@@ -219,25 +236,14 @@ export async function onRequestPost(context) {
 
         await db.batch(statements);
 
-        // --- WEBHOOK INTEGRATION (ZAPIER / MAKE / N8N) ---
         if (env.WEBHOOK_URL) {
             try {
-                context.waitUntil(
-                    fetch(env.WEBHOOK_URL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                            event: 'new_order_created', 
-                            orderId, 
-                            clientName: data.clientName, 
-                            totalPrice, 
-                            deliveryType: data.deliveryType 
-                        })
-                    })
-                );
-            } catch (e) {
-                console.error("Webhook error:", e);
-            }
+                context.waitUntil(fetch(env.WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ event: 'new_order_created', orderId, tenantId, clientName: data.clientName, totalPrice })
+                }));
+            } catch (e) { console.error("Webhook error:", e); }
         }
 
         return new Response(JSON.stringify({ success: true, orderId, totalItems, totalPrice, totalBs, bcvRate: finalBcvRate }), {
@@ -251,57 +257,51 @@ export async function onRequestPost(context) {
 }
 
 /**
- * PUT /api/orders - Actualizar estado
+ * PUT /api/orders - Admin only, scoped por tenant
  */
 export async function onRequestPut(context) {
-    const user = await verifySession(context);
+    const { env, request } = context;
+    const db = env.DB || env.vendly;
+    const { id: tenantId } = await resolveTenant(request, db);
+
+    const user = await verifySession(context, tenantId);
     if (!user) return unauthorizedResponse();
     if (user.role !== 'admin') return forbiddenResponse();
 
-    const { env, request } = context;
-    const db = env.DB || env.vendly;
-
     try {
         const { id, status, paymentMethod } = await request.json();
-
         if (!id || !status) return new Response(JSON.stringify({ error: "ID y Estado requeridos." }), { status: 400 });
 
         const validStatuses = ['pendiente', 'en_produccion', 'listo_entrega', 'completado', 'cancelado'];
         if (!validStatuses.includes(status)) return new Response(JSON.stringify({ error: "Estado no válido." }), { status: 400 });
 
-        const order = await db.prepare("SELECT * FROM orders WHERE id = ?").bind(id).first();
+        const order = await db.prepare("SELECT * FROM orders WHERE id = ? AND tenant_id = ?").bind(id, tenantId).first();
         if (!order) return new Response(JSON.stringify({ error: "Pedido no encontrado." }), { status: 404 });
 
         const statements = [
-            db.prepare("UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").bind(status, id)
+            db.prepare("UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND tenant_id = ?").bind(status, id, tenantId)
         ];
 
         if (status === "completado") {
             const existingSale = await db.prepare("SELECT id FROM sales WHERE order_id = ?").bind(id).first();
             if (!existingSale) {
                 statements.push(
-                    db.prepare("INSERT INTO sales (order_id, monto, metodo_pago, fecha) VALUES (?, ?, ?, CURRENT_TIMESTAMP)")
-                    .bind(id, order.total_price, paymentMethod || order.payment_method || "WhatsApp / Por acordar")
+                    db.prepare("INSERT INTO sales (order_id, monto, metodo_pago, fecha, tenant_id) VALUES (?, ?, ?, CURRENT_TIMESTAMP, ?)")
+                    .bind(id, order.total_price, paymentMethod || order.payment_method || "WhatsApp / Por acordar", tenantId)
                 );
             }
         }
 
         await db.batch(statements);
 
-        // --- WEBHOOK INTEGRATION (ZAPIER / MAKE / N8N) ---
         if (env.WEBHOOK_URL) {
             try {
-                // Ejecutar asíncronamente para no bloquear la respuesta
-                context.waitUntil(
-                    fetch(env.WEBHOOK_URL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ event: 'order_status_updated', orderId: id, newStatus: status, order })
-                    })
-                );
-            } catch (e) {
-                console.error("Webhook error:", e);
-            }
+                context.waitUntil(fetch(env.WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ event: 'order_status_updated', orderId: id, newStatus: status, tenantId, order })
+                }));
+            } catch (e) { console.error("Webhook error:", e); }
         }
 
         return new Response(JSON.stringify({ success: true }), { headers: { "Content-Type": "application/json" } });
@@ -312,22 +312,23 @@ export async function onRequestPut(context) {
 }
 
 /**
- * DELETE /api/orders - Eliminar un pedido
+ * DELETE /api/orders - Admin only, scoped por tenant
  */
 export async function onRequestDelete(context) {
-    const user = await verifySession(context);
-    if (!user) return unauthorizedResponse();
-    if (user.role !== 'admin') return forbiddenResponse();
-
     const { env, request } = context;
     const db = env.DB || env.vendly;
+    const { id: tenantId } = await resolveTenant(request, db);
+
+    const user = await verifySession(context, tenantId);
+    if (!user) return unauthorizedResponse();
+    if (user.role !== 'admin') return forbiddenResponse();
 
     try {
         const id = new URL(request.url).searchParams.get("id");
         if (!id) return new Response(JSON.stringify({ error: "ID requerido." }), { status: 400 });
 
         await db.prepare("DELETE FROM order_items WHERE order_id = ?").bind(id).run();
-        await db.prepare("DELETE FROM orders WHERE id = ?").bind(id).run();
+        await db.prepare("DELETE FROM orders WHERE id = ? AND tenant_id = ?").bind(id, tenantId).run();
 
         return new Response(JSON.stringify({ success: true }), { headers: { "Content-Type": "application/json" } });
     } catch (err) {

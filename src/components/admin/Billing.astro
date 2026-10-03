@@ -1,0 +1,108 @@
+---
+// src/components/admin/Billing.astro
+---
+<section id="section-billing" class="admin-section" style="display: none;">
+    <div class="section-header">
+        <div>
+            <h2>Plan y Facturación</h2>
+            <p>Gestiona los límites de tu cuenta y los pagos de tu suscripción SaaS.</p>
+        </div>
+        <button class="btn-action primary" onclick="window.open('https://wa.me/584141234567?text=Hola,%20quiero%20mejorar%20mi%20plan%20SaaS%20Vendly', '_blank')">
+            <i data-lucide="zap"></i> Mejorar Plan
+        </button>
+    </div>
+
+    <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+        
+        <!-- Tarjeta de Plan Actual -->
+        <div class="stat-card" style="grid-column: span 1;">
+            <div class="stat-header">
+                <span class="stat-title">Tu Plan Actual</span>
+                <i data-lucide="award" style="color: var(--primary);"></i>
+            </div>
+            <div class="stat-value" id="billing-plan-name">Cargando...</div>
+            <div class="stat-trend neutral" style="margin-top: 0.5rem;" id="billing-tenant-domain">...</div>
+            
+            <div style="margin-top: 1.5rem; font-size: 0.9rem; color: var(--text-secondary);">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span>Estado:</span>
+                    <span id="billing-status" style="color: var(--success); font-weight: bold;">Activo</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tarjeta de Consumo de Pedidos -->
+        <div class="stat-card">
+            <div class="stat-header">
+                <span class="stat-title">Pedidos este Mes</span>
+                <i data-lucide="shopping-cart" style="color: var(--info);"></i>
+            </div>
+            <div class="stat-value" style="font-size: 1.8rem;">
+                <span id="billing-orders-current">0</span> / <span id="billing-orders-limit" style="font-size: 1.2rem; color: var(--text-secondary);">0</span>
+            </div>
+            
+            <div style="margin-top: 1rem; background: var(--dark-bg); border-radius: 8px; height: 8px; overflow: hidden;">
+                <div id="billing-orders-bar" style="background: var(--info); height: 100%; width: 0%; transition: width 0.5s ease;"></div>
+            </div>
+            <div style="text-align: right; font-size: 0.8rem; margin-top: 0.5rem; color: var(--text-secondary);" id="billing-orders-percent">0% utilizado</div>
+        </div>
+
+        <!-- Tarjeta de Consumo de Productos -->
+        <div class="stat-card">
+            <div class="stat-header">
+                <span class="stat-title">Productos en Catálogo</span>
+                <i data-lucide="package" style="color: var(--warning);"></i>
+            </div>
+            <div class="stat-value" style="font-size: 1.8rem;">
+                <span id="billing-products-current">0</span> / <span id="billing-products-limit" style="font-size: 1.2rem; color: var(--text-secondary);">0</span>
+            </div>
+            
+            <div style="margin-top: 1rem; background: var(--dark-bg); border-radius: 8px; height: 8px; overflow: hidden;">
+                <div id="billing-products-bar" style="background: var(--warning); height: 100%; width: 0%; transition: width 0.5s ease;"></div>
+            </div>
+            <div style="text-align: right; font-size: 0.8rem; margin-top: 0.5rem; color: var(--text-secondary);" id="billing-products-percent">0% utilizado</div>
+        </div>
+    </div>
+
+    <!-- Información de Pago (Manual) -->
+    <div style="margin-top: 2rem;">
+        <h3>Información para Pagos</h3>
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Realiza el pago manual de tu mensualidad para mantener el servicio activo. Envía el comprobante por WhatsApp.</p>
+        
+        <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+            <div class="stat-card" style="padding: 1.5rem;">
+                <h4 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <i data-lucide="landmark" style="width: 18px; color: var(--success);"></i> Pago Móvil
+                </h4>
+                <div style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.8;">
+                    <div>Banco: <strong style="color: var(--text-primary);" id="pay-bank">Banesco (0134)</strong></div>
+                    <div>Teléfono: <strong style="color: var(--text-primary);" id="pay-phone">0414-1234567</strong></div>
+                    <div>RIF/Cédula: <strong style="color: var(--text-primary);" id="pay-id">J-12345678-9</strong></div>
+                </div>
+            </div>
+
+            <div class="stat-card" style="padding: 1.5rem;">
+                <h4 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <i data-lucide="wallet" style="width: 18px; color: var(--warning);"></i> Cripto / Internacional
+                </h4>
+                <div style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.8;">
+                    <div>Binance Pay: <strong style="color: var(--text-primary);" id="pay-binance">pagos@vendly.app</strong></div>
+                    <div>Zelle: <strong style="color: var(--text-primary);" id="pay-zelle">pagos@vendly.app</strong></div>
+                </div>
+            </div>
+            
+            <div class="stat-card" style="padding: 1.5rem; border: 1px solid var(--primary); background: rgba(201, 116, 138, 0.05);">
+                <h4 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; color: var(--primary);">
+                    Mensualidad
+                </h4>
+                <div style="font-size: 2.5rem; font-weight: bold; margin-bottom: 0.5rem;">
+                    $<span id="pay-amount">15</span>
+                </div>
+                <p style="font-size: 0.85rem; color: var(--text-secondary);">Renovación los días 1 de cada mes.</p>
+                <button class="btn-action primary" style="width: 100%; justify-content: center; margin-top: 1rem;" onclick="window.open('https://wa.me/584141234567?text=Hola,%20adjunto%20comprobante%20de%20pago%20Vendly', '_blank')">
+                    <i data-lucide="send"></i> Reportar Pago
+                </button>
+            </div>
+        </div>
+    </div>
+</section>
