@@ -84,10 +84,10 @@ export class CatalogController {
         try {
             const res = await fetch(`/api/products?template=${encodeURIComponent(this.config.template)}`);
             if (!res.ok) throw new Error();
-            const responseData = await res.json();
+            const responseData: any = await res.json();
             const products: CatalogProduct[] = Array.isArray(responseData)
                 ? responseData
-                : responseData.data || [];
+                : responseData?.data || [];
 
             this.products = products;
             this.renderCategoryFilters();
