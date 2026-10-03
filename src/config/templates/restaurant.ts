@@ -117,11 +117,6 @@ export const restaurantTemplate: StoreConfig = {
           title: 'Pedido Fácil por WhatsApp',
           description: 'Sin apps engorrosas, sin complicaciones. Elige tu plato en el menú, envíanos el pedido por WhatsApp y listo. ¡Así de simple!',
         },
-        {
-          icon: 'users',
-          title: 'Combos & Promociones',
-          description: 'Aprovecha nuestros combos familiares y ofertas del día. Más comida, mismo sabor, mejor precio. ¡Pregunta por las promociones!',
-        },
       ],
     },
     catalog: {

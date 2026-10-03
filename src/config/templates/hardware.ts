@@ -117,11 +117,6 @@ export const hardwareTemplate: StoreConfig = {
           title: 'Cotizaciones Rápidas por WhatsApp',
           description: 'Envíanos tu lista de materiales o medidas por foto o texto. Te enviamos presupuesto formal en minutos.',
         },
-        {
-          icon: 'file-text',
-          title: 'Factura Fiscal y Precios al Mayor',
-          description: 'Atendemos tanto al consumidor final como a empresas y contratistas con descuentos por volumen y formalidad fiscal.',
-        },
       ],
     },
     catalog: {

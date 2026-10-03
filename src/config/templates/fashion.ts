@@ -117,11 +117,6 @@ export const fashionTemplate: StoreConfig = {
           title: 'Packaging Premium de Regalo',
           description: 'Cada orden se entrega envuelta con papel seda perfumado, tarjeta personalizada y bolsa de tela reutilizable.',
         },
-        {
-          icon: 'repeat',
-          title: 'Política de Cambios Ágil',
-          description: 'Si la prenda no te quedó como esperabas, cuentas con días continuos para realizar el cambio sin complicaciones.',
-        },
       ],
     },
     catalog: {

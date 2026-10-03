@@ -117,11 +117,6 @@ export const techTemplate: StoreConfig = {
           title: 'Asesoría en Ensamblaje y Compatibilidad',
           description: '¿No sabes si esa gráfica entra en tu case o qué fuente necesitas? Te ayudamos a armar tu setup ideal sin costo extra.',
         },
-        {
-          icon: 'box',
-          title: 'Envíos Protegidos y Asegurados',
-          description: 'Embalaje a prueba de golpes con seguro de tránsito total ante pérdidas o daños durante el transporte.',
-        },
       ],
     },
     catalog: {
