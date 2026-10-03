@@ -213,7 +213,7 @@ export class CatalogController {
 
                 const priceDisplay =
                     p.price > 0
-                        ? `${parseFloat(String(p.price)).toFixed(2)} <span style="font-size:0.85rem; font-weight:normal; color:var(--text-light); margin-left:4px;">(~Bs. ${(p.price * currentBcvRate).toFixed(2)})</span>`
+                        ? `$${parseFloat(String(p.price)).toFixed(2)} <span style="font-size:0.85rem; font-weight:normal; color:var(--text-light); margin-left:4px;">(~Bs. ${(p.price * currentBcvRate).toFixed(2)})</span>`
                         : 'A consultar';
 
                 return `
