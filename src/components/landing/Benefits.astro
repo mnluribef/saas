@@ -31,3 +31,84 @@ const { benefits } = config.landing;
     </div>
   </div>
 </section>
+
+
+<style is:global>
+/* ===================== BENEFITS ===================== */
+#beneficios {
+    background: var(--cream);
+}
+
+.benefits-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+}
+
+.benefit-card {
+    background: var(--white);
+    padding: 2.5rem 2rem;
+    border-radius: var(--radius-lg);
+    text-align: center;
+    border: 1px solid var(--border-subtle);
+    transition: transform 0.4s var(--ease-bounce), box-shadow 0.4s var(--ease-smooth), border-color 0.3s;
+    position: relative;
+    overflow: hidden;
+}
+
+.benefit-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--grad-cta);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.4s var(--ease-smooth);
+}
+
+.benefit-card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-rose);
+    border-color: var(--border-focus);
+}
+
+.benefit-card:hover::before {
+    transform: scaleX(1);
+}
+
+.benefit-icon {
+    width: 72px;
+    height: 72px;
+    background: var(--grad-blush);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    color: var(--rose-deep);
+    transition: var(--transition);
+    border: 1px solid var(--border-subtle);
+}
+
+.benefit-card:hover .benefit-icon {
+    background: var(--grad-cta);
+    color: var(--white);
+    border-color: transparent;
+    transform: rotate(-5deg) scale(1.05);
+}
+
+.benefit-card h3 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--text-heading);
+    margin-bottom: 0.7rem;
+}
+
+.benefit-card p {
+    font-size: 0.92rem;
+    color: var(--text-muted);
+    line-height: 1.65;
+}
+</style>

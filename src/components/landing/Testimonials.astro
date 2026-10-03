@@ -43,3 +43,108 @@ const StarSVG = `<svg viewBox="0 0 24 24" class="star-svg"><path d="M12 .587l3.6
     </div>
   </div>
 </section>
+
+
+<style is:global>
+/* ===================== TESTIMONIALS ===================== */
+#testimonios {
+    background-color: var(--blush);
+    position: relative;
+}
+
+#testimonios::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(to right, transparent 10%, var(--rose-light) 40%, var(--gold-light) 60%, transparent 90%);
+}
+
+.testimonials-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.testimonial-card {
+    background: var(--white);
+    padding: 2.5rem 2rem;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-soft);
+    transition: transform 0.4s var(--ease-bounce), box-shadow 0.4s;
+    border: 1px solid var(--border-subtle);
+    position: relative;
+}
+
+.testimonial-card::before {
+    content: '\201C';
+    position: absolute;
+    top: 1rem;
+    right: 1.5rem;
+    font-family: var(--font-heading);
+    font-size: 4rem;
+    color: var(--rose-light);
+    line-height: 1;
+    pointer-events: none;
+}
+
+.testimonial-card:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-rose);
+}
+
+.stars {
+    margin-bottom: 1.2rem;
+    display: flex;
+    gap: 0.2rem;
+}
+
+.star-svg {
+    width: 16px;
+    height: 16px;
+    fill: var(--gold);
+    stroke: var(--gold);
+}
+
+.review {
+    font-size: 0.95rem;
+    color: var(--text-body);
+    margin-bottom: 1.5rem;
+    font-style: italic;
+    line-height: 1.75;
+}
+
+.client-info {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.client-avatar {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid var(--rose-light);
+    flex-shrink: 0;
+}
+
+.client-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.client-info h4 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-heading);
+    margin-bottom: 0.1rem;
+}
+
+.client-info p {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+}
+</style>

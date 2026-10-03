@@ -18,8 +18,8 @@
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.2.3",
+    "@lucide/astro": "^1.50.0",
     "astro": "^7.2.4",
-    "lucide-astro": "^0.556.0",
     "zod": "^4.6.5"
   },
   "devDependencies": {
@@ -27,6 +27,6 @@
     "@cloudflare/workers-types": "^4.20250620.0",
     "concurrently": "^10.0.5",
     "typescript": "^5.9.3",
-    "wrangler": "^4.129.1"
+    "wrangler": "^4.147.0"
   }
 }

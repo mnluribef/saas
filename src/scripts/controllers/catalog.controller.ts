@@ -213,16 +213,24 @@ export class CatalogController {
 
                 const priceDisplay =
                     p.price > 0
-                        ? `$${parseFloat(String(p.price)).toFixed(2)} <span style="font-size:0.85rem; font-weight:normal; color:var(--text-light); margin-left:4px;">(~Bs. ${(p.price * currentBcvRate).toFixed(2)})</span>`
+                        ? `$${parseFloat(String(p.price)).toFixed(2)} <span class="product-price-bcv">(~Bs. ${(p.price * currentBcvRate).toFixed(2)})</span>`
                         : 'A consultar';
+
+                let displayName = p.name;
+                let unitBadge = '';
+                const unitMatch = p.name.match(/(?:\s*\(([^)]+)\))$/);
+                if (unitMatch) {
+                    displayName = p.name.replace(unitMatch[0], '');
+                    unitBadge = `<span class="product-unit-badge">${unitMatch[1]}</span>`;
+                }
 
                 return `
           <div class="product-card reveal">
             <div class="product-img"><img src="${productImg}" alt="${p.name}" loading="lazy" onerror="this.onerror=null; this.src='/assets/favicon.svg';"></div>
             <div class="product-info">
-              <div class="product-header"><h3>${p.name}</h3></div>
-              <div class="product-price" style="font-size:1.3rem;font-weight:700;color:var(--accent);margin:.5rem 0 .8rem;font-family:'Outfit',sans-serif;">${priceDisplay}</div>
-              <p class="product-desc" style="min-height:auto;margin-bottom:1.2rem;">${p.description || ''}</p>
+              <div class="product-header"><h3><span>${displayName}</span>${unitBadge}</h3></div>
+              <div class="product-price">${priceDisplay}</div>
+              <p class="product-desc">${p.description || ''}</p>
               ${attributesHtml}${legacySizesHtml}
               <div class="product-actions">
                 <div class="main-qty-selector">
