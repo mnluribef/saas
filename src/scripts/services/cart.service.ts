@@ -42,7 +42,8 @@ export class CartService {
         price: number,
         qty = 1,
         icon = 'package',
-        options: Record<string, string> = {}
+        options: Record<string, string> = {},
+        optionLabels: Record<string, string> = {}
     ): { itemKey: string; isNew: boolean } {
         const optionsKey = Object.keys(options)
             .sort()
@@ -56,8 +57,11 @@ export class CartService {
         if (existing) {
             existing.qty += qty;
             if (existing.price === undefined) existing.price = price;
+            if (Object.keys(optionLabels).length > 0) {
+                existing.optionLabels = { ...(existing.optionLabels || {}), ...optionLabels };
+            }
         } else {
-            this.items.push({ id, key: itemKey, name, price, qty, icon, options });
+            this.items.push({ id, key: itemKey, name, price, qty, icon, options, optionLabels });
             isNew = true;
         }
 

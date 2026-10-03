@@ -49,11 +49,26 @@ export class OrderService implements IOrderService {
 
     buildWhatsAppUrl(orderId: string, data: OrderSubmissionData, items: CartItem[]): string {
         const labels: Record<string, string> = {
-            size: 'Tamaño',
+            switch: 'Switch',
+            almacenamiento: 'Almacenamiento',
+            capacidad: 'Capacidad',
+            soporte: 'Montura',
+            bateria: 'Batería',
+            voltaje: 'Voltaje',
+            longitud: 'Longitud',
+            talla: 'Talla',
+            color: 'Color',
             proteina: 'Proteína',
+            guarnicion: 'Guarnición',
+            relleno: 'Relleno',
+            porcion: 'Porción',
+            sabor: 'Sabor',
+            presentacion: 'Presentación',
             punto: 'Punto',
             salsa: 'Salsa',
             cantidad: 'Cantidad',
+            size: 'Opción',
+            opcion: 'Opción',
         };
 
         let msg = `¡Hola ${this.config.businessName}! 🛍️\n\nHe realizado una orden desde la web.\n*Número de Pedido:* #${orderId}\n*Cliente:* ${data.clientName} (${data.clientPhone})\n\n*Detalle de artículos:*\n`;
@@ -61,7 +76,10 @@ export class OrderService implements IOrderService {
         items.forEach((item) => {
             const opts = Object.entries(item.options || {})
                 .filter(([, v]) => v)
-                .map(([k, v]) => `${labels[k] || k}: ${v}`)
+                .map(([k, v]) => {
+                    const labelText = item.optionLabels?.[k] || labels[k] || (k.charAt(0).toUpperCase() + k.slice(1));
+                    return `${labelText}: ${v}`;
+                })
                 .join(', ');
             const itemTotal =
                 item.price && item.price > 0

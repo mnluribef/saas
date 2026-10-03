@@ -20,6 +20,7 @@ export interface CartItem {
     qty: number;
     icon: string;
     options: Record<string, string>;
+    optionLabels?: Record<string, string>;
 }
 
 export interface CatalogProductAttribute {

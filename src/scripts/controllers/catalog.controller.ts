@@ -167,7 +167,7 @@ export class CatalogController {
                         .map((attr) => {
                             const optionsHtml =
                                 attr.type === 'color_swatch'
-                                    ? `<div class="color-swatch-container" data-attribute="${attr.key}" data-product="${p.id}">${attr.values
+                                    ? `<div class="color-swatch-container" data-attribute="${attr.key}" data-label="${attr.label}" data-product="${p.id}">${attr.values
                                           .map((val: string, idx: number) => {
                                               const hex =
                                                   this.colorMap[val.toLowerCase().trim()] || val;
@@ -183,7 +183,7 @@ export class CatalogController {
                                               return `<button class="color-swatch-btn ${idx === 0 ? 'active' : ''} ${lightClass}" style="background-color:${hex};" data-value="${val}" title="${val}"></button>`;
                                           })
                                           .join('')}</div>`
-                                    : `<div class="attribute-selector" data-attribute="${attr.key}" data-product="${p.id}">${attr.values
+                                    : `<div class="attribute-selector" data-attribute="${attr.key}" data-label="${attr.label}" data-product="${p.id}">${attr.values
                                           .map(
                                               (val: string, idx: number) =>
                                                   `<button class="attribute-btn ${idx === 0 ? 'active' : ''}" data-value="${val}">${val}</button>`
@@ -195,12 +195,12 @@ export class CatalogController {
                 }
 
                 const legacySizesHtml =
-                    p.sizes && (!p.attributes || !p.attributes.some((a) => a.key === 'size'))
-                        ? `<div class="attribute-options-group"><label>Opciones:</label><div class="attribute-selector" data-attribute="size" data-product="${p.id}">${p.sizes
+                    p.sizes && (!p.attributes || p.attributes.length === 0)
+                        ? `<div class="attribute-options-group"><label>Opciones:</label><div class="attribute-selector" data-attribute="opcion" data-label="Opción" data-product="${p.id}">${p.sizes
                               .split(',')
                               .map(
                                   (size: string, idx: number) =>
-                                      `<button class="attribute-btn ${idx === 0 ? 'active' : ''}" data-value="${size}">${size}</button>`
+                                      `<button class="attribute-btn ${idx === 0 ? 'active' : ''}" data-value="${size.trim()}">${size.trim()}</button>`
                               )
                               .join('')}</div></div>`
                         : '';
@@ -283,15 +283,20 @@ export class CatalogController {
                 const qty = input ? parseInt(input.value) || 1 : 1;
 
                 const options: Record<string, string> = {};
+                const optionLabels: Record<string, string> = {};
                 const card = addBtn.closest('.product-card');
                 card?.querySelectorAll<HTMLElement>('[data-attribute]').forEach((sel) => {
                     const key = sel.getAttribute('data-attribute')!;
+                    const label = sel.getAttribute('data-label') || key;
                     const activeBtn = sel.querySelector<HTMLElement>('.active');
                     const val = activeBtn?.getAttribute('data-value');
-                    if (val) options[key] = val;
+                    if (val) {
+                        options[key] = val;
+                        optionLabels[key] = label;
+                    }
                 });
 
-                this.cartService.addItem(id, name, price, qty, icon, options);
+                this.cartService.addItem(id, name, price, qty, icon, options, optionLabels);
                 if (input) input.value = '1';
 
                 const optList = Object.values(options).filter(Boolean);

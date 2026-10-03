@@ -88,18 +88,36 @@ export class CartUIController {
         if (totalFixed) totalFixed.style.display = 'flex';
 
         const labels: Record<string, string> = {
-            size: 'Tamaño',
+            switch: 'Switch',
+            almacenamiento: 'Almacenamiento',
+            capacidad: 'Capacidad',
+            soporte: 'Montura',
+            bateria: 'Batería',
+            voltaje: 'Voltaje',
+            longitud: 'Longitud',
+            talla: 'Talla',
+            color: 'Color',
             proteina: 'Proteína',
+            guarnicion: 'Guarnición',
+            relleno: 'Relleno',
+            porcion: 'Porción',
+            sabor: 'Sabor',
+            presentacion: 'Presentación',
             punto: 'Punto',
             salsa: 'Salsa',
             cantidad: 'Cantidad',
+            size: 'Opción',
+            opcion: 'Opción',
         };
 
         container.innerHTML = items
             .map((item) => {
                 const opts = Object.entries(item.options || {})
                     .filter(([, v]) => v)
-                    .map(([k, v]) => `<span class="cart-item-option">${labels[k] || k}: ${v}</span>`)
+                    .map(([k, v]) => {
+                        const labelText = item.optionLabels?.[k] || labels[k] || (k.charAt(0).toUpperCase() + k.slice(1));
+                        return `<span class="cart-item-option">${labelText}: ${v}</span>`;
+                    })
                     .join('');
 
                 const unitPrice =
