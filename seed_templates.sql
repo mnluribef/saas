@@ -58,3 +58,20 @@ INSERT OR IGNORE INTO products (id, name, type_id, category, price, icon, descri
 ('ssd-nvme-1tb-gen4', 'Unidad de Estado Sólido SSD NVMe 1TB PCIe 4.0', 'componentes', 'componentes', 85.00, 'hard-drive', 'Velocidades ultra rápidas de hasta 7000 MB/s de lectura. Compatible con PC y PS5.', '/assets/product_ssd.webp', '1TB Gen4, 2TB Gen4 (+60$)', 'tech', 1),
 ('teclado-mecanico-rgb', 'Teclado Mecánico RGB 75% Switch Red Hot-Swap', 'perifericos', 'perifericos', 48.00, 'headphones', 'Conexión inalámbrica triple (Bluetooth, 2.4Ghz y cable USB-C), switches lubricados de fábrica.', '/assets/product_teclado.webp', 'Switches Red (Lineales), Switches Brown (Táctiles)', 'tech', 1),
 ('monitor-gamer-24-165hz', 'Monitor Gamer 24" Fast IPS 165Hz 1ms HDR', 'perifericos', 'perifericos', 145.00, 'cpu', 'Resolución FHD 1080p, soporte FreeSync / G-Sync Compatible, bordes ultra delgados.', '/assets/product_monitor.webp', 'Base estándar, Con brazo ergonómico (+25$)', 'tech', 1);
+
+-- =====================================================
+-- 4. AUTOPARTES / REPUESTOS (autoparts)
+-- =====================================================
+-- Categorías Autopartes
+INSERT OR IGNORE INTO product_types (id, name, description, icon, template) VALUES
+('frenos', 'Frenos y Sistema', 'Pastillas, bandas, discos, ligas y cilindros de freno.', 'shield-check', 'autoparts'),
+('motor', 'Componentes de Motor', 'Correas de tiempo, pistones, conchas y empacaduras.', 'settings', 'autoparts'),
+('suspension', 'Suspensión y Dirección', 'Amortiguadores, bujes, terminales y muñones.', 'truck', 'autoparts'),
+('lubricantes', 'Lubricantes y Fluidos', 'Aceites minerales, sintéticos, valvulinas y refrigerantes.', 'droplet', 'autoparts'),
+('electrico', 'Sistema Eléctrico', 'Baterías, alternadores, arranques y bujías.', 'zap', 'autoparts');
+
+-- Productos de Muestra Autopartes
+INSERT OR IGNORE INTO products (id, name, type_id, category, price, icon, description, image_url, sizes, template, active, brand, model) VALUES
+('pastillas-freno-ceramica', 'Pastillas de Freno de Cerámica EBC', 'frenos', 'frenos', 35.00, 'shield-check', 'Juego de pastillas delanteras de cerámica, alto coeficiente de fricción, sin ruido y bajo polvo. Aplica para modelos Sedán 2015-2023.', '/assets/product_frenos.webp', 'Delanteras, Traseras (+30$)', 'autoparts', 1, 'EBC Brakes', 'Ultimax2'),
+('aceite-sintetico-5w40', 'Aceite 100% Sintético Velocita 5W-40 (4 Litros)', 'lubricantes', 'lubricantes', 42.00, 'droplet', 'Lubricante sintético formulado para máxima protección en motores de alto rendimiento y temperaturas extremas.', '/assets/product_aceite.webp', 'Envase 4 Litros, Cuarto (946ml) (12$)', 'autoparts', 1, 'Velocita', '5W-40 SN'),
+('amortiguadores-gas', 'Par de Amortiguadores a Gas Heavy Duty', 'suspension', 'suspension', 110.00, 'truck', 'Amortiguadores presurizados con nitrógeno. Mejoran la estabilidad, reducen el rebote y aumentan la seguridad. Incluyen bases.', '/assets/product_suspension.webp', 'Delanteros (Par), Traseros (Par)', 'autoparts', 1, 'Monroe', 'OESpectrum');

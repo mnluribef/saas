@@ -22,6 +22,8 @@ CREATE TABLE IF NOT EXISTS products (
     image_url TEXT,
     sizes TEXT, -- Opciones secundarias separadas por comas
     type_id TEXT REFERENCES product_types(id),
+    brand TEXT,
+    model TEXT,
     template TEXT NOT NULL DEFAULT 'restaurant', -- 'restaurant', 'hardware', 'fashion', 'tech'
     active INTEGER NOT NULL DEFAULT 1, -- 1 = Activo, 0 = Inactivo
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,

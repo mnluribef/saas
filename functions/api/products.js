@@ -22,6 +22,8 @@ const productSchema = z.object({
     category: z.string().default("principales"),
     icon: z.string().max(50).optional().default("package"),
     image_url: z.string().url().or(z.string().startsWith("/")).optional().default("/assets/favicon.svg"),
+    brand: z.string().max(100).optional().nullable(),
+    model: z.string().max(100).optional().nullable(),
     sizes: z.string().max(200).optional().nullable(),
     template: z.string().default("restaurant"),
     active: z.number().int().min(0).max(1).optional().default(1)
@@ -146,7 +148,7 @@ export async function onRequestPost(context) {
             });
         }
 
-        const { id, name, description, price, category, icon, image_url, sizes, template, active } = result.data;
+        const { id, name, description, price, category, icon, image_url, sizes, template, active, brand, model } = result.data;
         const productId = id.toLowerCase().trim();
 
         const existing = await db.prepare(
@@ -160,8 +162,8 @@ export async function onRequestPost(context) {
         }
 
         await db.prepare(
-            "INSERT INTO products (id, name, type_id, category, description, price, icon, image_url, sizes, template, active, tenant_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-        ).bind(productId, name, category, category, description, price, icon, image_url, sizes, template, active, tenantId).run();
+            "INSERT INTO products (id, name, type_id, category, description, price, icon, image_url, sizes, template, active, tenant_id, brand, model) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        ).bind(productId, name, category, category, description, price, icon, image_url, sizes, template, active, tenantId, brand, model).run();
 
         return new Response(JSON.stringify({ success: true, message: "Producto creado exitosamente." }), {
             status: 201, headers: { "Content-Type": "application/json" }
@@ -195,7 +197,7 @@ export async function onRequestPut(context) {
             });
         }
 
-        const { id, name, description, price, category, icon, image_url, sizes, template, active } = result.data;
+        const { id, name, description, price, category, icon, image_url, sizes, template, active, brand, model } = result.data;
 
         const existing = await db.prepare(
             "SELECT id FROM products WHERE id = ? AND tenant_id = ?"
@@ -208,8 +210,8 @@ export async function onRequestPut(context) {
         }
 
         await db.prepare(
-            "UPDATE products SET name = ?, type_id = ?, category = ?, description = ?, price = ?, icon = ?, image_url = ?, sizes = ?, template = ?, active = ? WHERE id = ? AND tenant_id = ?"
-        ).bind(name, category, category, description, price, icon, image_url, sizes, template, active, id, tenantId).run();
+            "UPDATE products SET name = ?, type_id = ?, category = ?, description = ?, price = ?, icon = ?, image_url = ?, sizes = ?, template = ?, active = ?, brand = ?, model = ? WHERE id = ? AND tenant_id = ?"
+        ).bind(name, category, category, description, price, icon, image_url, sizes, template, active, brand, model, id, tenantId).run();
 
         return new Response(JSON.stringify({ success: true, message: "Producto actualizado exitosamente." }), {
             headers: { "Content-Type": "application/json" }

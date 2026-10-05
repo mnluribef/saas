@@ -1310,6 +1310,8 @@ if (productForm) {
         const icon = document.getElementById('prod-icon')?.value.trim();
         let image_url = document.getElementById('prod-image')?.value.trim();
         const sizes = document.getElementById('prod-sizes')?.value.trim();
+        const brand = document.getElementById('prod-brand')?.value.trim();
+        const model = document.getElementById('prod-model')?.value.trim();
         const active = parseInt(document.getElementById('prod-active')?.value) || 1;
         const description = document.getElementById('prod-description')?.value.trim();
         
@@ -1340,7 +1342,8 @@ if (productForm) {
                 method: method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    id, name, template, category, price, icon, image_url, sizes: sizes || null, active, description
+                    id, name, template, category, price, icon, image_url, sizes: sizes || null, active, description,
+                    brand: brand || null, model: model || null
                 })
             });
 
@@ -1382,6 +1385,8 @@ function startEditProduct(productId) {
     const imageFileEl = document.getElementById('prod-image-file');
     const imagePreviewEl = document.getElementById('prod-image-preview');
     const sizesEl = document.getElementById('prod-sizes');
+    const brandEl = document.getElementById('prod-brand');
+    const modelEl = document.getElementById('prod-model');
     const activeEl = document.getElementById('prod-active');
     const descEl = document.getElementById('prod-description');
 
@@ -1407,6 +1412,8 @@ function startEditProduct(productId) {
     }
 
     if (sizesEl) sizesEl.value = product.sizes || '';
+    if (brandEl) brandEl.value = product.brand || '';
+    if (modelEl) modelEl.value = product.model || '';
     if (activeEl) activeEl.value = product.active !== undefined ? product.active : 1;
     if (descEl) descEl.value = product.description || '';
 

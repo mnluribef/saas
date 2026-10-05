@@ -224,11 +224,16 @@ export class CatalogController {
                     unitBadge = `<span class="product-unit-badge">${unitMatch[1]}</span>`;
                 }
 
+                let brandBadge = p.brand ? `<span class="product-brand-badge">${p.brand}</span>` : '';
+                let modelBadge = p.model ? `<span class="product-model-badge">${p.model}</span>` : '';
+                let badgesHtml = (brandBadge || modelBadge) ? `<div class="product-badges" style="display:flex; gap:0.5rem; margin-bottom:0.5rem; font-size:0.75rem; font-weight:600; text-transform:uppercase; flex-wrap:wrap;">${brandBadge}${modelBadge}</div>` : '';
+
                 return `
           <div class="product-card reveal">
             <div class="product-img"><img src="${productImg}" alt="${p.name}" loading="lazy" onerror="this.onerror=null; this.src='/assets/favicon.svg';"></div>
             <div class="product-info">
               <div class="product-header"><h3><span>${displayName}</span>${unitBadge}</h3></div>
+              ${badgesHtml}
               <div class="product-price">${priceDisplay}</div>
               <p class="product-desc">${p.description || ''}</p>
               ${attributesHtml}${legacySizesHtml}
