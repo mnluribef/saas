@@ -26,7 +26,7 @@ const tenantSchema = z.object({
         .regex(/^[a-z0-9-]+$/, 'Solo minúsculas, números y guiones'),
     name: z.string().min(2).max(100),
     plan: z.enum(['basic', 'pro', 'enterprise']).default('basic'),
-    template: z.enum(['restaurant', 'hardware', 'fashion', 'tech']).default('restaurant'),
+    template: z.enum(['restaurant', 'hardware', 'fashion', 'tech', 'autoparts']).default('restaurant'),
     config_json: z.string().optional().default('{}'),
     domain: z.string().max(200).optional().nullable(),
     whatsapp: z.string().max(30).optional().nullable(),

@@ -4,6 +4,7 @@
 import type { StoreConfig, StoreTemplateType } from '../types/store.types';
 import { restaurantTemplate } from './templates/restaurant';
 import { hardwareTemplate } from './templates/hardware';
+import { autopartsTemplate } from './templates/autoparts';
 import { fashionTemplate } from './templates/fashion';
 import { techTemplate } from './templates/tech';
 
@@ -13,6 +14,7 @@ import { techTemplate } from './templates/tech';
 export const storeTemplates: Record<StoreTemplateType, StoreConfig> = {
   restaurant: restaurantTemplate,
   hardware: hardwareTemplate,
+  autoparts: autopartsTemplate,
   fashion: fashionTemplate,
   tech: techTemplate,
 };
@@ -21,7 +23,7 @@ export const storeTemplates: Record<StoreTemplateType, StoreConfig> = {
  * Plantilla activa actual.
  * 
  * 👉 ¡Para cambiar el tipo de tienda en todo el proyecto, solo cambia este valor!
- * Opciones disponibles: 'restaurant' | 'hardware' | 'fashion' | 'tech'
+ * Opciones disponibles: 'restaurant' | 'hardware' | 'fashion' | 'tech' | 'autoparts'
  */
 export const ACTIVE_TEMPLATE: StoreTemplateType = 'restaurant';
 

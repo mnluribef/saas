@@ -44,7 +44,7 @@ const storeSettingsSchema = z.object({
         deliveryOptionPrice: z.number().min(0).or(z.string().transform(v => parseFloat(v))).optional(),
         pickupOptionName: z.string().max(50).optional(),
     }).optional(),
-    template: z.enum(['restaurant', 'hardware', 'fashion', 'tech']).optional(),
+    template: z.enum(['restaurant', 'hardware', 'fashion', 'tech', 'autoparts']).optional(),
     storePrefix: z.string().min(2).max(6).regex(/^[A-Z0-9]+$/).optional(),
 });
 

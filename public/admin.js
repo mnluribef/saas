@@ -1174,6 +1174,7 @@ let activeProductTemplateFilter = 'all';
 const templateDefaultCategory = {
     restaurant: 'principales',
     hardware: 'herramientas-electricas',
+    autoparts: 'frenos',
     fashion: 'vestidos',
     tech: 'laptops-pc'
 };
@@ -1181,6 +1182,7 @@ const templateDefaultCategory = {
 const templateBadges = {
     restaurant: '<span class="template-badge restaurant">🍽️ Restaurante</span>',
     hardware: '<span class="template-badge hardware">🔨 Ferretería</span>',
+    autoparts: '<span class="template-badge autoparts">🚗 Repuestos</span>',
     fashion: '<span class="template-badge fashion">👗 Moda</span>',
     tech: '<span class="template-badge tech">⚡ Tecnología</span>'
 };
@@ -1195,12 +1197,14 @@ function renderProductsTable() {
     const countHard = document.getElementById('count-hardware');
     const countFash = document.getElementById('count-fashion');
     const countTech = document.getElementById('count-tech');
+    const countAuto = document.getElementById('count-autoparts');
 
     if (countAll) countAll.textContent = productsList.length;
     if (countRest) countRest.textContent = productsList.filter(p => (p.template || 'restaurant') === 'restaurant').length;
     if (countHard) countHard.textContent = productsList.filter(p => p.template === 'hardware').length;
     if (countFash) countFash.textContent = productsList.filter(p => p.template === 'fashion').length;
     if (countTech) countTech.textContent = productsList.filter(p => p.template === 'tech').length;
+    if (countAuto) countAuto.textContent = productsList.filter(p => p.template === 'autoparts').length;
 
     // Filtrar lista según pestaña activa
     let filteredProducts = activeProductTemplateFilter === 'all'
