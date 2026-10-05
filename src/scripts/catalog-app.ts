@@ -61,4 +61,56 @@ export function initCatalogApp(): void {
     currencyService.fetchRate();
     catalogController.loadCatalog();
     cartController.render();
+
+    // Sincronizar en vivo configuraciones personalizadas del tenant si existen
+    fetch('/api/settings').then(res => res.json()).then(data => {
+        if (data.success && data.tenant?.config) {
+            const cfg = data.tenant.config;
+            const pm = cfg.payment?.pagoMovil;
+            const z = cfg.payment?.zelle;
+            const c = cfg.contact;
+            const b = cfg.business;
+
+            // Actualizar datos de pago móvil en el DOM si fueron configurados
+            if (pm?.banco) {
+                const el = document.getElementById('pm-data-banco');
+                if (el) el.textContent = pm.banco;
+            }
+            if (pm?.telefono) {
+                const el = document.getElementById('pm-data-telefono');
+                if (el) el.textContent = pm.telefono;
+            }
+            if (pm?.cedula) {
+                const el = document.getElementById('pm-data-cedula');
+                if (el) el.textContent = pm.cedula;
+            }
+
+            // Actualizar datos de Zelle en el DOM
+            if (z?.email) {
+                const el = document.getElementById('zelle-data-email');
+                if (el) el.textContent = z.email;
+            }
+            if (z?.titular) {
+                const el = document.getElementById('zelle-data-titular');
+                if (el) el.textContent = z.titular;
+            }
+
+            // Actualizar WhatsApp si fue modificado
+            if (c?.whatsapp) {
+                config.whatsappNumber = c.whatsapp;
+                const waFloat = document.querySelector('.float-wa') as HTMLAnchorElement | null;
+                if (waFloat) {
+                    waFloat.href = `https://wa.me/${c.whatsapp}?text=${encodeURIComponent(`Hola! Vengo de la web y quiero ver el catálogo`)}`;
+                }
+            }
+
+            // Actualizar precio de delivery si fue modificado
+            if (cfg.labels?.deliveryOptionPrice !== undefined) {
+                config.deliveryPrice = parseFloat(cfg.labels.deliveryOptionPrice);
+                cartController.render();
+            }
+        }
+    }).catch(() => {
+        // En caso de modo offline o demo estático, conserva los valores por defecto
+    });
 }

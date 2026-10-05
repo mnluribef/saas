@@ -17,6 +17,28 @@ export async function resolveTenant(request, db) {
     const url = new URL(request.url);
     const host = url.hostname; // e.g. 'fogon.vendly.app' or 'fogon.com'
 
+    // 0.1 Query Parameter (direct navigation)
+    const qsTenant = url.searchParams.get('tenant');
+    if (qsTenant) {
+        const tenant = await getTenantById(db, qsTenant);
+        if (tenant) return { id: qsTenant, tenant };
+    }
+
+    // 0.2 Referer Header (API calls from the frontend on localhost/pages.dev)
+    const referer = request.headers.get('Referer');
+    if (referer) {
+        try {
+            const refererUrl = new URL(referer);
+            const refererTenant = refererUrl.searchParams.get('tenant');
+            if (refererTenant) {
+                const tenant = await getTenantById(db, refererTenant);
+                if (tenant) return { id: refererTenant, tenant };
+            }
+        } catch (e) {
+            // Ignore invalid referer URLs
+        }
+    }
+
     // 1. Header explícito (útil en desarrollo local y super-admin)
     const headerTenantId = request.headers.get('X-Tenant-Id');
     if (headerTenantId) {

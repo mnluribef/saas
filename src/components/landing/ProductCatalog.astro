@@ -339,18 +339,22 @@ const { business, contact, features } = config;
             id="payment-info-pago-movil"
             style="display: none; width: 100%; margin-top: 0.8rem; padding: 0.8rem; background: rgba(0,0,0,0.03); border-radius: 8px; font-size: 0.85rem; border: 1px solid rgba(0,0,0,0.05);"
         >
-            <p style="margin:0 0 0.4rem 0; font-weight:600; color:var(--text-dark);">
-                Datos para Pago Móvil:
-            </p>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                <p style="margin:0; font-weight:600; color:var(--text-dark);">Datos para Pago Móvil:</p>
+                <button type="button" id="copy-pm-btn" style="background: var(--primary-light, rgba(0,0,0,0.05)); color: var(--primary); border: none; padding: 0.2rem 0.6rem; border-radius: 5px; font-size: 0.75rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.3rem; transition: background 0.2s;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    Copiar
+                </button>
+            </div>
             <ul style="margin:0; padding-left:1.2rem; color:var(--text-light);">
                 <li>
-                    <strong>Banco:</strong> {config.payment?.pagoMovil?.banco || "Banesco (0134)"}
+                    <strong>Banco:</strong> <span id="pm-data-banco">{config.payment?.pagoMovil?.banco || "Banesco (0134)"}</span>
                 </li>
                 <li>
-                    <strong>Teléfono:</strong> {config.payment?.pagoMovil?.telefono || contact.phone || "0412-4756191"}
+                    <strong>Teléfono:</strong> <span id="pm-data-telefono">{config.payment?.pagoMovil?.telefono || contact.phone || "0412-4756191"}</span>
                 </li>
                 <li>
-                    <strong>C.I / RIF:</strong> {config.payment?.pagoMovil?.cedula || "V-12345678"}
+                    <strong>C.I / RIF:</strong> <span id="pm-data-cedula">{config.payment?.pagoMovil?.cedula || "V-12345678"}</span>
                 </li>
             </ul>
             <div style="margin-top: 0.6rem; padding-top: 0.6rem; border-top: 1px dashed rgba(0,0,0,0.1); font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.2rem;">
@@ -368,15 +372,19 @@ const { business, contact, features } = config;
             id="payment-info-zelle"
             style="display: none; width: 100%; margin-top: 0.8rem; padding: 0.8rem; background: rgba(0,0,0,0.03); border-radius: 8px; font-size: 0.85rem; border: 1px solid rgba(0,0,0,0.05);"
         >
-            <p style="margin:0 0 0.4rem 0; font-weight:600; color:var(--text-dark);">
-                Datos para Zelle:
-            </p>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                <p style="margin:0; font-weight:600; color:var(--text-dark);">Datos para Zelle:</p>
+                <button type="button" id="copy-zelle-btn" style="background: var(--primary-light, rgba(0,0,0,0.05)); color: var(--primary); border: none; padding: 0.2rem 0.6rem; border-radius: 5px; font-size: 0.75rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.3rem; transition: background 0.2s;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    Copiar
+                </button>
+            </div>
             <ul style="margin:0; padding-left:1.2rem; color:var(--text-light);">
                 <li>
-                    <strong>Correo:</strong> {config.payment?.zelle?.email || contact.email || "pagos@vendly.com"}
+                    <strong>Correo:</strong> <span id="zelle-data-email">{config.payment?.zelle?.email || contact.email || "pagos@vendly.com"}</span>
                 </li>
                 <li>
-                    <strong>Titular:</strong> {config.payment?.zelle?.titular || business.name}
+                    <strong>Titular:</strong> <span id="zelle-data-titular">{config.payment?.zelle?.titular || business.name}</span>
                 </li>
             </ul>
         </div>

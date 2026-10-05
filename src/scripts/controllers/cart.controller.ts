@@ -364,6 +364,43 @@ export class CartUIController {
             }
         });
 
+        // Copy Pago Movil Data
+        document.getElementById('copy-pm-btn')?.addEventListener('click', async (e) => {
+            const banco = document.getElementById('pm-data-banco')?.textContent?.trim() || '';
+            const telefono = document.getElementById('pm-data-telefono')?.textContent?.trim() || '';
+            const cedula = document.getElementById('pm-data-cedula')?.textContent?.trim() || '';
+            const copyText = `Banco: ${banco}\nTeléfono: ${telefono}\nC.I/RIF: ${cedula}`;
+            
+            try {
+                await navigator.clipboard.writeText(copyText);
+                const btn = e.currentTarget as HTMLButtonElement;
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = '✅ ¡Copiado!';
+                this.toastService.show('Datos copiados al portapapeles');
+                setTimeout(() => { btn.innerHTML = originalHtml; }, 2000);
+            } catch (err) {
+                this.toastService.show('❌ Error al copiar los datos');
+            }
+        });
+
+        // Copy Zelle Data
+        document.getElementById('copy-zelle-btn')?.addEventListener('click', async (e) => {
+            const email = document.getElementById('zelle-data-email')?.textContent?.trim() || '';
+            const titular = document.getElementById('zelle-data-titular')?.textContent?.trim() || '';
+            const copyText = `Correo: ${email}\nTitular: ${titular}`;
+            
+            try {
+                await navigator.clipboard.writeText(copyText);
+                const btn = e.currentTarget as HTMLButtonElement;
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = '✅ ¡Copiado!';
+                this.toastService.show('Datos copiados al portapapeles');
+                setTimeout(() => { btn.innerHTML = originalHtml; }, 2000);
+            } catch (err) {
+                this.toastService.show('❌ Error al copiar los datos');
+            }
+        });
+
         // Receipt dropzone & file handling
         this.bindReceiptUpload();
 

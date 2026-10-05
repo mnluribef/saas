@@ -355,6 +355,10 @@ sidebarLinks.forEach(link => {
             if (dashboardTitle) dashboardTitle.textContent = 'Plan y Facturación';
             if (dashboardSubtitle) dashboardSubtitle.textContent = 'Gestiona los límites de tu cuenta y pagos de suscripción.';
             loadBillingData();
+        } else if (targetId === 'section-settings') {
+            if (dashboardTitle) dashboardTitle.textContent = 'Configuración de Tienda';
+            if (dashboardSubtitle) dashboardSubtitle.textContent = 'Personaliza el nombre, contacto, WhatsApp, métodos de pago y delivery.';
+            loadStoreSettings();
         }
     });
 });
@@ -930,7 +934,7 @@ async function viewOrderDetails(orderId) {
 
         // Total del Pedido
         const totalVal = parseFloat(order.total_price) || 0.0;
-        const totalText = totalVal > 0 ? `${totalVal.toFixed(2)}` : '$0.00';
+        const totalText = totalVal > 0 ? `$${totalVal.toFixed(2)}` : '$0.00';
         const totalElement = document.getElementById('modal-order-total');
         if (totalElement) {
             totalElement.textContent = totalText;
@@ -1991,9 +1995,168 @@ function updateConnectionStatus() {
     }
 }
 
-window.addEventListener('online', updateConnectionStatus);
-window.addEventListener('offline', updateConnectionStatus);
+// --- GESTIÓN DE CONFIGURACIÓN DE TIENDA (CRUD DE AJUSTES) ---
+async function loadStoreSettings() {
+    try {
+        const res = await fetch('/api/settings');
+        if (!res.ok) throw new Error('No se pudo cargar la configuración');
+        const data = await res.json();
+        const cfg = data.tenant?.config || {};
+        const b = cfg.business || {};
+        const c = cfg.contact || {};
+        const p = cfg.payment || {};
+        const pm = p.pagoMovil || {};
+        const z = p.zelle || {};
+        const l = cfg.labels || {};
 
-// Set initial state
-updateConnectionStatus();
+        // Identidad
+        const nameEl = document.getElementById('cfg-business-name');
+        if (nameEl) nameEl.value = b.name || data.tenant?.name || '';
+        const tagEl = document.getElementById('cfg-tagline');
+        if (tagEl) tagEl.value = b.tagline || '';
+        const descEl = document.getElementById('cfg-description');
+        if (descEl) descEl.value = b.description || '';
+        const lpEl = document.getElementById('cfg-logo-primary');
+        if (lpEl) lpEl.value = b.logoTextPrimary || '';
+        const lsEl = document.getElementById('cfg-logo-secondary');
+        if (lsEl) lsEl.value = b.logoTextSecondary || '';
+        const prefEl = document.getElementById('cfg-store-prefix');
+        if (prefEl) prefEl.value = cfg.storePrefix || '';
+
+        // Contacto
+        const waEl = document.getElementById('cfg-whatsapp');
+        if (waEl) waEl.value = c.whatsapp || data.tenant?.whatsapp || '';
+        const waDispEl = document.getElementById('cfg-whatsapp-display');
+        if (waDispEl) waDispEl.value = c.whatsappDisplay || '';
+        const emailEl = document.getElementById('cfg-email');
+        if (emailEl) emailEl.value = c.email || '';
+        const addrEl = document.getElementById('cfg-address');
+        if (addrEl) addrEl.value = c.address || '';
+        const hoursEl = document.getElementById('cfg-hours');
+        if (hoursEl) hoursEl.value = c.hours || '';
+
+        // Pago Móvil
+        const pmBancoEl = document.getElementById('cfg-pm-banco');
+        if (pmBancoEl) pmBancoEl.value = pm.banco || '';
+        const pmTelEl = document.getElementById('cfg-pm-telefono');
+        if (pmTelEl) pmTelEl.value = pm.telefono || '';
+        const pmCedEl = document.getElementById('cfg-pm-cedula');
+        if (pmCedEl) pmCedEl.value = pm.cedula || '';
+
+        // Zelle
+        const zEmailEl = document.getElementById('cfg-zelle-email');
+        if (zEmailEl) zEmailEl.value = z.email || '';
+        const zTitEl = document.getElementById('cfg-zelle-titular');
+        if (zTitEl) zTitEl.value = z.titular || '';
+
+        // Delivery & Carrito
+        const delNameEl = document.getElementById('cfg-delivery-name');
+        if (delNameEl) delNameEl.value = l.deliveryOptionName || '';
+        const delPriceEl = document.getElementById('cfg-delivery-price');
+        if (delPriceEl) delPriceEl.value = l.deliveryOptionPrice !== undefined ? l.deliveryOptionPrice : '';
+        const pickNameEl = document.getElementById('cfg-pickup-name');
+        if (pickNameEl) pickNameEl.value = l.pickupOptionName || '';
+        const nounSinEl = document.getElementById('cfg-item-noun-singular');
+        if (nounSinEl) nounSinEl.value = l.itemNounSingular || '';
+        const nounPluEl = document.getElementById('cfg-item-noun-plural');
+        if (nounPluEl) nounPluEl.value = l.itemNounPlural || '';
+        const emojiEl = document.getElementById('cfg-empty-cart-emoji');
+        if (emojiEl) emojiEl.value = l.emptyCartEmoji || '';
+    } catch (err) {
+        console.error('Error al cargar configuración:', err);
+        showToast('No se pudo cargar la configuración de la tienda.', 'error');
+    }
+}
+
+const btnReloadSettings = document.getElementById('btn-reload-settings');
+if (btnReloadSettings) {
+    btnReloadSettings.addEventListener('click', () => {
+        loadStoreSettings();
+        showToast('Configuración recargada.', 'info');
+    });
+}
+
+const storeSettingsForm = document.getElementById('store-settings-form');
+if (storeSettingsForm) {
+    storeSettingsForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const btnSave = document.getElementById('btn-save-settings');
+        if (btnSave) {
+            btnSave.disabled = true;
+            btnSave.innerHTML = '<i data-lucide="loader" class="spin"></i> Guardando cambios...';
+            if (window.lucide) lucide.createIcons();
+        }
+
+        const payload = {
+            business: {
+                name: document.getElementById('cfg-business-name')?.value.trim() || undefined,
+                tagline: document.getElementById('cfg-tagline')?.value.trim() || undefined,
+                description: document.getElementById('cfg-description')?.value.trim() || undefined,
+                logoTextPrimary: document.getElementById('cfg-logo-primary')?.value.trim() || undefined,
+                logoTextSecondary: document.getElementById('cfg-logo-secondary')?.value.trim() || undefined,
+            },
+            contact: {
+                whatsapp: document.getElementById('cfg-whatsapp')?.value.trim() || undefined,
+                whatsappDisplay: document.getElementById('cfg-whatsapp-display')?.value.trim() || undefined,
+                email: document.getElementById('cfg-email')?.value.trim() || undefined,
+                address: document.getElementById('cfg-address')?.value.trim() || undefined,
+                hours: document.getElementById('cfg-hours')?.value.trim() || undefined,
+            },
+            payment: {
+                pagoMovil: {
+                    banco: document.getElementById('cfg-pm-banco')?.value.trim() || undefined,
+                    telefono: document.getElementById('cfg-pm-telefono')?.value.trim() || undefined,
+                    cedula: document.getElementById('cfg-pm-cedula')?.value.trim() || undefined,
+                },
+                zelle: {
+                    email: document.getElementById('cfg-zelle-email')?.value.trim() || undefined,
+                    titular: document.getElementById('cfg-zelle-titular')?.value.trim() || undefined,
+                }
+            },
+            labels: {
+                deliveryOptionName: document.getElementById('cfg-delivery-name')?.value.trim() || undefined,
+                deliveryOptionPrice: document.getElementById('cfg-delivery-price')?.value !== '' 
+                    ? parseFloat(document.getElementById('cfg-delivery-price').value) 
+                    : undefined,
+                pickupOptionName: document.getElementById('cfg-pickup-name')?.value.trim() || undefined,
+                itemNounSingular: document.getElementById('cfg-item-noun-singular')?.value.trim() || undefined,
+                itemNounPlural: document.getElementById('cfg-item-noun-plural')?.value.trim() || undefined,
+                emptyCartEmoji: document.getElementById('cfg-empty-cart-emoji')?.value.trim() || undefined,
+            },
+            storePrefix: document.getElementById('cfg-store-prefix')?.value.trim().toUpperCase() || undefined
+        };
+
+        try {
+            const res = await fetch('/api/settings', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await res.json();
+            if (res.ok && data.success) {
+                showToast('✅ ¡Configuración guardada exitosamente!', 'success');
+                if (payload.business.name) {
+                    const subTitle = document.getElementById('dashboard-subtitle');
+                    if (subTitle && subTitle.textContent.includes('FOGÓN')) {
+                        subTitle.textContent = subTitle.textContent.replace('FOGÓN', payload.business.name);
+                    }
+                }
+            } else {
+                showToast(data.error || 'Error al guardar la configuración.', 'error');
+            }
+        } catch (err) {
+            console.error('Error al guardar configuración:', err);
+            showToast('Error de red al guardar la configuración.', 'error');
+        } finally {
+            if (btnSave) {
+                btnSave.disabled = false;
+                btnSave.innerHTML = '<i data-lucide="save"></i> Guardar Todos los Cambios';
+                if (window.lucide) lucide.createIcons();
+            }
+        }
+    });
+}
+
 

@@ -34,7 +34,7 @@ export async function checkProductLimit(db, tenant) {
     
     const { total } = await db.prepare(
         'SELECT COUNT(*) as total FROM products WHERE tenant_id = ?'
-    ).bind(tenant.id).first();
+    ).bind(tenant?.id || 'demo').first();
 
     return {
         allowed: total < planLimits.maxProducts,
@@ -59,7 +59,7 @@ export async function checkOrderLimit(db, tenant) {
 
     const { total } = await db.prepare(
         'SELECT COUNT(*) as total FROM orders WHERE tenant_id = ? AND created_at >= ?'
-    ).bind(tenant.id, firstDayOfMonth).first();
+    ).bind(tenant?.id || 'demo', firstDayOfMonth).first();
 
     return {
         allowed: total < planLimits.maxOrdersPerMonth,

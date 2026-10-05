@@ -14,7 +14,7 @@ const { business, nav, features } = config;
 <header class="glass-nav">
     <div class="container">
         <nav>
-            <a href="#" class="logo" style="text-decoration: none; color: inherit; display: inline-flex; align-items: center; gap: 0.5rem;">
+            <a href="#" class="logo">
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="22"
@@ -65,17 +65,13 @@ const { business, nav, features } = config;
                 ))}
             </ul>
 
-            <div
-                class="header-actions"
-                style="display: flex; align-items: center; gap: 0.8rem;"
-            >
+            <div class="header-actions">
                 {features.showBcvRate && (
                     <div
                         id="nav-bcv-badge"
-                        style="display: none; align-items: center; gap: 0.35rem; background: var(--badge-bg, rgba(212, 175, 55, 0.12)); border: 1px solid var(--badge-border, rgba(212, 175, 55, 0.35)); border-radius: 50px; padding: 0.3rem 0.75rem; font-size: 0.78rem; font-weight: 600; color: var(--badge-text, #D4AF37); white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.15);"
                         title="Tasa Oficial del Banco Central de Venezuela"
                     >
-                        <span style="font-size: 0.85rem;">🇻🇪</span>
+                        <span class="bcv-flag">🇻🇪</span>
                         <span>
                             BCV: <strong id="nav-bcv-rate">--</strong> Bs.
                         </span>
@@ -85,7 +81,6 @@ const { business, nav, features } = config;
                 <button
                     id="mobile-menu-btn"
                     aria-label="Abrir menú"
-                    style="background: none; border: none; cursor: pointer; display: none;"
                 >
                     <svg
                         id="menu-icon"
@@ -150,16 +145,34 @@ const { business, nav, features } = config;
     const CLOSE_ICON = `<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>`;
 
     if (mobileMenuBtn && navLinks && menuIcon) {
-        mobileMenuBtn.addEventListener("click", () => {
+        mobileMenuBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
             const isOpen = navLinks.classList.toggle("active");
             menuIcon.innerHTML = isOpen ? CLOSE_ICON : MENU_ICON;
         });
+
         navLinks.querySelectorAll("a").forEach((link) => {
             link.addEventListener("click", () => {
                 navLinks.classList.remove("active");
                 menuIcon.innerHTML = MENU_ICON;
             });
         });
+
+        // Cerrar menú al hacer clic fuera del header
+        document.addEventListener("click", (e) => {
+            if (header && !header.contains(e.target as Node) && navLinks.classList.contains("active")) {
+                navLinks.classList.remove("active");
+                menuIcon.innerHTML = MENU_ICON;
+            }
+        });
+
+        // Cerrar menú al redimensionar pantalla a escritorio
+        window.addEventListener("resize", () => {
+            if (window.innerWidth > 768 && navLinks.classList.contains("active")) {
+                navLinks.classList.remove("active");
+                menuIcon.innerHTML = MENU_ICON;
+            }
+        }, { passive: true });
     }
 
     // Cargar Tasa BCV en la barra superior si existe el elemento
@@ -176,7 +189,7 @@ const { business, nav, features } = config;
                     rateSpan.textContent = parseFloat(
                         String(data.rate),
                     ).toFixed(2);
-                    badge.style.display = "inline-flex";
+                    badge.classList.add("visible");
                 }
             }
         } catch (e) {}
@@ -226,10 +239,12 @@ nav {
     font-size: 1.9rem;
     font-weight: 600;
     color: var(--white);
-    display: flex;
+    display: inline-flex;
     align-items: center;
     letter-spacing: 0.03em;
     text-transform: uppercase;
+    text-decoration: none;
+    gap: 0.5rem;
 }
 
 .logo svg,
@@ -261,6 +276,9 @@ nav {
 .nav-links {
     display: flex;
     gap: 2rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
 }
 
 .nav-links a {
@@ -272,6 +290,8 @@ nav {
     text-transform: uppercase;
     position: relative;
     padding-bottom: 2px;
+    text-decoration: none;
+    transition: color 0.2s ease;
 }
 
 .nav-links a::after {
@@ -296,5 +316,100 @@ nav {
 .header-actions {
     display: flex;
     align-items: center;
+    gap: 0.8rem;
+}
+
+#nav-bcv-badge {
+    display: none;
+    align-items: center;
+    gap: 0.35rem;
+    background: var(--badge-bg, rgba(212, 175, 55, 0.12));
+    border: 1px solid var(--badge-border, rgba(212, 175, 55, 0.35));
+    border-radius: 50px;
+    padding: 0.3rem 0.75rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--badge-text, #D4AF37);
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+#nav-bcv-badge.visible {
+    display: inline-flex;
+}
+
+.bcv-flag {
+    font-size: 0.85rem;
+}
+
+#mobile-menu-btn {
+    display: none;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--white, #ffffff);
+    padding: 0.4rem;
+    border-radius: 8px;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease;
+}
+
+#mobile-menu-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Responsive Mobile Navigation */
+@media (max-width: 768px) {
+    #mobile-menu-btn {
+        display: flex;
+    }
+
+    .nav-separator {
+        display: none;
+    }
+
+    .nav-links {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        background: var(--hero-bg, #0B1120);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        flex-direction: column;
+        padding: 1.5rem 2rem;
+        gap: 0.5rem;
+        align-items: center;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55);
+    }
+
+    .nav-links.active {
+        display: flex;
+    }
+
+    .nav-links a {
+        font-size: 0.85rem;
+        padding: 0.75rem 1rem;
+        width: 100%;
+        text-align: center;
+        display: block;
+    }
+
+    .nav-links a::after {
+        display: none;
+    }
+
+    .nav-links a:hover {
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 6px;
+    }
+
+    .logo {
+        font-size: 1.5rem;
+    }
 }
 </style>

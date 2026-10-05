@@ -796,7 +796,7 @@ const config = createStoreConfig('tech', {
                         baseDomain = hostParts.slice(1).join('.');
                     }
                     
-                    if (baseDomain.startsWith('localhost') || baseDomain.includes('127.0.0.1')) {
+                    if (baseDomain.startsWith('localhost') || baseDomain.includes('127.0.0.1') || baseDomain.includes('.pages.dev')) {
                         const storeUrl = `${protocol}//${baseDomain}/?tenant=${data.tenantId}`;
                         const adminUrl = `${protocol}//${baseDomain}/admin/?tenant=${data.tenantId}`;
                         (document.getElementById('store-url') as HTMLAnchorElement).href = storeUrl;

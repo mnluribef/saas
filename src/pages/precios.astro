@@ -1,0 +1,401 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Header from '../components/layout/Header.astro';
+import Footer from '../components/layout/Footer.astro';
+import storeConfig from '../config/store.config';
+
+const pricingConfig = {
+    ...storeConfig,
+    business: { ...storeConfig.business, name: "Vendly SaaS", logoTextPrimary: "Vendly", logoTextSecondary: "" },
+    seo: { ...storeConfig.seo, title: "Planes y Precios | Vendly SaaS", description: "Escala tu negocio con nuestros planes." },
+    nav: {
+        links: [
+            { label: "Inicio", href: "/" },
+            { label: "Beneficios", href: "/#benefits" },
+            { label: "Planes", href: "/precios" },
+            { label: "Acceder", href: "/admin" }
+        ]
+    }
+};
+---
+
+<BaseLayout config={pricingConfig} title="Planes y Precios | Vendly SaaS">
+    <Header config={pricingConfig} />
+    
+    <main class="pricing-page">
+        <section class="pricing-hero">
+            <div class="pricing-hero-content reveal">
+                <h1>Planes simples para <span class="highlight">negocios reales</span></h1>
+                <p>Empieza gratis y escala cuando tu negocio lo necesite. Sin comisiones por venta.</p>
+            </div>
+        </section>
+
+        <section class="pricing-cards-section">
+            <div class="pricing-grid">
+                
+                <!-- Plan Básico -->
+                <div class="pricing-card reveal">
+                    <div class="card-header">
+                        <h3>Básico</h3>
+                        <p class="price">Gratis</p>
+                        <p class="billing">Para siempre</p>
+                    </div>
+                    <div class="card-body">
+                        <p class="plan-desc">Ideal para emprendedores probando su modelo de negocio.</p>
+                        <ul class="features-list">
+                            <li><svg viewBox="0 0 24 24" class="check-icon"><polyline points="20 6 9 17 4 12"></polyline></svg> Catálogo digital personalizado</li>
+                            <li><svg viewBox="0 0 24 24" class="check-icon"><polyline points="20 6 9 17 4 12"></polyline></svg> Pedidos directos a WhatsApp</li>
+                            <li><svg viewBox="0 0 24 24" class="check-icon"><polyline points="20 6 9 17 4 12"></polyline></svg> Límite de <strong>30 productos</strong></li>
+                            <li><svg viewBox="0 0 24 24" class="check-icon"><polyline points="20 6 9 17 4 12"></polyline></svg> Hasta <strong>100 pedidos</strong> al mes</li>
+                            <li><svg viewBox="0 0 24 24" class="check-icon"><polyline points="20 6 9 17 4 12"></polyline></svg> Panel de administración base</li>
+                        </ul>
+                        <a href="/register" class="btn-outline">Crear tienda gratis</a>
+                    </div>
+                </div>
+
+                <!-- Plan PRO -->
+                <div class="pricing-card popular reveal" style="animation-delay: 0.1s;">
+                    <div class="popular-badge">Más Recomendado</div>
+                    <div class="card-header">
+                        <h3>Profesional</h3>
+                        <p class="price">$15<span class="period">/mes</span></p>
+                        <p class="billing">Pago mensual o anual (ahorra 20%)</p>
+                    </div>
+                    <div class="card-body">
+                        <p class="plan-desc">Para negocios establecidos que necesitan más capacidad y control.</p>
+                        <ul class="features-list">
+                            <li><svg viewBox="0 0 24 24" class="check-icon"><polyline points="20 6 9 17 4 12"></polyline></svg> Todo lo del plan Básico</li>
+                            <li><svg viewBox="0 0 24 24" class="check-icon"><polyline points="20 6 9 17 4 12"></polyline></svg> Límite de <strong>200 productos</strong></li>
+                            <li><svg viewBox="0 0 24 24" class="check-icon"><polyline points="20 6 9 17 4 12"></polyline></svg> Hasta <strong>1,000 pedidos</strong> al mes</li>
+                            <li><svg viewBox="0 0 24 24" class="check-icon"><polyline points="20 6 9 17 4 12"></polyline></svg> Control de Inventario</li>
+                            <li><svg viewBox="0 0 24 24" class="check-icon"><polyline points="20 6 9 17 4 12"></polyline></svg> Estadísticas y analíticas</li>
+                        </ul>
+                        <a href="/register" class="btn-primary">Empezar con PRO</a>
+                    </div>
+                </div>
+
+                <!-- Plan Enterprise -->
+                <div class="pricing-card reveal" style="animation-delay: 0.2s;">
+                    <div class="card-header">
+                        <h3>Empresarial</h3>
+                        <p class="price">$45<span class="period">/mes</span></p>
+                        <p class="billing">Para operaciones a gran escala</p>
+                    </div>
+                    <div class="card-body">
+                        <p class="plan-desc">Máximo rendimiento y funciones premium para franquicias.</p>
+                        <ul class="features-list">
+                            <li><svg viewBox="0 0 24 24" class="check-icon"><polyline points="20 6 9 17 4 12"></polyline></svg> Productos <strong>Ilimitados</strong></li>
+                            <li><svg viewBox="0 0 24 24" class="check-icon"><polyline points="20 6 9 17 4 12"></polyline></svg> Pedidos <strong>Ilimitados</strong></li>
+                            <li><svg viewBox="0 0 24 24" class="check-icon"><polyline points="20 6 9 17 4 12"></polyline></svg> Dominio Personalizado (.com)</li>
+                            <li><svg viewBox="0 0 24 24" class="check-icon"><polyline points="20 6 9 17 4 12"></polyline></svg> Acceso a API Privada</li>
+                            <li><svg viewBox="0 0 24 24" class="check-icon"><polyline points="20 6 9 17 4 12"></polyline></svg> Soporte Prioritario 24/7</li>
+                        </ul>
+                        <a href="/register" class="btn-outline">Contactar Ventas</a>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+        
+        <section class="faq-minimal reveal">
+            <h2>Preguntas Frecuentes</h2>
+            <div class="faq-grid">
+                <div class="faq-item">
+                    <h4>¿Cobran comisión por venta?</h4>
+                    <p>No. Jamás te cobraremos comisiones por las ventas que realices. El dinero va directo a ti a través de los métodos de pago que configures (Zelle, Pago Móvil, etc).</p>
+                </div>
+                <div class="faq-item">
+                    <h4>¿Puedo cambiar de plan después?</h4>
+                    <p>Sí, puedes actualizar o degradar tu plan en cualquier momento desde tu panel de administración. Los cambios se reflejan inmediatamente.</p>
+                </div>
+                <div class="faq-item">
+                    <h4>¿Qué pasa si supero mi límite mensual?</h4>
+                    <p>Te notificaremos cuando estés cerca del límite. Si lo superas, tu catálogo seguirá visible pero se pausará la recepción de nuevos pedidos hasta el próximo mes o hasta que actualices tu plan.</p>
+                </div>
+                <div class="faq-item">
+                    <h4>¿Necesito tarjeta de crédito para empezar?</h4>
+                    <p>No. Puedes crear tu cuenta y usar el plan Básico de por vida sin introducir ningún método de pago.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <Footer config={pricingConfig} />
+</BaseLayout>
+
+<style>
+    .pricing-page {
+        min-height: 100vh;
+        background-color: var(--bg-page);
+        font-family: 'Inter', sans-serif;
+    }
+
+    .pricing-hero {
+        text-align: center;
+        padding: 6rem 1rem 3rem 1rem;
+        background: linear-gradient(135deg, rgba(248,250,252,0) 0%, rgba(59,130,246,0.05) 100%);
+    }
+
+    .pricing-hero h1 {
+        font-size: clamp(2.5rem, 5vw, 4rem);
+        color: #0f172a;
+        margin-bottom: 1rem;
+        font-weight: 800;
+        letter-spacing: -1px;
+        line-height: 1.1;
+    }
+
+    .highlight {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .pricing-hero p {
+        font-size: 1.1rem;
+        color: #64748b;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .pricing-cards-section {
+        padding: 2rem 1rem 6rem 1rem;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .pricing-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 2rem;
+        align-items: center;
+    }
+
+    .pricing-card {
+        background: #fff;
+        border-radius: 24px;
+        padding: 2.5rem;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    .pricing-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+    }
+
+    .pricing-card.popular {
+        border: 2px solid #3b82f6;
+        transform: scale(1.05);
+        box-shadow: 0 20px 40px rgba(59,130,246,0.15);
+        z-index: 2;
+    }
+    
+    .pricing-card.popular:hover {
+        transform: scale(1.05) translateY(-5px);
+    }
+
+    @media (max-width: 1024px) {
+        .pricing-card.popular {
+            transform: none;
+        }
+        .pricing-card.popular:hover {
+            transform: translateY(-5px);
+        }
+    }
+
+    .popular-badge {
+        position: absolute;
+        top: -14px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+        padding: 0.4rem 1rem;
+        border-radius: 50px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        box-shadow: 0 4px 10px rgba(59,130,246,0.3);
+    }
+
+    .card-header {
+        text-align: center;
+        margin-bottom: 2rem;
+        padding-bottom: 2rem;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .card-header h3 {
+        font-size: 1.25rem;
+        color: #334155;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+
+    .price {
+        font-size: 3rem;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1;
+        margin-bottom: 0.5rem;
+    }
+
+    .period {
+        font-size: 1rem;
+        color: #64748b;
+        font-weight: 500;
+    }
+
+    .billing {
+        font-size: 0.85rem;
+        color: #94a3b8;
+    }
+
+    .card-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .plan-desc {
+        font-size: 0.95rem;
+        color: #64748b;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+
+    .features-list {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 2.5rem 0;
+        flex: 1;
+    }
+
+    .features-list li {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+        color: #334155;
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+
+    .check-icon {
+        width: 20px;
+        height: 20px;
+        fill: none;
+        stroke: #10b981;
+        stroke-width: 3;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+    .btn-primary, .btn-outline {
+        display: block;
+        width: 100%;
+        padding: 1rem;
+        border-radius: 12px;
+        text-align: center;
+        font-weight: 600;
+        font-size: 1rem;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+
+    .btn-primary {
+        background: #3b82f6;
+        color: white;
+        border: none;
+        box-shadow: 0 4px 12px rgba(59,130,246,0.25);
+    }
+
+    .btn-primary:hover {
+        background: #2563eb;
+        box-shadow: 0 6px 15px rgba(59,130,246,0.35);
+    }
+
+    .btn-outline {
+        background: transparent;
+        color: #3b82f6;
+        border: 2px solid #e2e8f0;
+    }
+
+    .btn-outline:hover {
+        border-color: #3b82f6;
+        background: #f8fafc;
+    }
+
+    .faq-minimal {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 4rem 1rem 6rem 1rem;
+    }
+
+    .faq-minimal h2 {
+        text-align: center;
+        font-size: 2rem;
+        color: #0f172a;
+        margin-bottom: 3rem;
+    }
+
+    .faq-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 2.5rem;
+    }
+
+    .faq-item h4 {
+        font-size: 1.1rem;
+        color: #1e293b;
+        margin-bottom: 0.75rem;
+    }
+
+    .faq-item p {
+        color: #64748b;
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+
+    /* Revelación animada */
+    .reveal {
+        opacity: 0;
+        transform: translateY(30px);
+        transition: all 0.8s cubic-bezier(0.5, 0, 0, 1);
+    }
+
+    .reveal.active {
+        opacity: 1;
+        transform: translateY(0);
+    }
+</style>
+
+<script>
+    // Intersection Observer for reveal animations
+    document.addEventListener("DOMContentLoaded", () => {
+        const reveals = document.querySelectorAll(".reveal");
+
+        const revealObserver = new IntersectionObserver(
+            (entries, observer) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add("active");
+                        observer.unobserve(entry.target);
+                    }
+                });
+            },
+            { rootMargin: "0px 0px -50px 0px" }
+        );
+
+        reveals.forEach((reveal) => revealObserver.observe(reveal));
+    });
+</script>
