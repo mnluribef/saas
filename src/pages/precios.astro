@@ -2,25 +2,43 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Header from '../components/layout/Header.astro';
 import Footer from '../components/layout/Footer.astro';
-import storeConfig from '../config/store.config';
+import { techTemplate } from '../config/templates/tech';
+import '../styles/precios.css';
 
-const pricingConfig = {
-    ...storeConfig,
-    business: { ...storeConfig.business, name: "Vendly SaaS", logoTextPrimary: "Vendly", logoTextSecondary: "" },
-    seo: { ...storeConfig.seo, title: "Planes y Precios | Vendly SaaS", description: "Escala tu negocio con nuestros planes." },
+const saasConfig = {
+    ...techTemplate,
+    template: 'tech' as const,
+    business: { 
+        ...techTemplate.business, 
+        name: "Vendly", 
+        shortName: "Vendly",
+        tagline: "Plataforma de E-commerce y Pedidos por WhatsApp",
+        logoTextPrimary: "VENDLY", 
+        logoTextSecondary: "SAAS",
+        description: "La solución líder para crear tu tienda virtual en minutos y recibir pedidos directamente en tu WhatsApp.",
+        siteUrl: "https://vendly-20w.pages.dev"
+    },
+    seo: {
+        title: "Planes y Precios | Vendly SaaS",
+        description: "Escala tu negocio con nuestros planes. Sin comisiones por venta.",
+        keywords: "tienda online venezuela, catalogo whatsapp, pedidos whatsapp, ecommerce venezuela, vendly, tasa bcv",
+        schemaType: "SoftwareApplication",
+        priceRange: "$$"
+    },
     nav: {
         links: [
             { label: "Inicio", href: "/" },
-            { label: "Beneficios", href: "/#benefits" },
+            { label: "Características", href: "/#features" },
             { label: "Planes", href: "/precios" },
-            { label: "Acceder", href: "/admin" }
+            { label: "Acceder", href: "/login" },
+            { label: "Crear Tienda", href: "/register" }
         ]
     }
 };
 ---
 
-<BaseLayout config={pricingConfig} title="Planes y Precios | Vendly SaaS">
-    <Header config={pricingConfig} />
+<BaseLayout config={saasConfig} title="Planes y Precios | Vendly SaaS">
+    <Header config={saasConfig} />
     
     <main class="pricing-page">
         <section class="pricing-hero">
@@ -120,282 +138,7 @@ const pricingConfig = {
         </section>
     </main>
 
-    <Footer config={pricingConfig} />
+    <Footer config={saasConfig} />
 </BaseLayout>
 
-<style>
-    .pricing-page {
-        min-height: 100vh;
-        background-color: var(--bg-page);
-        font-family: 'Inter', sans-serif;
-    }
-
-    .pricing-hero {
-        text-align: center;
-        padding: 6rem 1rem 3rem 1rem;
-        background: linear-gradient(135deg, rgba(248,250,252,0) 0%, rgba(59,130,246,0.05) 100%);
-    }
-
-    .pricing-hero h1 {
-        font-size: clamp(2.5rem, 5vw, 4rem);
-        color: #0f172a;
-        margin-bottom: 1rem;
-        font-weight: 800;
-        letter-spacing: -1px;
-        line-height: 1.1;
-    }
-
-    .highlight {
-        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-
-    .pricing-hero p {
-        font-size: 1.1rem;
-        color: #64748b;
-        max-width: 600px;
-        margin: 0 auto;
-    }
-
-    .pricing-cards-section {
-        padding: 2rem 1rem 6rem 1rem;
-        max-width: 1200px;
-        margin: 0 auto;
-    }
-
-    .pricing-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-        gap: 2rem;
-        align-items: center;
-    }
-
-    .pricing-card {
-        background: #fff;
-        border-radius: 24px;
-        padding: 2.5rem;
-        border: 1px solid #e2e8f0;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.03);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-    }
-
-    .pricing-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 12px 30px rgba(0,0,0,0.08);
-    }
-
-    .pricing-card.popular {
-        border: 2px solid #3b82f6;
-        transform: scale(1.05);
-        box-shadow: 0 20px 40px rgba(59,130,246,0.15);
-        z-index: 2;
-    }
-    
-    .pricing-card.popular:hover {
-        transform: scale(1.05) translateY(-5px);
-    }
-
-    @media (max-width: 1024px) {
-        .pricing-card.popular {
-            transform: none;
-        }
-        .pricing-card.popular:hover {
-            transform: translateY(-5px);
-        }
-    }
-
-    .popular-badge {
-        position: absolute;
-        top: -14px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-        color: white;
-        padding: 0.4rem 1rem;
-        border-radius: 50px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        letter-spacing: 0.5px;
-        text-transform: uppercase;
-        box-shadow: 0 4px 10px rgba(59,130,246,0.3);
-    }
-
-    .card-header {
-        text-align: center;
-        margin-bottom: 2rem;
-        padding-bottom: 2rem;
-        border-bottom: 1px solid #f1f5f9;
-    }
-
-    .card-header h3 {
-        font-size: 1.25rem;
-        color: #334155;
-        font-weight: 600;
-        margin-bottom: 1rem;
-    }
-
-    .price {
-        font-size: 3rem;
-        font-weight: 800;
-        color: #0f172a;
-        line-height: 1;
-        margin-bottom: 0.5rem;
-    }
-
-    .period {
-        font-size: 1rem;
-        color: #64748b;
-        font-weight: 500;
-    }
-
-    .billing {
-        font-size: 0.85rem;
-        color: #94a3b8;
-    }
-
-    .card-body {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .plan-desc {
-        font-size: 0.95rem;
-        color: #64748b;
-        margin-bottom: 2rem;
-        text-align: center;
-    }
-
-    .features-list {
-        list-style: none;
-        padding: 0;
-        margin: 0 0 2.5rem 0;
-        flex: 1;
-    }
-
-    .features-list li {
-        display: flex;
-        align-items: flex-start;
-        gap: 0.75rem;
-        margin-bottom: 1rem;
-        color: #334155;
-        font-size: 0.95rem;
-        line-height: 1.5;
-    }
-
-    .check-icon {
-        width: 20px;
-        height: 20px;
-        fill: none;
-        stroke: #10b981;
-        stroke-width: 3;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-        flex-shrink: 0;
-        margin-top: 2px;
-    }
-
-    .btn-primary, .btn-outline {
-        display: block;
-        width: 100%;
-        padding: 1rem;
-        border-radius: 12px;
-        text-align: center;
-        font-weight: 600;
-        font-size: 1rem;
-        text-decoration: none;
-        transition: all 0.2s;
-    }
-
-    .btn-primary {
-        background: #3b82f6;
-        color: white;
-        border: none;
-        box-shadow: 0 4px 12px rgba(59,130,246,0.25);
-    }
-
-    .btn-primary:hover {
-        background: #2563eb;
-        box-shadow: 0 6px 15px rgba(59,130,246,0.35);
-    }
-
-    .btn-outline {
-        background: transparent;
-        color: #3b82f6;
-        border: 2px solid #e2e8f0;
-    }
-
-    .btn-outline:hover {
-        border-color: #3b82f6;
-        background: #f8fafc;
-    }
-
-    .faq-minimal {
-        max-width: 900px;
-        margin: 0 auto;
-        padding: 4rem 1rem 6rem 1rem;
-    }
-
-    .faq-minimal h2 {
-        text-align: center;
-        font-size: 2rem;
-        color: #0f172a;
-        margin-bottom: 3rem;
-    }
-
-    .faq-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-        gap: 2.5rem;
-    }
-
-    .faq-item h4 {
-        font-size: 1.1rem;
-        color: #1e293b;
-        margin-bottom: 0.75rem;
-    }
-
-    .faq-item p {
-        color: #64748b;
-        font-size: 0.95rem;
-        line-height: 1.6;
-    }
-
-    /* Revelación animada */
-    .reveal {
-        opacity: 0;
-        transform: translateY(30px);
-        transition: all 0.8s cubic-bezier(0.5, 0, 0, 1);
-    }
-
-    .reveal.active {
-        opacity: 1;
-        transform: translateY(0);
-    }
-</style>
-
-<script>
-    // Intersection Observer for reveal animations
-    document.addEventListener("DOMContentLoaded", () => {
-        const reveals = document.querySelectorAll(".reveal");
-
-        const revealObserver = new IntersectionObserver(
-            (entries, observer) => {
-                entries.forEach((entry) => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add("active");
-                        observer.unobserve(entry.target);
-                    }
-                });
-            },
-            { rootMargin: "0px 0px -50px 0px" }
-        );
-
-        reveals.forEach((reveal) => revealObserver.observe(reveal));
-    });
-</script>
+<script src="../scripts/precios.js"></script>

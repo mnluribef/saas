@@ -1,0 +1,194 @@
+.superadmin-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 4rem 1rem;
+        min-height: 100vh;
+        font-family: 'Inter', sans-serif;
+    }
+    .sa-card {
+        max-width: 450px;
+        margin: 4rem auto;
+        background: #fff;
+        padding: 2.5rem;
+        border-radius: 16px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+        text-align: center;
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+    .sa-title {
+        font-size: 1.8rem;
+        color: #0f172a;
+        margin-bottom: 0.5rem;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+    }
+    .sa-subtitle {
+        color: #64748b;
+        margin-bottom: 2rem;
+        font-size: 0.95rem;
+    }
+    .sa-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    .sa-input {
+        padding: 0.8rem 1.2rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 1rem;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+    .sa-input:focus {
+        border-color: #3b82f6;
+    }
+    .sa-btn-primary {
+        background: #3b82f6;
+        color: white;
+        border: none;
+        padding: 0.9rem;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .sa-btn-primary:hover {
+        background: #2563eb;
+    }
+    .sa-error {
+        color: #ef4444;
+        font-size: 0.9rem;
+        margin-top: 1rem;
+        padding: 0.5rem;
+        background: #fef2f2;
+        border-radius: 6px;
+    }
+    
+    .sa-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+    .sa-btn-outline {
+        background: transparent;
+        color: #64748b;
+        border: 1px solid #cbd5e1;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+    .sa-btn-outline:hover {
+        background: #f8fafc;
+        color: #0f172a;
+    }
+
+    .sa-stats-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 3rem;
+    }
+    .sa-stat-card {
+        background: #fff;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+    .sa-stat-card h3 {
+        color: #64748b;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.5rem;
+    }
+    .stat-number {
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: #0f172a;
+    }
+    .stat-green { color: #10b981; }
+    .stat-red { color: #ef4444; }
+
+    .sa-table-container {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        border: 1px solid rgba(0,0,0,0.05);
+        overflow-x: auto;
+    }
+    .sa-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+    .sa-table th {
+        background: #f8fafc;
+        color: #64748b;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .sa-table td {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #f1f5f9;
+        color: #334155;
+        font-size: 0.95rem;
+        vertical-align: middle;
+    }
+    .sa-table tr:last-child td {
+        border-bottom: none;
+    }
+    
+    .badge {
+        padding: 0.25rem 0.6rem;
+        border-radius: 50px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .badge-basic { background: #e0f2fe; color: #0284c7; }
+    .badge-pro { background: #fef08a; color: #854d0e; }
+    .badge-enterprise { background: #d8b4fe; color: #6b21a8; }
+    
+    .badge-active { background: #dcfce7; color: #166534; }
+    .badge-suspended { background: #fee2e2; color: #991b1b; }
+
+    .action-select {
+        padding: 0.4rem;
+        border-radius: 6px;
+        border: 1px solid #e2e8f0;
+        font-size: 0.85rem;
+        color: #334155;
+        outline: none;
+        background: #fff;
+        cursor: pointer;
+    }
+    .btn-suspend {
+        background: transparent;
+        border: 1px solid #ef4444;
+        color: #ef4444;
+        padding: 0.35rem 0.6rem;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        cursor: pointer;
+        margin-left: 0.5rem;
+    }
+    .btn-suspend.activate {
+        border-color: #10b981;
+        color: #10b981;
+    }
+    .btn-suspend:hover {
+        background: #fef2f2;
+    }
+    .btn-suspend.activate:hover {
+        background: #ecfdf5;
+    }
+    .hidden { display: none !important; }
