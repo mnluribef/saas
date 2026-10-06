@@ -1,6 +1,7 @@
 ---
 // src/pages/login.astro - Página de inicio de sesión del panel admin Vendly
 import storeConfig from '../config/store.config';
+import '../styles/login.css';
 
 const error = Astro.url.searchParams.get('error');
 const errorMsg: Record<string, string> = {
@@ -18,7 +19,6 @@ const errorMsg: Record<string, string> = {
   <meta name="robots" content="noindex, nofollow">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles/login.css" />
 
 </head>
 <body>

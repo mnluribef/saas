@@ -67,9 +67,9 @@ export const restaurantTemplate: StoreConfig = {
     shadowCard: '0 4px 20px rgba(60, 20, 0, 0.06)',
 
     // Badges & Pastillas
-    badgeBg: 'rgba(212, 175, 55, 0.14)',
-    badgeBorder: 'rgba(212, 175, 55, 0.38)',
-    badgeText: '#B8860B',
+    badgeBg: 'rgba(212, 175, 55, 0.16)',
+    badgeBorder: 'rgba(212, 175, 55, 0.40)',
+    badgeText: '#FBBF24',
 
     // Fuentes
     fontHeading: "'Playfair Display', serif",

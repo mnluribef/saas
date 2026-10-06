@@ -67,9 +67,9 @@ export const hardwareTemplate: StoreConfig = {
     shadowCard: '0 4px 20px rgba(15, 23, 42, 0.06)',
 
     // Badges & Pastillas
-    badgeBg: 'rgba(249, 115, 22, 0.14)',
+    badgeBg: 'rgba(249, 115, 22, 0.16)',
     badgeBorder: 'rgba(249, 115, 22, 0.40)',
-    badgeText: '#C2410C',
+    badgeText: '#FB923C',
 
     // Fuentes
     fontHeading: "'Outfit', sans-serif",

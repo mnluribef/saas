@@ -2,6 +2,8 @@
 
 Plataforma SaaS multi-plantilla para creación de catálogos virtuales, control de ventas y pedidos directos a WhatsApp, construida para ser rápida y desplegada globalmente en el borde.
 
+Live Demo: https://vendly-20w.pages.dev
+
 ## 🛠️ Stack Tecnológico
 
 - **Frontend:** Astro + Vanilla CSS / TailwindCSS

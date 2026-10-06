@@ -67,9 +67,9 @@ export const fashionTemplate: StoreConfig = {
     shadowCard: '0 4px 22px rgba(44, 15, 34, 0.06)',
 
     // Badges & Pastillas
-    badgeBg: 'rgba(190, 24, 93, 0.12)',
-    badgeBorder: 'rgba(190, 24, 93, 0.35)',
-    badgeText: '#BE185D',
+    badgeBg: 'rgba(190, 24, 93, 0.16)',
+    badgeBorder: 'rgba(190, 24, 93, 0.40)',
+    badgeText: '#F472B6',
 
     // Fuentes
     fontHeading: "'Playfair Display', serif",

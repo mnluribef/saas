@@ -67,9 +67,9 @@ export const autopartsTemplate: StoreConfig = {
     shadowCard: '0 4px 20px rgba(17, 24, 39, 0.06)',
 
     // Badges & Pastillas
-    badgeBg: 'rgba(75, 85, 99, 0.14)',
-    badgeBorder: 'rgba(75, 85, 99, 0.40)',
-    badgeText: '#374151',
+    badgeBg: 'rgba(245, 158, 11, 0.15)',
+    badgeBorder: 'rgba(245, 158, 11, 0.40)',
+    badgeText: '#FBBF24',
 
     // Fuentes
     fontHeading: "'Outfit', sans-serif",
@@ -79,9 +79,9 @@ export const autopartsTemplate: StoreConfig = {
   landing: {
     hero: {
       badgeText: '🚗 Repuestos y Accesorios · Originales y Alternativos',
-      headline: 'Rendimiento y seguridad',
-      headlineHighlight: 'para tu vehículo.',
-      subheadline: 'Encuentra las mejores marcas en frenos, suspensión, motor y lubricantes. Asesoramiento experto y repuestos garantizados para llegar más lejos.',
+      headline: 'Máximo poder',
+      headlineHighlight: 'para tu motor.',
+      subheadline: 'Repuestos premium y originales. Frenos, motor y suspensión con envíos nacionales y asesoría experta al instante.',
       ctaPrimaryText: 'Buscar Repuestos',
       ctaPrimaryLink: '#menu',
       ctaSecondaryText: 'Consulta por WhatsApp',

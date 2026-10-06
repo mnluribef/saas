@@ -67,9 +67,9 @@ export const techTemplate: StoreConfig = {
     shadowCard: '0 4px 22px rgba(15, 23, 42, 0.07)',
 
     // Badges & Pastillas
-    badgeBg: 'rgba(6, 182, 212, 0.14)',
+    badgeBg: 'rgba(6, 182, 212, 0.16)',
     badgeBorder: 'rgba(6, 182, 212, 0.40)',
-    badgeText: '#0E7490',
+    badgeText: '#22D3EE',
 
     // Fuentes
     fontHeading: "'Outfit', sans-serif",

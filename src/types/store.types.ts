@@ -8,8 +8,10 @@ export type SchemaOrgType =
   | 'HardwareStore'
   | 'ClothingStore'
   | 'ElectronicsStore'
+  | 'AutoPartsStore'
   | 'Store'
-  | 'LocalBusiness';
+  | 'LocalBusiness'
+  | 'SoftwareApplication';
 
 export interface BenefitItem {
   icon: string; // Nombre del icono o SVG inline
