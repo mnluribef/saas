@@ -1,185 +1,659 @@
 ---
 // src/components/admin/StoreSettings.astro
-// Sección de Configuración Integral de la Tienda (Negocio, WhatsApp, Pagos, Textos y Delivery)
+// Panel de Personalización y Edición Integral de la Tienda (Textos, Imágenes y Contenido)
 ---
 <div id="section-settings" class="dashboard-section">
-    <div class="content-card">
-        <div class="card-header">
-            <div>
-                <h2>Personalización y Configuración de Tienda</h2>
-                <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:0.25rem;">
-                    Ajusta los datos del negocio, información de pago (Pago Móvil, Zelle), costos de delivery y apariencia de tu catálogo web.
-                </p>
+    <div class="content-card settings-container">
+        <!-- Encabezado de la Sección -->
+        <div class="card-header settings-header-box">
+            <div class="settings-title-desc">
+                <h2>Personalización Integral de tu Tienda</h2>
+                <p>Edita en tiempo real todos los textos, imágenes de portada, catálogo, beneficios, testimonios y datos de contacto de tu tienda online.</p>
             </div>
-            <div class="card-actions">
-                <button class="btn-action secondary" id="btn-reload-settings">
-                    <i data-lucide="refresh-cw"></i> Recargar
+            <div class="settings-top-actions">
+                <a href="/demo/restaurant" target="_blank" rel="noopener" id="btn-preview-store" class="btn-preview-store" title="Abrir tienda en nueva pestaña">
+                    <i data-lucide="external-link"></i>
+                    <span>Ver Mi Tienda</span>
+                </a>
+                <button type="button" class="btn-action secondary" id="btn-reload-settings">
+                    <i data-lucide="refresh-cw"></i>
+                    <span>Recargar</span>
                 </button>
             </div>
         </div>
 
-        <form id="store-settings-form" style="padding: 1.5rem 0;">
-            <!-- Pestañas o Bloques -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem;">
-                
-                <!-- BLOQUE 1: Identidad y Negocio -->
-                <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem;">
-                    <h3 style="font-size: 1.05rem; color: var(--primary); margin-bottom: 1.2rem; display: flex; align-items: center; gap: 0.5rem;">
-                        <i data-lucide="store" style="width: 18px; height: 18px;"></i> Identidad del Negocio
-                    </h3>
+        <form id="store-settings-form">
+            <!-- Barra de Pestañas (Tabs de Navegación) -->
+            <div class="settings-tabs-nav" role="tablist">
+                <button type="button" class="settings-tab-btn active" data-tab="tab-branding">
+                    <i data-lucide="store"></i> Identidad & Marca
+                </button>
+                <button type="button" class="settings-tab-btn" data-tab="tab-hero">
+                    <i data-lucide="image"></i> Portada Hero & Slider
+                </button>
+                <button type="button" class="settings-tab-btn" data-tab="tab-catalog">
+                    <i data-lucide="shopping-bag"></i> Catálogo & Carrito
+                </button>
+                <button type="button" class="settings-tab-btn" data-tab="tab-benefits">
+                    <i data-lucide="award"></i> Beneficios
+                </button>
+                <button type="button" class="settings-tab-btn" data-tab="tab-process">
+                    <i data-lucide="list-ordered"></i> ¿Cómo Pedir?
+                </button>
+                <button type="button" class="settings-tab-btn" data-tab="tab-testimonials">
+                    <i data-lucide="message-square"></i> Testimonios
+                </button>
+                <button type="button" class="settings-tab-btn" data-tab="tab-faq">
+                    <i data-lucide="help-circle"></i> Preguntas (FAQ)
+                </button>
+                <button type="button" class="settings-tab-btn" data-tab="tab-contact-payment">
+                    <i data-lucide="phone"></i> Contacto & Pagos
+                </button>
+            </div>
 
-                    <div class="form-group" style="margin-bottom: 1rem;">
-                        <label for="cfg-business-name">Nombre de la Tienda</label>
-                        <input type="text" id="cfg-business-name" class="form-control" placeholder="Ej: FOGÓN Gourmet" required />
+            <!-- ========================================== -->
+            <!-- TAB 1: IDENTIDAD Y MARCA                   -->
+            <!-- ========================================== -->
+            <div id="tab-branding" class="settings-tab-panel active">
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <div>
+                            <h3 class="settings-card-title">
+                                <i data-lucide="sparkles"></i> Identidad del Negocio y Marca
+                            </h3>
+                            <p class="settings-card-subtitle">Define el nombre comercial, eslogan, logo y descripción pública que verán tus clientes.</p>
+                        </div>
                     </div>
 
-                    <div class="form-group" style="margin-bottom: 1rem;">
-                        <label for="cfg-tagline">Eslogan / Frase Clave</label>
-                        <input type="text" id="cfg-tagline" class="form-control" placeholder="Ej: Sabor tradicional a la parrilla" />
+                    <div class="settings-grid-2">
+                        <div class="settings-form-group">
+                            <label for="cfg-business-name">Nombre Comercial de la Tienda *</label>
+                            <input type="text" id="cfg-business-name" class="form-control" placeholder="Ej: FOGÓN Gourmet" required />
+                        </div>
+                        <div class="settings-form-group">
+                            <label for="cfg-tagline">Eslogan / Frase Clave</label>
+                            <input type="text" id="cfg-tagline" class="form-control" placeholder="Ej: Auténtico sabor tradicional a la leña" />
+                        </div>
                     </div>
 
-                    <div class="form-group" style="margin-bottom: 1rem;">
-                        <label for="cfg-description">Descripción Comercial</label>
-                        <textarea id="cfg-description" class="form-control" rows="2" placeholder="Breve reseña que verán tus clientes..."></textarea>
+                    <div class="settings-form-group">
+                        <label for="cfg-description">Descripción Comercial / Sobre Nosotros</label>
+                        <textarea id="cfg-description" class="form-control" rows="3" placeholder="Breve reseña sobre la propuesta de tu negocio que aparece en el pie de página..."></textarea>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                        <div class="form-group">
-                            <label for="cfg-logo-primary">Logo Texto 1</label>
+                    <div class="settings-grid-3">
+                        <div class="settings-form-group">
+                            <label for="cfg-logo-primary">Logo Texto 1 (Principal)</label>
                             <input type="text" id="cfg-logo-primary" class="form-control" placeholder="Ej: FOG" />
+                            <span class="hint">Primera parte del texto del logo</span>
                         </div>
-                        <div class="form-group">
-                            <label for="cfg-logo-secondary">Logo Texto 2</label>
+                        <div class="settings-form-group">
+                            <label for="cfg-logo-secondary">Logo Texto 2 (Acento)</label>
                             <input type="text" id="cfg-logo-secondary" class="form-control" placeholder="Ej: ÓN" />
+                            <span class="hint">Segunda parte destacada en cursiva/color</span>
+                        </div>
+                        <div class="settings-form-group">
+                            <label for="cfg-store-prefix">Prefijo de Pedidos (3 a 5 letras)</label>
+                            <input type="text" id="cfg-store-prefix" class="form-control" maxlength="5" placeholder="Ej: FOG" />
+                            <span class="hint">Identificador para números de orden: FOG-1042</span>
                         </div>
                     </div>
 
-                    <div class="form-group" style="margin-top: 1rem;">
-                        <label for="cfg-store-prefix">Prefijo de Pedidos (3-5 letras)</label>
-                        <input type="text" id="cfg-store-prefix" class="form-control" maxlength="5" placeholder="Ej: FOG" style="text-transform: uppercase;" />
-                        <span style="font-size: 0.75rem; color: var(--text-secondary);">Aparecerá en los números de orden: FOG-XXXX</span>
+                    <div class="settings-grid-2">
+                        <!-- Imagen de Logotipo -->
+                        <div class="settings-form-group">
+                            <label>Imagen de Logotipo (Opcional)</label>
+                            <div class="image-upload-widget">
+                                <div class="image-upload-widget-preview-box compact" id="preview-logo-container">
+                                    <img id="preview-logo-img" class="file-input-hidden" alt="Vista previa de logo" />
+                                    <div class="empty-placeholder" id="placeholder-logo">
+                                        <i data-lucide="image"></i>
+                                        <span>Sin Logo</span>
+                                    </div>
+                                </div>
+                                <div class="image-upload-actions-row">
+                                    <input type="text" id="cfg-logo-image" class="form-control" placeholder="URL de la imagen del logo..." />
+                                    <button type="button" class="btn-upload-file" id="btn-upload-logo">
+                                        <i data-lucide="upload"></i> Subir
+                                    </button>
+                                    <input type="file" id="file-logo-image" class="file-input-hidden" accept="image/*" />
+                                </div>
+                                <span class="hint">Si se proporciona, reemplaza el icono por defecto en la cabecera</span>
+                            </div>
+                        </div>
+
+                        <!-- Imagen Social (OG Image) -->
+                        <div class="settings-form-group">
+                            <label>Imagen para Redes Sociales (OpenGraph)</label>
+                            <div class="image-upload-widget">
+                                <div class="image-upload-widget-preview-box" id="preview-og-container">
+                                    <img id="preview-og-img" class="file-input-hidden" alt="Vista previa de imagen social" />
+                                    <div class="empty-placeholder" id="placeholder-og">
+                                        <i data-lucide="share-2"></i>
+                                        <span>Sin Imagen Social</span>
+                                    </div>
+                                </div>
+                                <div class="image-upload-actions-row">
+                                    <input type="text" id="cfg-og-image" class="form-control" placeholder="URL de imagen al compartir en WhatsApp..." />
+                                    <button type="button" class="btn-upload-file" id="btn-upload-og">
+                                        <i data-lucide="upload"></i> Subir
+                                    </button>
+                                    <input type="file" id="file-og-image" class="file-input-hidden" accept="image/*" />
+                                </div>
+                                <span class="hint">Vista previa mostrada al compartir el enlace en WhatsApp o redes</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- TAB 2: PORTADA HERO & SLIDER               -->
+            <!-- ========================================== -->
+            <div id="tab-hero" class="settings-tab-panel">
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <div>
+                            <h3 class="settings-card-title">
+                                <i data-lucide="layout"></i> Textos y Botones de la Cabecera (Hero)
+                            </h3>
+                            <p class="settings-card-subtitle">La primera impresión de tus clientes: títulos llamativos, botones de acción y eslogan.</p>
+                        </div>
+                    </div>
+
+                    <div class="settings-form-group">
+                        <label for="cfg-hero-badge">Insignia Superior (Pill Badge)</label>
+                        <input type="text" id="cfg-hero-badge" class="form-control" placeholder="Ej: 🔥 Restaurante Venezolano · Pedidos por WhatsApp" />
+                    </div>
+
+                    <div class="settings-grid-2">
+                        <div class="settings-form-group">
+                            <label for="cfg-hero-headline">Título Principal (Headline)</label>
+                            <input type="text" id="cfg-hero-headline" class="form-control" placeholder="Ej: Sabor que te" />
+                        </div>
+                        <div class="settings-form-group">
+                            <label for="cfg-hero-headline-highlight">Frase Destacada (Con Gradiente / Color)</label>
+                            <input type="text" id="cfg-hero-headline-highlight" class="form-control" placeholder="Ej: lleva a casa." />
+                        </div>
+                    </div>
+
+                    <div class="settings-form-group">
+                        <label for="cfg-hero-subheadline">Subtítulo / Mensaje de Bienvenida</label>
+                        <textarea id="cfg-hero-subheadline" class="form-control" rows="2" placeholder="Ej: Cocina venezolana con el alma de la abuela. Delivery y retiro en local — pedidos fáciles por WhatsApp."></textarea>
+                    </div>
+
+                    <div class="settings-grid-2">
+                        <div class="settings-card">
+                            <h4 class="dynamic-item-badge">Botón Principal (CTA 1)</h4>
+                            <div class="settings-form-group">
+                                <label for="cfg-hero-cta1-text">Texto del Botón</label>
+                                <input type="text" id="cfg-hero-cta1-text" class="form-control" placeholder="Ej: Ver Menú" />
+                            </div>
+                            <div class="settings-form-group">
+                                <label for="cfg-hero-cta1-link">Enlace de Destino</label>
+                                <input type="text" id="cfg-hero-cta1-link" class="form-control" placeholder="Ej: #menu" />
+                            </div>
+                        </div>
+
+                        <div class="settings-card">
+                            <h4 class="dynamic-item-badge">Botón Secundario (CTA 2)</h4>
+                            <div class="settings-form-group">
+                                <label for="cfg-hero-cta2-text">Texto del Botón</label>
+                                <input type="text" id="cfg-hero-cta2-text" class="form-control" placeholder="Ej: Hacer Pedido" />
+                            </div>
+                            <div class="settings-form-group">
+                                <label for="cfg-hero-cta2-link">Enlace de Destino</label>
+                                <input type="text" id="cfg-hero-cta2-link" class="form-control" placeholder="Ej: https://wa.me/..." />
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- BLOQUE 2: Contacto y WhatsApp -->
-                <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem;">
-                    <h3 style="font-size: 1.05rem; color: #10B981; margin-bottom: 1.2rem; display: flex; align-items: center; gap: 0.5rem;">
-                        <i data-lucide="message-circle" style="width: 18px; height: 18px;"></i> WhatsApp y Contacto
-                    </h3>
-
-                    <div class="form-group" style="margin-bottom: 1rem;">
-                        <label for="cfg-whatsapp">Número de WhatsApp (con código de país sin +)</label>
-                        <input type="text" id="cfg-whatsapp" class="form-control" placeholder="Ej: 584124756191" required />
-                        <span style="font-size: 0.75rem; color: var(--text-secondary);">Aquí llegarán los pedidos directamente.</span>
+                <!-- Diapositivas de Imágenes del Hero (Slider) -->
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <div>
+                            <h3 class="settings-card-title">
+                                <i data-lucide="images"></i> Diapositivas e Imágenes de Fondo del Hero
+                            </h3>
+                            <p class="settings-card-subtitle">Sube o ingresa imágenes en alta calidad que rotan suavemente de fondo.</p>
+                        </div>
                     </div>
 
-                    <div class="form-group" style="margin-bottom: 1rem;">
-                        <label for="cfg-whatsapp-display">WhatsApp Visible al Público</label>
-                        <input type="text" id="cfg-whatsapp-display" class="form-control" placeholder="Ej: +58 412-4756191" />
+                    <div id="hero-slides-list" class="dynamic-items-container">
+                        <!-- Elementos renderizados dinámicamente -->
                     </div>
 
-                    <div class="form-group" style="margin-bottom: 1rem;">
-                        <label for="cfg-email">Correo Electrónico</label>
-                        <input type="email" id="cfg-email" class="form-control" placeholder="contacto@mitienda.com" />
+                    <button type="button" class="btn-add-item" id="btn-add-hero-slide">
+                        <i data-lucide="plus-circle"></i> Agregar Nueva Imagen al Slider
+                    </button>
+                </div>
+
+                <!-- Estadísticas de Confianza (Trust Stats) -->
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <div>
+                            <h3 class="settings-card-title">
+                                <i data-lucide="bar-chart-2"></i> Estadísticas y Números de Confianza
+                            </h3>
+                            <p class="settings-card-subtitle">Indicadores que transmiten seguridad (Ej: +800 Pedidos, 4.9★ Calificación, etc.).</p>
+                        </div>
                     </div>
 
-                    <div class="form-group" style="margin-bottom: 1rem;">
+                    <div id="hero-stats-list" class="dynamic-items-container">
+                        <!-- Elementos renderizados dinámicamente -->
+                    </div>
+
+                    <button type="button" class="btn-add-item" id="btn-add-hero-stat">
+                        <i data-lucide="plus-circle"></i> Agregar Nueva Estadística
+                    </button>
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- TAB 3: CATÁLOGO & CARRITO                  -->
+            <!-- ========================================== -->
+            <div id="tab-catalog" class="settings-tab-panel">
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <div>
+                            <h3 class="settings-card-title">
+                                <i data-lucide="shopping-bag"></i> Textos de la Sección de Catálogo
+                            </h3>
+                            <p class="settings-card-subtitle">Personaliza los encabezados y textos que enmarcan la lista de productos.</p>
+                        </div>
+                    </div>
+
+                    <div class="settings-grid-2">
+                        <div class="settings-form-group">
+                            <label for="cfg-catalog-title">Título de la Sección</label>
+                            <input type="text" id="cfg-catalog-title" class="form-control" placeholder="Ej: Nuestro" />
+                        </div>
+                        <div class="settings-form-group">
+                            <label for="cfg-catalog-title-highlight">Texto Destacado (Acento)</label>
+                            <input type="text" id="cfg-catalog-title-highlight" class="form-control" placeholder="Ej: Menú" />
+                        </div>
+                    </div>
+
+                    <div class="settings-form-group">
+                        <label for="cfg-catalog-subtitle">Subtítulo Descriptivo</label>
+                        <textarea id="cfg-catalog-subtitle" class="form-control" rows="2" placeholder="Ej: Cada plato, preparado con amor y sazón de verdad..."></textarea>
+                    </div>
+
+                    <div class="settings-grid-3">
+                        <div class="settings-form-group">
+                            <label for="cfg-catalog-search-placeholder">Placeholder del Buscador</label>
+                            <input type="text" id="cfg-catalog-search-placeholder" class="form-control" placeholder="Ej: Buscar platillos..." />
+                        </div>
+                        <div class="settings-form-group">
+                            <label for="cfg-catalog-add-cart-text">Texto Botón Agregar</label>
+                            <input type="text" id="cfg-catalog-add-cart-text" class="form-control" placeholder="Ej: Agregar al Pedido" />
+                        </div>
+                        <div class="settings-form-group">
+                            <label for="cfg-catalog-empty-msg">Mensaje si no hay resultados</label>
+                            <input type="text" id="cfg-catalog-empty-msg" class="form-control" placeholder="Ej: No encontramos resultados..." />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <div>
+                            <h3 class="settings-card-title">
+                                <i data-lucide="shopping-cart"></i> Terminología y Carrito
+                            </h3>
+                            <p class="settings-card-subtitle">Adapta el vocabulario a tu nicho (ej. Platillos para comida, Prendas para moda, etc.).</p>
+                        </div>
+                    </div>
+
+                    <div class="settings-grid-3">
+                        <div class="settings-form-group">
+                            <label for="cfg-item-noun-singular">Sustantivo Singular</label>
+                            <input type="text" id="cfg-item-noun-singular" class="form-control" placeholder="Ej: Platillo, Prenda, Artículo" />
+                        </div>
+                        <div class="settings-form-group">
+                            <label for="cfg-item-noun-plural">Sustantivo Plural</label>
+                            <input type="text" id="cfg-item-noun-plural" class="form-control" placeholder="Ej: Platillos, Prendas, Artículos" />
+                        </div>
+                        <div class="settings-form-group">
+                            <label for="cfg-empty-cart-emoji">Emoji del Carrito</label>
+                            <input type="text" id="cfg-empty-cart-emoji" class="form-control" maxlength="4" placeholder="Ej: 🍽️, 🛍️, ⚡, 🛒" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- TAB 4: BENEFICIOS ("¿POR QUÉ NOSOTROS?")   -->
+            <!-- ========================================== -->
+            <div id="tab-benefits" class="settings-tab-panel">
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <div>
+                            <h3 class="settings-card-title">
+                                <i data-lucide="award"></i> Encabezado de la Sección Beneficios
+                            </h3>
+                            <p class="settings-card-subtitle">Explica a tus visitantes por qué elegir tu propuesta frente a la competencia.</p>
+                        </div>
+                    </div>
+
+                    <div class="settings-grid-2">
+                        <div class="settings-form-group">
+                            <label for="cfg-benefits-title">Título de la Sección</label>
+                            <input type="text" id="cfg-benefits-title" class="form-control" placeholder="Ej: ¿Por qué pedir en" />
+                        </div>
+                        <div class="settings-form-group">
+                            <label for="cfg-benefits-title-highlight">Texto Destacado (Acento)</label>
+                            <input type="text" id="cfg-benefits-title-highlight" class="form-control" placeholder="Ej: FOGÓN" />
+                        </div>
+                    </div>
+
+                    <div class="settings-form-group">
+                        <label for="cfg-benefits-subtitle">Subtítulo Descriptivo</label>
+                        <textarea id="cfg-benefits-subtitle" class="form-control" rows="2" placeholder="Ej: Cocinamos con ingredientes frescos del día y sazón de verdad..."></textarea>
+                    </div>
+
+                    <div class="settings-card-header">
+                        <div>
+                            <h4 class="settings-card-title">
+                                <i data-lucide="check-circle-2"></i> Tarjetas de Beneficios
+                            </h4>
+                            <p class="settings-card-subtitle">Agrega, edita o elimina las ventajas competitivas de tu negocio.</p>
+                        </div>
+                    </div>
+
+                    <div id="benefits-items-list" class="dynamic-items-container">
+                        <!-- Elementos renderizados dinámicamente -->
+                    </div>
+
+                    <button type="button" class="btn-add-item" id="btn-add-benefit">
+                        <i data-lucide="plus-circle"></i> Agregar Nuevo Beneficio
+                    </button>
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- TAB 5: PROCESO ("¿CÓMO PEDIR?")            -->
+            <!-- ========================================== -->
+            <div id="tab-process" class="settings-tab-panel">
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <div>
+                            <h3 class="settings-card-title">
+                                <i data-lucide="list-ordered"></i> Encabezado de la Sección Paso a Paso
+                            </h3>
+                            <p class="settings-card-subtitle">Muestra a tus clientes el proceso intuitivo para realizar su compra.</p>
+                        </div>
+                    </div>
+
+                    <div class="settings-grid-2">
+                        <div class="settings-form-group">
+                            <label for="cfg-process-title">Título de la Sección</label>
+                            <input type="text" id="cfg-process-title" class="form-control" placeholder="Ej: ¿Cómo hacer tu" />
+                        </div>
+                        <div class="settings-form-group">
+                            <label for="cfg-process-title-highlight">Texto Destacado (Acento)</label>
+                            <input type="text" id="cfg-process-title-highlight" class="form-control" placeholder="Ej: pedido?" />
+                        </div>
+                    </div>
+
+                    <div class="settings-form-group">
+                        <label for="cfg-process-subtitle">Subtítulo Descriptivo</label>
+                        <textarea id="cfg-process-subtitle" class="form-control" rows="2" placeholder="Ej: Proceso sencillo en 4 pasos. Tu comida lista en minutos..."></textarea>
+                    </div>
+
+                    <div class="settings-card-header">
+                        <div>
+                            <h4 class="settings-card-title">
+                                <i data-lucide="arrow-right-circle"></i> Pasos del Proceso
+                            </h4>
+                            <p class="settings-card-subtitle">Define las etapas del proceso de compra.</p>
+                        </div>
+                    </div>
+
+                    <div id="process-steps-list" class="dynamic-items-container">
+                        <!-- Elementos renderizados dinámicamente -->
+                    </div>
+
+                    <button type="button" class="btn-add-item" id="btn-add-process-step">
+                        <i data-lucide="plus-circle"></i> Agregar Nuevo Paso
+                    </button>
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- TAB 6: TESTIMONIOS & RESEÑAS               -->
+            <!-- ========================================== -->
+            <div id="tab-testimonials" class="settings-tab-panel">
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <div>
+                            <h3 class="settings-card-title">
+                                <i data-lucide="message-square"></i> Encabezado de Testimonios
+                            </h3>
+                            <p class="settings-card-subtitle">Prueba social que genera confianza en nuevos compradores.</p>
+                        </div>
+                    </div>
+
+                    <div class="settings-grid-2">
+                        <div class="settings-form-group">
+                            <label for="cfg-testimonials-title">Título de la Sección</label>
+                            <input type="text" id="cfg-testimonials-title" class="form-control" placeholder="Ej: Lo que dicen" />
+                        </div>
+                        <div class="settings-form-group">
+                            <label for="cfg-testimonials-title-highlight">Texto Destacado (Acento)</label>
+                            <input type="text" id="cfg-testimonials-title-highlight" class="form-control" placeholder="Ej: nuestros clientes" />
+                        </div>
+                    </div>
+
+                    <div class="settings-form-group">
+                        <label for="cfg-testimonials-subtitle">Subtítulo Descriptivo</label>
+                        <textarea id="cfg-testimonials-subtitle" class="form-control" rows="2" placeholder="Ej: Cada plato cuenta una historia. Lee lo que dicen quienes ya nos probaron..."></textarea>
+                    </div>
+
+                    <div class="settings-card-header">
+                        <div>
+                            <h4 class="settings-card-title">
+                                <i data-lucide="star"></i> Reseñas de Clientes
+                            </h4>
+                            <p class="settings-card-subtitle">Agrega testimonios con fotos reales de avatar y valoración en estrellas.</p>
+                        </div>
+                    </div>
+
+                    <div id="testimonials-items-list" class="dynamic-items-container">
+                        <!-- Elementos renderizados dinámicamente -->
+                    </div>
+
+                    <button type="button" class="btn-add-item" id="btn-add-testimonial">
+                        <i data-lucide="plus-circle"></i> Agregar Nuevo Testimonio
+                    </button>
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- TAB 7: PREGUNTAS FRECUENTES (FAQ)          -->
+            <!-- ========================================== -->
+            <div id="tab-faq" class="settings-tab-panel">
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <div>
+                            <h3 class="settings-card-title">
+                                <i data-lucide="help-circle"></i> Encabezado de Preguntas Frecuentes
+                            </h3>
+                            <p class="settings-card-subtitle">Resuelve las dudas típicas de tus clientes para acelerar el cierre de pedidos.</p>
+                        </div>
+                    </div>
+
+                    <div class="settings-grid-2">
+                        <div class="settings-form-group">
+                            <label for="cfg-faq-title">Título de la Sección</label>
+                            <input type="text" id="cfg-faq-title" class="form-control" placeholder="Ej: Preguntas" />
+                        </div>
+                        <div class="settings-form-group">
+                            <label for="cfg-faq-title-highlight">Texto Destacado (Acento)</label>
+                            <input type="text" id="cfg-faq-title-highlight" class="form-control" placeholder="Ej: Frecuentes" />
+                        </div>
+                    </div>
+
+                    <div class="settings-form-group">
+                        <label for="cfg-faq-subtitle">Subtítulo Descriptivo</label>
+                        <textarea id="cfg-faq-subtitle" class="form-control" rows="2" placeholder="Ej: Todo lo que necesitas saber antes de hacer tu pedido..."></textarea>
+                    </div>
+
+                    <div class="settings-card-header">
+                        <div>
+                            <h4 class="settings-card-title">
+                                <i data-lucide="messages-square"></i> Lista de Preguntas y Respuestas
+                            </h4>
+                            <p class="settings-card-subtitle">Agrega preguntas y respuestas completas.</p>
+                        </div>
+                    </div>
+
+                    <div id="faq-items-list" class="dynamic-items-container">
+                        <!-- Elementos renderizados dinámicamente -->
+                    </div>
+
+                    <button type="button" class="btn-add-item" id="btn-add-faq">
+                        <i data-lucide="plus-circle"></i> Agregar Nueva Pregunta
+                    </button>
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- TAB 8: CONTACTO, REDES & MÉTODOS DE PAGO   -->
+            <!-- ========================================== -->
+            <div id="tab-contact-payment" class="settings-tab-panel">
+                <!-- Contacto -->
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <div>
+                            <h3 class="settings-card-title">
+                                <i data-lucide="phone"></i> Datos de Contacto y WhatsApp
+                            </h3>
+                            <p class="settings-card-subtitle">Canales por donde los clientes se comunican y realizan sus pedidos.</p>
+                        </div>
+                    </div>
+
+                    <div class="settings-grid-2">
+                        <div class="settings-form-group">
+                            <label for="cfg-whatsapp">Número de WhatsApp para Pedidos (con código de país sin +) *</label>
+                            <input type="text" id="cfg-whatsapp" class="form-control" placeholder="Ej: 584124756191" required />
+                            <span class="hint">Aquí llegarán directamente las órdenes de compra</span>
+                        </div>
+                        <div class="settings-form-group">
+                            <label for="cfg-whatsapp-display">WhatsApp Visible al Público</label>
+                            <input type="text" id="cfg-whatsapp-display" class="form-control" placeholder="Ej: +58 412-4756191" />
+                            <span class="hint">Formato estético mostrado en la web y pie de página</span>
+                        </div>
+                    </div>
+
+                    <div class="settings-grid-2">
+                        <div class="settings-form-group">
+                            <label for="cfg-email">Correo Electrónico de Contacto</label>
+                            <input type="email" id="cfg-email" class="form-control" placeholder="contacto@mitienda.com" />
+                        </div>
+                        <div class="settings-form-group">
+                            <label for="cfg-hours">Horarios de Atención</label>
+                            <input type="text" id="cfg-hours" class="form-control" placeholder="Ej: Lun – Dom: 11:00 AM – 10:00 PM" />
+                        </div>
+                    </div>
+
+                    <div class="settings-form-group">
                         <label for="cfg-address">Dirección Física del Local</label>
-                        <input type="text" id="cfg-address" class="form-control" placeholder="Ej: Av. Principal, C.C. Las Américas" />
+                        <input type="text" id="cfg-address" class="form-control" placeholder="Ej: Av. Principal, C.C. Las Américas, Local 12" />
                     </div>
 
-                    <div class="form-group">
-                        <label for="cfg-hours">Horarios de Atención</label>
-                        <input type="text" id="cfg-hours" class="form-control" placeholder="Ej: Lun – Dom: 11:00 AM – 10:00 PM" />
+                    <div class="settings-grid-2">
+                        <div class="settings-form-group">
+                            <label for="cfg-instagram">Enlace de Instagram</label>
+                            <input type="text" id="cfg-instagram" class="form-control" placeholder="Ej: https://instagram.com/mitienda" />
+                        </div>
+                        <div class="settings-form-group">
+                            <label for="cfg-instagram-handle">Usuario de Instagram (@handle)</label>
+                            <input type="text" id="cfg-instagram-handle" class="form-control" placeholder="Ej: @mitienda" />
+                        </div>
                     </div>
                 </div>
 
-                <!-- BLOQUE 3: Datos de Pago Móvil & Zelle -->
-                <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem;">
-                    <h3 style="font-size: 1.05rem; color: var(--accent); margin-bottom: 1.2rem; display: flex; align-items: center; gap: 0.5rem;">
-                        <i data-lucide="wallet" style="width: 18px; height: 18px;"></i> Métodos de Pago
-                    </h3>
-
-                    <h4 style="font-size: 0.85rem; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.8rem;">
-                        📱 Datos Pago Móvil
-                    </h4>
-
-                    <div class="form-group" style="margin-bottom: 0.8rem;">
-                        <label for="cfg-pm-banco">Banco y Código</label>
-                        <input type="text" id="cfg-pm-banco" class="form-control" placeholder="Ej: Banesco (0134)" />
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.2rem;">
-                        <div class="form-group">
-                            <label for="cfg-pm-telefono">Teléfono</label>
-                            <input type="text" id="cfg-pm-telefono" class="form-control" placeholder="Ej: 0412-4756191" />
-                        </div>
-                        <div class="form-group">
-                            <label for="cfg-pm-cedula">Cédula / RIF</label>
-                            <input type="text" id="cfg-pm-cedula" class="form-control" placeholder="Ej: V-12345678" />
+                <!-- Métodos de Pago -->
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <div>
+                            <h3 class="settings-card-title">
+                                <i data-lucide="wallet"></i> Métodos de Pago
+                            </h3>
+                            <p class="settings-card-subtitle">Datos bancarios que se muestran al cliente al momento del checkout.</p>
                         </div>
                     </div>
 
-                    <h4 style="font-size: 0.85rem; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.8rem;">
-                        🇺🇸 Datos Zelle
-                    </h4>
-
-                    <div class="form-group" style="margin-bottom: 0.8rem;">
-                        <label for="cfg-zelle-email">Correo Electrónico Zelle</label>
-                        <input type="text" id="cfg-zelle-email" class="form-control" placeholder="Ej: pagos@mitienda.com" />
+                    <div class="settings-card">
+                        <h4 class="dynamic-item-badge">📱 Datos para Pago Móvil (Venezuela)</h4>
+                        <div class="settings-form-group">
+                            <label for="cfg-pm-banco">Banco y Código</label>
+                            <input type="text" id="cfg-pm-banco" class="form-control" placeholder="Ej: Banesco (0134) o Banco de Venezuela (0102)" />
+                        </div>
+                        <div class="settings-grid-2">
+                            <div class="settings-form-group">
+                                <label for="cfg-pm-telefono">Teléfono Afiliado</label>
+                                <input type="text" id="cfg-pm-telefono" class="form-control" placeholder="Ej: 0412-4756191" />
+                            </div>
+                            <div class="settings-form-group">
+                                <label for="cfg-pm-cedula">Cédula / RIF</label>
+                                <input type="text" id="cfg-pm-cedula" class="form-control" placeholder="Ej: V-12345678 o J-12345678-0" />
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="cfg-zelle-titular">Nombre del Titular Zelle</label>
-                        <input type="text" id="cfg-zelle-titular" class="form-control" placeholder="Ej: Nombre Empresa C.A." />
+                    <div class="settings-card">
+                        <h4 class="dynamic-item-badge">🇺🇸 Datos para Zelle (USD)</h4>
+                        <div class="settings-grid-2">
+                            <div class="settings-form-group">
+                                <label for="cfg-zelle-email">Correo Electrónico Zelle</label>
+                                <input type="text" id="cfg-zelle-email" class="form-control" placeholder="Ej: pagos@mitienda.com" />
+                            </div>
+                            <div class="settings-form-group">
+                                <label for="cfg-zelle-titular">Nombre del Titular Zelle</label>
+                                <input type="text" id="cfg-zelle-titular" class="form-control" placeholder="Ej: Inversiones Mi Tienda LLC" />
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- BLOQUE 4: Costos de Entrega y Textos del Carrito -->
-                <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem;">
-                    <h3 style="font-size: 1.05rem; color: #38BDF8; margin-bottom: 1.2rem; display: flex; align-items: center; gap: 0.5rem;">
-                        <i data-lucide="truck" style="width: 18px; height: 18px;"></i> Delivery y Personalización
-                    </h3>
+                <!-- Opciones de Entrega -->
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <div>
+                            <h3 class="settings-card-title">
+                                <i data-lucide="truck"></i> Entrega y Despacho
+                            </h3>
+                            <p class="settings-card-subtitle">Configura los nombres de las opciones de entrega y el costo de delivery.</p>
+                        </div>
+                    </div>
 
-                    <div style="display: grid; grid-template-columns: 1.4fr 0.8fr; gap: 1rem; margin-bottom: 1rem;">
-                        <div class="form-group">
+                    <div class="settings-grid-3">
+                        <div class="settings-form-group">
                             <label for="cfg-delivery-name">Nombre Opción Delivery</label>
                             <input type="text" id="cfg-delivery-name" class="form-control" placeholder="Ej: Delivery Express" />
                         </div>
-                        <div class="form-group">
-                            <label for="cfg-delivery-price">Costo Delivery ($)</label>
+                        <div class="settings-form-group">
+                            <label for="cfg-delivery-price">Costo de Delivery en Dólares ($)</label>
                             <input type="number" id="cfg-delivery-price" class="form-control" step="0.5" min="0" placeholder="5.00" />
                         </div>
-                    </div>
-
-                    <div class="form-group" style="margin-bottom: 1rem;">
-                        <label for="cfg-pickup-name">Nombre Opción Retiro</label>
-                        <input type="text" id="cfg-pickup-name" class="form-control" placeholder="Ej: Retiro en Local / Pick-up" />
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                        <div class="form-group">
-                            <label for="cfg-item-noun-singular">Sustantivo Singular</label>
-                            <input type="text" id="cfg-item-noun-singular" class="form-control" placeholder="Ej: Platillo, Prenda, Equipo" />
+                        <div class="settings-form-group">
+                            <label for="cfg-pickup-name">Nombre Opción Retiro</label>
+                            <input type="text" id="cfg-pickup-name" class="form-control" placeholder="Ej: Retiro en Local / Pick-up" />
                         </div>
-                        <div class="form-group">
-                            <label for="cfg-item-noun-plural">Sustantivo Plural</label>
-                            <input type="text" id="cfg-item-noun-plural" class="form-control" placeholder="Ej: Platillos, Prendas, Equipos" />
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="cfg-empty-cart-emoji">Emoji del Carrito</label>
-                        <input type="text" id="cfg-empty-cart-emoji" class="form-control" placeholder="Ej: 🍽️ o 🛒 o 🛍️" maxlength="4" />
                     </div>
                 </div>
-
             </div>
 
-            <!-- Botón de Guardado Flotante o al Pie -->
-            <div style="margin-top: 2rem; display: flex; justify-content: flex-end; gap: 1rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
-                <button type="submit" class="btn-action" id="btn-save-settings" style="padding: 0.8rem 2.2rem; font-size: 1rem;">
-                    <i data-lucide="save"></i> Guardar Todos los Cambios
+            <!-- ========================================== -->
+            <!-- BOTÓN FLOTANTE / INFERIOR DE GUARDAR       -->
+            <!-- ========================================== -->
+            <div class="settings-sticky-footer">
+                <button type="submit" class="btn-save-all" id="btn-save-settings">
+                    <i data-lucide="save"></i>
+                    <span>Guardar Todos los Cambios</span>
                 </button>
             </div>
         </form>

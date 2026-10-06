@@ -26,12 +26,7 @@ export async function onRequestPost(context) {
         // pero por ahora limitaremos el tamaño del archivo a 5MB.
     }
 
-    if (!env.STORAGE) {
-        return new Response(JSON.stringify({ error: "El almacenamiento de archivos (R2) no está activo en esta versión demo. Usa la URL de la imagen directamente." }), {
-            status: 503,
-            headers: { "Content-Type": "application/json" }
-        });
-    }
+
 
     try {
         const formData = await request.formData();
@@ -78,16 +73,29 @@ export async function onRequestPost(context) {
         const randomString = Math.random().toString(36).substring(2, 10);
         const fileName = `${type || 'upload'}_${Date.now()}_${randomString}.${ext}`;
 
-        // Subir a R2 (usamos el buffer validado)
-        await env.STORAGE.put(fileName, buffer, {
-            httpMetadata: { contentType: file.type }
-        });
+        // Si R2 está activo, subir al bucket
+        if (env.STORAGE) {
+            await env.STORAGE.put(fileName, buffer, {
+                httpMetadata: { contentType: file.type }
+            });
+            const publicUrl = `/api/assets/${fileName}`;
+            return new Response(JSON.stringify({ success: true, url: publicUrl, fileName }), {
+                headers: { "Content-Type": "application/json" }
+            });
+        }
 
-        // La URL pública del bucket (si está configurada) o usar un worker de assets
-        // Asumiendo que configuraremos un custom domain en R2 o usaremos el worker para servirlo:
-        const publicUrl = `/api/assets/${fileName}`;
+        // Respaldo para entornos sin bucket R2 conectado (ej. desarrollo o D1 demo):
+        // Convertimos el buffer validado a Data URL segura
+        const uint8 = new Uint8Array(buffer);
+        let binary = "";
+        const chunkSize = 8192;
+        for (let i = 0; i < uint8.length; i += chunkSize) {
+            binary += String.fromCharCode.apply(null, uint8.subarray(i, i + chunkSize));
+        }
+        const base64 = btoa(binary);
+        const dataUrl = `data:${file.type || 'image/jpeg'};base64,${base64}`;
 
-        return new Response(JSON.stringify({ success: true, url: publicUrl, fileName }), {
+        return new Response(JSON.stringify({ success: true, url: dataUrl, fileName }), {
             headers: { "Content-Type": "application/json" }
         });
 

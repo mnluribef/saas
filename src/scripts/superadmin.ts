@@ -1,3 +1,5 @@
+export {};
+
 let masterToken = sessionStorage.getItem('sa_token') || '';
 
     const loginStep = document.getElementById('sa-login-step');
@@ -65,7 +67,7 @@ let masterToken = sessionStorage.getItem('sa_token') || '';
                 throw new Error();
             }
 
-            const tenants = await res.json();
+            const tenants = (await res.json()) as any[];
             renderTable(tenants);
             updateStats(tenants);
         } catch {
@@ -150,7 +152,7 @@ let masterToken = sessionStorage.getItem('sa_token') || '';
                 alert('Guardado exitosamente.');
                 loadTenants();
             } else {
-                const data = await res.json();
+                const data = (await res.json()) as any;
                 alert(data.error || 'Error al guardar.');
             }
         } catch {

@@ -39,6 +39,29 @@ export async function resolveTenant(request, db) {
         }
     }
 
+    // 0.3 Cookie de Sesión (si el usuario ya inició sesión en el panel admin)
+    const cookieHeader = request.headers.get('Cookie');
+    if (cookieHeader) {
+        const cookies = cookieHeader.split(';').reduce((acc, cookie) => {
+            const [key, value] = cookie.trim().split('=');
+            if (key) acc[key] = value;
+            return acc;
+        }, {});
+        const sessionToken = cookies['vendly_session'];
+        if (sessionToken && db) {
+            try {
+                const now = Math.floor(Date.now() / 1000);
+                const sessionRow = await db.prepare(
+                    'SELECT tenant_id FROM sessions WHERE token = ? AND expires_at > ?'
+                ).bind(sessionToken, now).first();
+                if (sessionRow && sessionRow.tenant_id) {
+                    const tenant = await getTenantById(db, sessionRow.tenant_id);
+                    if (tenant) return { id: sessionRow.tenant_id, tenant };
+                }
+            } catch (_) {}
+        }
+    }
+
     // 1. Header explícito (útil en desarrollo local y super-admin)
     const headerTenantId = request.headers.get('X-Tenant-Id');
     if (headerTenantId) {

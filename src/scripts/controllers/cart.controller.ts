@@ -1,4 +1,4 @@
-import type { CartItem, OrderSubmissionData, StoreMetaConfig } from '../types/catalog.types';
+import type { OrderSubmissionData, StoreMetaConfig } from '../types/catalog.types';
 import type { CartService } from '../services/cart.service';
 import type { ICurrencyService } from '../services/bcv.service';
 import type { IOrderService } from '../services/order.service';

@@ -2006,7 +2006,491 @@ function updateConnectionStatus() {
     }
 }
 
-// --- GESTIÓN DE CONFIGURACIÓN DE TIENDA (CRUD DE AJUSTES) ---
+// --- GESTIÓN DE CONFIGURACIÓN INTEGRAL DE TIENDA (CRUD DE AJUSTES) ---
+
+// Helper para subir archivos de imagen con respaldo local
+async function uploadImageFile(file) {
+    if (!file) return null;
+    if (file.size > 5 * 1024 * 1024) {
+        showToast('La imagen supera los 5MB permitidos.', 'error');
+        return null;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+        const res = await fetch('/api/upload?type=store', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await res.json();
+        if (res.ok && data.url) {
+            return data.url;
+        }
+    } catch (e) {
+        console.warn('Endpoint /api/upload no disponible, utilizando respaldo local:', e);
+    }
+
+    // Respaldo en cliente con FileReader
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = () => resolve(null);
+        reader.readAsDataURL(file);
+    });
+}
+
+function setPreviewImage(imgEl, placeholderEl, url) {
+    if (!imgEl) return;
+    if (url && url.trim()) {
+        imgEl.src = url;
+        imgEl.classList.remove('file-input-hidden');
+        if (placeholderEl) placeholderEl.classList.add('file-input-hidden');
+    } else {
+        imgEl.src = '';
+        imgEl.classList.add('file-input-hidden');
+        if (placeholderEl) placeholderEl.classList.remove('file-input-hidden');
+    }
+}
+
+// Inicialización de pestañas en configuración
+function initSettingsTabs() {
+    const tabButtons = document.querySelectorAll('.settings-tab-btn');
+    tabButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const targetTab = btn.dataset.tab;
+            if (!targetTab) return;
+
+            tabButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            const panels = document.querySelectorAll('.settings-tab-panel');
+            panels.forEach(p => {
+                if (p.id === targetTab) {
+                    p.classList.add('active');
+                } else {
+                    p.classList.remove('active');
+                }
+            });
+
+            if (window.lucide) lucide.createIcons();
+        });
+    });
+}
+
+// Configurar inputs de imagen simples (Logo y OG)
+function setupSingleImageUploader(btnId, fileInputId, textInputId, previewImgId, placeholderId) {
+    const btn = document.getElementById(btnId);
+    const fileInput = document.getElementById(fileInputId);
+    const textInput = document.getElementById(textInputId);
+    const previewImg = document.getElementById(previewImgId);
+    const placeholder = document.getElementById(placeholderId);
+
+    if (btn && fileInput) {
+        btn.addEventListener('click', () => fileInput.click());
+    }
+
+    if (fileInput && textInput) {
+        fileInput.addEventListener('change', async () => {
+            if (fileInput.files && fileInput.files[0]) {
+                btn.disabled = true;
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i data-lucide="loader" class="spin"></i> Subiendo...';
+                if (window.lucide) lucide.createIcons();
+
+                const url = await uploadImageFile(fileInput.files[0]);
+                if (url) {
+                    textInput.value = url;
+                    setPreviewImage(previewImg, placeholder, url);
+                    showToast('Imagen cargada con éxito.', 'success');
+                }
+
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                if (window.lucide) lucide.createIcons();
+            }
+        });
+    }
+
+    if (textInput && previewImg) {
+        textInput.addEventListener('input', () => {
+            setPreviewImage(previewImg, placeholder, textInput.value.trim());
+        });
+    }
+}
+
+// --- RENDERIZADORES DE ELEMENTOS REPETITIVOS ---
+
+// 1. Hero Slides
+function renderHeroSlides(slides = []) {
+    const container = document.getElementById('hero-slides-list');
+    if (!container) return;
+    container.innerHTML = '';
+
+    slides.forEach((slide, idx) => {
+        const row = document.createElement('div');
+        row.className = 'dynamic-item-card hero-slide-row';
+        row.innerHTML = `
+            <div class="dynamic-item-header">
+                <span class="dynamic-item-badge">
+                    <i data-lucide="image"></i> Diapositiva #${idx + 1}
+                </span>
+                <button type="button" class="btn-remove-item btn-del-slide" title="Eliminar diapositiva">
+                    <i data-lucide="trash-2"></i> Quitar
+                </button>
+            </div>
+            <div class="settings-grid-2">
+                <div class="settings-form-group">
+                    <label>Imagen de la Portada</label>
+                    <div class="image-upload-widget">
+                        <div class="image-upload-widget-preview-box">
+                            <img class="slide-preview-img ${slide.image ? '' : 'file-input-hidden'}" src="${slide.image || ''}" alt="Slide" />
+                            <div class="empty-placeholder slide-placeholder ${slide.image ? 'file-input-hidden' : ''}">
+                                <i data-lucide="image"></i>
+                                <span>Sin Imagen</span>
+                            </div>
+                        </div>
+                        <div class="image-upload-actions-row">
+                            <input type="text" class="form-control slide-img-input" placeholder="URL de la imagen..." value="${slide.image || ''}" />
+                            <button type="button" class="btn-upload-file btn-slide-upload">
+                                <i data-lucide="upload"></i> Subir
+                            </button>
+                            <input type="file" class="file-input-hidden slide-file-input" accept="image/*" />
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-form-group">
+                    <label>Texto Alternativo (Alt / Descripción SEO)</label>
+                    <input type="text" class="form-control slide-alt-input" placeholder="Ej: Plato tradicional FOGÓN" value="${slide.alt || ''}" />
+                    <span class="hint">Mejora el posicionamiento en Google y la accesibilidad.</span>
+                </div>
+            </div>
+        `;
+        container.appendChild(row);
+
+        // Eventos de la fila de slide
+        const fileIn = row.querySelector('.slide-file-input');
+        const uploadBtn = row.querySelector('.btn-slide-upload');
+        const textIn = row.querySelector('.slide-img-input');
+        const previewImg = row.querySelector('.slide-preview-img');
+        const placeholder = row.querySelector('.slide-placeholder');
+        const delBtn = row.querySelector('.btn-del-slide');
+
+        if (uploadBtn && fileIn) {
+            uploadBtn.addEventListener('click', () => fileIn.click());
+        }
+        if (fileIn && textIn) {
+            fileIn.addEventListener('change', async () => {
+                if (fileIn.files && fileIn.files[0]) {
+                    uploadBtn.disabled = true;
+                    uploadBtn.innerHTML = '<i data-lucide="loader" class="spin"></i>...';
+                    const url = await uploadImageFile(fileIn.files[0]);
+                    if (url) {
+                        textIn.value = url;
+                        setPreviewImage(previewImg, placeholder, url);
+                    }
+                    uploadBtn.disabled = false;
+                    uploadBtn.innerHTML = '<i data-lucide="upload"></i> Subir';
+                    if (window.lucide) lucide.createIcons();
+                }
+            });
+        }
+        if (textIn) {
+            textIn.addEventListener('input', () => {
+                setPreviewImage(previewImg, placeholder, textIn.value.trim());
+            });
+        }
+        if (delBtn) {
+            delBtn.addEventListener('click', () => {
+                row.remove();
+                renumberSlideBadges();
+            });
+        }
+    });
+
+    if (window.lucide) lucide.createIcons();
+}
+
+function renumberSlideBadges() {
+    const rows = document.querySelectorAll('.hero-slide-row');
+    rows.forEach((r, i) => {
+        const badge = r.querySelector('.dynamic-item-badge');
+        if (badge) badge.innerHTML = `<i data-lucide="image"></i> Diapositiva #${i + 1}`;
+    });
+    if (window.lucide) lucide.createIcons();
+}
+
+// 2. Hero Stats
+function renderHeroStats(stats = []) {
+    const container = document.getElementById('hero-stats-list');
+    if (!container) return;
+    container.innerHTML = '';
+
+    stats.forEach((st) => {
+        const row = document.createElement('div');
+        row.className = 'dynamic-item-card hero-stat-row';
+        row.innerHTML = `
+            <div class="dynamic-item-header">
+                <span class="dynamic-item-badge">
+                    <i data-lucide="award"></i> Métrica
+                </span>
+                <button type="button" class="btn-remove-item btn-del-stat" title="Eliminar estadística">
+                    <i data-lucide="trash-2"></i> Quitar
+                </button>
+            </div>
+            <div class="settings-grid-2">
+                <div class="settings-form-group">
+                    <label>Valor Destacado</label>
+                    <input type="text" class="form-control stat-value-input" placeholder="Ej: +800 o ⭐ 4.9" value="${st.value || ''}" />
+                </div>
+                <div class="settings-form-group">
+                    <label>Etiqueta / Descripción</label>
+                    <input type="text" class="form-control stat-label-input" placeholder="Ej: Pedidos Entregados" value="${st.label || ''}" />
+                </div>
+            </div>
+        `;
+        container.appendChild(row);
+
+        const delBtn = row.querySelector('.btn-del-stat');
+        if (delBtn) delBtn.addEventListener('click', () => row.remove());
+    });
+
+    if (window.lucide) lucide.createIcons();
+}
+
+// 3. Beneficios
+function renderBenefits(items = []) {
+    const container = document.getElementById('benefits-items-list');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const iconOptions = ['flame', 'zap', 'award', 'shield', 'truck', 'star', 'heart', 'clock', 'package', 'message-circle', 'sparkles', 'check'];
+
+    items.forEach((item, idx) => {
+        const row = document.createElement('div');
+        row.className = 'dynamic-item-card benefit-item-row';
+
+        let optionsHtml = '';
+        iconOptions.forEach(ico => {
+            const isSel = (item.icon === ico) ? 'selected' : '';
+            optionsHtml += `<option value="${ico}" ${isSel}>${ico}</option>`;
+        });
+
+        row.innerHTML = `
+            <div class="dynamic-item-header">
+                <span class="dynamic-item-badge">
+                    <i data-lucide="check-circle-2"></i> Beneficio #${idx + 1}
+                </span>
+                <button type="button" class="btn-remove-item btn-del-benefit">
+                    <i data-lucide="trash-2"></i> Quitar
+                </button>
+            </div>
+            <div class="settings-grid-2">
+                <div class="settings-form-group">
+                    <label>Icono</label>
+                    <select class="form-control benefit-icon-select">
+                        ${optionsHtml}
+                    </select>
+                </div>
+                <div class="settings-form-group">
+                    <label>Título del Beneficio</label>
+                    <input type="text" class="form-control benefit-title-input" placeholder="Ej: Cocina Artesanal" value="${item.title || ''}" />
+                </div>
+            </div>
+            <div class="settings-form-group">
+                <label>Descripción</label>
+                <textarea class="form-control benefit-desc-input" rows="2" placeholder="Explica las ventajas de este beneficio...">${item.description || ''}</textarea>
+            </div>
+        `;
+        container.appendChild(row);
+
+        const delBtn = row.querySelector('.btn-del-benefit');
+        if (delBtn) delBtn.addEventListener('click', () => row.remove());
+    });
+
+    if (window.lucide) lucide.createIcons();
+}
+
+// 4. Proceso (Pasos)
+function renderProcessSteps(steps = []) {
+    const container = document.getElementById('process-steps-list');
+    if (!container) return;
+    container.innerHTML = '';
+
+    steps.forEach((step, idx) => {
+        const row = document.createElement('div');
+        row.className = 'dynamic-item-card process-step-row';
+        row.innerHTML = `
+            <div class="dynamic-item-header">
+                <span class="dynamic-item-badge">
+                    <i data-lucide="list-ordered"></i> Paso #${idx + 1}
+                </span>
+                <button type="button" class="btn-remove-item btn-del-step">
+                    <i data-lucide="trash-2"></i> Quitar
+                </button>
+            </div>
+            <div class="settings-grid-2">
+                <div class="settings-form-group">
+                    <label>Número o Etiqueta</label>
+                    <input type="text" class="form-control step-number-input" placeholder="Ej: 1" value="${step.number ?? (idx + 1)}" />
+                </div>
+                <div class="settings-form-group">
+                    <label>Título del Paso</label>
+                    <input type="text" class="form-control step-title-input" placeholder="Ej: Elige tu Plato" value="${step.title || ''}" />
+                </div>
+            </div>
+            <div class="settings-form-group">
+                <label>Instrucciones / Descripción</label>
+                <textarea class="form-control step-desc-input" rows="2" placeholder="Describe lo que el cliente debe hacer...">${step.description || ''}</textarea>
+            </div>
+        `;
+        container.appendChild(row);
+
+        const delBtn = row.querySelector('.btn-del-step');
+        if (delBtn) delBtn.addEventListener('click', () => row.remove());
+    });
+
+    if (window.lucide) lucide.createIcons();
+}
+
+// 5. Testimonios
+function renderTestimonials(items = []) {
+    const container = document.getElementById('testimonials-items-list');
+    if (!container) return;
+    container.innerHTML = '';
+
+    items.forEach((item, idx) => {
+        const row = document.createElement('div');
+        row.className = 'dynamic-item-card testimonial-item-row';
+        row.innerHTML = `
+            <div class="dynamic-item-header">
+                <span class="dynamic-item-badge">
+                    <i data-lucide="star"></i> Reseña #${idx + 1}
+                </span>
+                <button type="button" class="btn-remove-item btn-del-testimonial">
+                    <i data-lucide="trash-2"></i> Quitar
+                </button>
+            </div>
+            <div class="settings-grid-3">
+                <div class="settings-form-group">
+                    <label>Nombre del Cliente</label>
+                    <input type="text" class="form-control test-name-input" placeholder="Ej: María González" value="${item.name || ''}" />
+                </div>
+                <div class="settings-form-group">
+                    <label>Rol o Ubicación</label>
+                    <input type="text" class="form-control test-role-input" placeholder="Ej: Cliente frecuente" value="${item.role || ''}" />
+                </div>
+                <div class="settings-form-group">
+                    <label>Calificación (Estrellas)</label>
+                    <select class="form-control test-rating-select">
+                        <option value="5" ${item.rating === 5 || !item.rating ? 'selected' : ''}>⭐⭐⭐⭐⭐ (5/5)</option>
+                        <option value="4" ${item.rating === 4 ? 'selected' : ''}>⭐⭐⭐⭐ (4/5)</option>
+                        <option value="3" ${item.rating === 3 ? 'selected' : ''}>⭐⭐⭐ (3/5)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="settings-grid-2">
+                <div class="settings-form-group">
+                    <label>Foto de Avatar</label>
+                    <div class="image-upload-widget">
+                        <div class="image-upload-widget-preview-box compact">
+                            <img class="test-preview-img ${item.avatar ? '' : 'file-input-hidden'}" src="${item.avatar || ''}" alt="Avatar" />
+                            <div class="empty-placeholder test-placeholder ${item.avatar ? 'file-input-hidden' : ''}">
+                                <i data-lucide="user"></i>
+                            </div>
+                        </div>
+                        <div class="image-upload-actions-row">
+                            <input type="text" class="form-control test-avatar-input" placeholder="URL foto..." value="${item.avatar || ''}" />
+                            <button type="button" class="btn-upload-file btn-test-upload">
+                                <i data-lucide="upload"></i> Subir
+                            </button>
+                            <input type="file" class="file-input-hidden test-file-input" accept="image/*" />
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-form-group">
+                    <label>Comentario / Reseña</label>
+                    <textarea class="form-control test-review-input" rows="4" placeholder="Lo que dijo el cliente sobre tu servicio...">${item.review || ''}</textarea>
+                </div>
+            </div>
+        `;
+        container.appendChild(row);
+
+        const fileIn = row.querySelector('.test-file-input');
+        const uploadBtn = row.querySelector('.btn-test-upload');
+        const textIn = row.querySelector('.test-avatar-input');
+        const previewImg = row.querySelector('.test-preview-img');
+        const placeholder = row.querySelector('.test-placeholder');
+        const delBtn = row.querySelector('.btn-del-testimonial');
+
+        if (uploadBtn && fileIn) {
+            uploadBtn.addEventListener('click', () => fileIn.click());
+        }
+        if (fileIn && textIn) {
+            fileIn.addEventListener('change', async () => {
+                if (fileIn.files && fileIn.files[0]) {
+                    uploadBtn.disabled = true;
+                    uploadBtn.innerHTML = '<i data-lucide="loader" class="spin"></i>...';
+                    const url = await uploadImageFile(fileIn.files[0]);
+                    if (url) {
+                        textIn.value = url;
+                        setPreviewImage(previewImg, placeholder, url);
+                    }
+                    uploadBtn.disabled = false;
+                    uploadBtn.innerHTML = '<i data-lucide="upload"></i> Subir';
+                    if (window.lucide) lucide.createIcons();
+                }
+            });
+        }
+        if (textIn) {
+            textIn.addEventListener('input', () => {
+                setPreviewImage(previewImg, placeholder, textIn.value.trim());
+            });
+        }
+        if (delBtn) delBtn.addEventListener('click', () => row.remove());
+    });
+
+    if (window.lucide) lucide.createIcons();
+}
+
+// 6. Preguntas Frecuentes (FAQ)
+function renderFaq(items = []) {
+    const container = document.getElementById('faq-items-list');
+    if (!container) return;
+    container.innerHTML = '';
+
+    items.forEach((item, idx) => {
+        const row = document.createElement('div');
+        row.className = 'dynamic-item-card faq-item-row';
+        row.innerHTML = `
+            <div class="dynamic-item-header">
+                <span class="dynamic-item-badge">
+                    <i data-lucide="help-circle"></i> Pregunta #${idx + 1}
+                </span>
+                <button type="button" class="btn-remove-item btn-del-faq">
+                    <i data-lucide="trash-2"></i> Quitar
+                </button>
+            </div>
+            <div class="settings-form-group">
+                <label>Pregunta</label>
+                <input type="text" class="form-control faq-q-input" placeholder="Ej: ¿Cuáles son las zonas de cobertura del delivery?" value="${item.q || ''}" />
+            </div>
+            <div class="settings-form-group">
+                <label>Respuesta</label>
+                <textarea class="form-control faq-a-input" rows="3" placeholder="Redacta la respuesta completa...">${item.a || ''}</textarea>
+            </div>
+        `;
+        container.appendChild(row);
+
+        const delBtn = row.querySelector('.btn-del-faq');
+        if (delBtn) delBtn.addEventListener('click', () => row.remove());
+    });
+
+    if (window.lucide) lucide.createIcons();
+}
+
+// --- CARGA DE TODAS LAS CONFIGURACIONES DESDE LA API ---
 async function loadStoreSettings() {
     try {
         const res = await fetch('/api/settings');
@@ -2015,12 +2499,33 @@ async function loadStoreSettings() {
         const cfg = data.tenant?.config || {};
         const b = cfg.business || {};
         const c = cfg.contact || {};
+        const lnd = cfg.landing || {};
+        const h = lnd.hero || {};
+        const cat = lnd.catalog || {};
+        const ben = lnd.benefits || {};
+        const prc = lnd.process || {};
+        const tst = lnd.testimonials || {};
+        const fq = lnd.faq || {};
         const p = cfg.payment || {};
         const pm = p.pagoMovil || {};
         const z = p.zelle || {};
         const l = cfg.labels || {};
 
-        // Identidad
+        // Actualizar botón de vista previa "Ver Mi Tienda"
+        const previewBtn = document.getElementById('btn-preview-store');
+        if (previewBtn) {
+            const template = data.tenant?.template || 'restaurant';
+            const tenantId = data.tenant?.id;
+            if (data.tenant?.domain) {
+                previewBtn.href = `https://${data.tenant.domain}`;
+            } else if (tenantId && tenantId !== 'demo') {
+                previewBtn.href = `/demo/${template}?tenant=${tenantId}`;
+            } else {
+                previewBtn.href = `/demo/${template}`;
+            }
+        }
+
+        // TAB 1: IDENTIDAD
         const nameEl = document.getElementById('cfg-business-name');
         if (nameEl) nameEl.value = b.name || data.tenant?.name || '';
         const tagEl = document.getElementById('cfg-tagline');
@@ -2034,7 +2539,123 @@ async function loadStoreSettings() {
         const prefEl = document.getElementById('cfg-store-prefix');
         if (prefEl) prefEl.value = cfg.storePrefix || '';
 
-        // Contacto
+        const logoImgEl = document.getElementById('cfg-logo-image');
+        if (logoImgEl) {
+            logoImgEl.value = b.logoImage || '';
+            setPreviewImage(document.getElementById('preview-logo-img'), document.getElementById('placeholder-logo'), b.logoImage);
+        }
+        const ogImgEl = document.getElementById('cfg-og-image');
+        if (ogImgEl) {
+            ogImgEl.value = b.ogImage || '';
+            setPreviewImage(document.getElementById('preview-og-img'), document.getElementById('placeholder-og'), b.ogImage);
+        }
+
+        // TAB 2: HERO
+        const heroBadgeEl = document.getElementById('cfg-hero-badge');
+        if (heroBadgeEl) heroBadgeEl.value = h.badgeText || '';
+        const heroHeadEl = document.getElementById('cfg-hero-headline');
+        if (heroHeadEl) heroHeadEl.value = h.headline || '';
+        const heroHeadHighEl = document.getElementById('cfg-hero-headline-highlight');
+        if (heroHeadHighEl) heroHeadHighEl.value = h.headlineHighlight || '';
+        const heroSubEl = document.getElementById('cfg-hero-subheadline');
+        if (heroSubEl) heroSubEl.value = h.subheadline || '';
+        const cta1TextEl = document.getElementById('cfg-hero-cta1-text');
+        if (cta1TextEl) cta1TextEl.value = h.ctaPrimaryText || '';
+        const cta1LinkEl = document.getElementById('cfg-hero-cta1-link');
+        if (cta1LinkEl) cta1LinkEl.value = h.ctaPrimaryLink || '';
+        const cta2TextEl = document.getElementById('cfg-hero-cta2-text');
+        if (cta2TextEl) cta2TextEl.value = h.ctaSecondaryText || '';
+        const cta2LinkEl = document.getElementById('cfg-hero-cta2-link');
+        if (cta2LinkEl) cta2LinkEl.value = h.ctaSecondaryLink || '';
+
+        renderHeroSlides(h.slides || [
+            { image: '/assets/hero_main.webp', alt: 'Portada 1' },
+            { image: '/assets/hero_grill.webp', alt: 'Portada 2' }
+        ]);
+
+        renderHeroStats(h.stats || [
+            { value: '+800', label: 'Pedidos Entregados' },
+            { value: '⭐ 4.9', label: 'Calificación Promedio' },
+            { value: '🚀 Rápido', label: 'Delivery Express' }
+        ]);
+
+        // TAB 3: CATÁLOGO
+        const catTitleEl = document.getElementById('cfg-catalog-title');
+        if (catTitleEl) catTitleEl.value = cat.title || '';
+        const catTitleHighEl = document.getElementById('cfg-catalog-title-highlight');
+        if (catTitleHighEl) catTitleHighEl.value = cat.titleHighlight || '';
+        const catSubEl = document.getElementById('cfg-catalog-subtitle');
+        if (catSubEl) catSubEl.value = cat.subtitle || '';
+        const catSearchEl = document.getElementById('cfg-catalog-search-placeholder');
+        if (catSearchEl) catSearchEl.value = cat.searchPlaceholder || '';
+        const catAddEl = document.getElementById('cfg-catalog-add-cart-text');
+        if (catAddEl) catAddEl.value = cat.addToCartText || '';
+        const catEmptyEl = document.getElementById('cfg-catalog-empty-msg');
+        if (catEmptyEl) catEmptyEl.value = cat.emptyMessage || '';
+
+        const nounSinEl = document.getElementById('cfg-item-noun-singular');
+        if (nounSinEl) nounSinEl.value = l.itemNounSingular || '';
+        const nounPluEl = document.getElementById('cfg-item-noun-plural');
+        if (nounPluEl) nounPluEl.value = l.itemNounPlural || '';
+        const emojiEl = document.getElementById('cfg-empty-cart-emoji');
+        if (emojiEl) emojiEl.value = l.emptyCartEmoji || '';
+
+        // TAB 4: BENEFICIOS
+        const benTitleEl = document.getElementById('cfg-benefits-title');
+        if (benTitleEl) benTitleEl.value = ben.title || '';
+        const benTitleHighEl = document.getElementById('cfg-benefits-title-highlight');
+        if (benTitleHighEl) benTitleHighEl.value = ben.titleHighlight || '';
+        const benSubEl = document.getElementById('cfg-benefits-subtitle');
+        if (benSubEl) benSubEl.value = ben.subtitle || '';
+
+        renderBenefits(ben.items || [
+            { icon: 'flame', title: 'Cocina Artesanal', description: 'Recetas tradicionales preparadas al momento con ingredientes frescos del día.' },
+            { icon: 'zap', title: 'Delivery Express', description: 'Tu pedido llega caliente y empacado con cuidado a tiempo.' },
+            { icon: 'message-circle', title: 'Pedido por WhatsApp', description: 'Sin apps complicadas. Elige en la web y envía tu orden en un clic.' }
+        ]);
+
+        // TAB 5: PROCESO
+        const prcTitleEl = document.getElementById('cfg-process-title');
+        if (prcTitleEl) prcTitleEl.value = prc.title || '';
+        const prcTitleHighEl = document.getElementById('cfg-process-title-highlight');
+        if (prcTitleHighEl) prcTitleHighEl.value = prc.titleHighlight || '';
+        const prcSubEl = document.getElementById('cfg-process-subtitle');
+        if (prcSubEl) prcSubEl.value = prc.subtitle || '';
+
+        renderProcessSteps(prc.steps || [
+            { number: 1, title: 'Elige tu Plato', description: 'Explora nuestro menú y selecciona tus opciones favoritas.' },
+            { number: 2, title: 'Arma tu Pedido', description: 'Añade tus artículos al carrito y selecciona delivery o retiro.' },
+            { number: 3, title: 'Envía por WhatsApp', description: 'Te confirmamos en minutos y preparamos tu orden.' },
+            { number: 4, title: '¡Disfruta!', description: 'Recibe en tu puerta o retira en nuestro local.' }
+        ]);
+
+        // TAB 6: TESTIMONIOS
+        const tstTitleEl = document.getElementById('cfg-testimonials-title');
+        if (tstTitleEl) tstTitleEl.value = tst.title || '';
+        const tstTitleHighEl = document.getElementById('cfg-testimonials-title-highlight');
+        if (tstTitleHighEl) tstTitleHighEl.value = tst.titleHighlight || '';
+        const tstSubEl = document.getElementById('cfg-testimonials-subtitle');
+        if (tstSubEl) tstSubEl.value = tst.subtitle || '';
+
+        renderTestimonials(tst.items || [
+            { name: 'María González', role: 'Cliente frecuente', rating: 5, review: 'La comida llegó caliente y deliciosa. El pedido por WhatsApp fue súper rápido.', avatar: '/assets/client_maria.webp' },
+            { name: 'Carlos Rodríguez', role: 'Cliente verificado', rating: 5, review: 'Excelente atención y calidad insuperable. 100% recomendado.', avatar: '/assets/client_jose.webp' }
+        ]);
+
+        // TAB 7: FAQ
+        const fqTitleEl = document.getElementById('cfg-faq-title');
+        if (fqTitleEl) fqTitleEl.value = fq.title || '';
+        const fqTitleHighEl = document.getElementById('cfg-faq-title-highlight');
+        if (fqTitleHighEl) fqTitleHighEl.value = fq.titleHighlight || '';
+        const fqSubEl = document.getElementById('cfg-faq-subtitle');
+        if (fqSubEl) fqSubEl.value = fq.subtitle || '';
+
+        renderFaq(fq.items || [
+            { q: '¿Cómo pago mi pedido?', a: 'Aceptamos Pago Móvil, Zelle y Efectivo. Puedes adjuntar tu comprobante de pago al ordenar.' },
+            { q: '¿Cuánto tarda el delivery?', a: 'Normalmente entre 25 a 45 minutos dependiendo de la zona de entrega.' }
+        ]);
+
+        // TAB 8: CONTACTO & PAGOS
         const waEl = document.getElementById('cfg-whatsapp');
         if (waEl) waEl.value = c.whatsapp || data.tenant?.whatsapp || '';
         const waDispEl = document.getElementById('cfg-whatsapp-display');
@@ -2045,8 +2666,11 @@ async function loadStoreSettings() {
         if (addrEl) addrEl.value = c.address || '';
         const hoursEl = document.getElementById('cfg-hours');
         if (hoursEl) hoursEl.value = c.hours || '';
+        const igEl = document.getElementById('cfg-instagram');
+        if (igEl) igEl.value = c.instagram || '';
+        const igHl = document.getElementById('cfg-instagram-handle');
+        if (igHl) igHl.value = c.instagramHandle || '';
 
-        // Pago Móvil
         const pmBancoEl = document.getElementById('cfg-pm-banco');
         if (pmBancoEl) pmBancoEl.value = pm.banco || '';
         const pmTelEl = document.getElementById('cfg-pm-telefono');
@@ -2054,39 +2678,172 @@ async function loadStoreSettings() {
         const pmCedEl = document.getElementById('cfg-pm-cedula');
         if (pmCedEl) pmCedEl.value = pm.cedula || '';
 
-        // Zelle
         const zEmailEl = document.getElementById('cfg-zelle-email');
         if (zEmailEl) zEmailEl.value = z.email || '';
         const zTitEl = document.getElementById('cfg-zelle-titular');
         if (zTitEl) zTitEl.value = z.titular || '';
 
-        // Delivery & Carrito
         const delNameEl = document.getElementById('cfg-delivery-name');
         if (delNameEl) delNameEl.value = l.deliveryOptionName || '';
         const delPriceEl = document.getElementById('cfg-delivery-price');
         if (delPriceEl) delPriceEl.value = l.deliveryOptionPrice !== undefined ? l.deliveryOptionPrice : '';
         const pickNameEl = document.getElementById('cfg-pickup-name');
         if (pickNameEl) pickNameEl.value = l.pickupOptionName || '';
-        const nounSinEl = document.getElementById('cfg-item-noun-singular');
-        if (nounSinEl) nounSinEl.value = l.itemNounSingular || '';
-        const nounPluEl = document.getElementById('cfg-item-noun-plural');
-        if (nounPluEl) nounPluEl.value = l.itemNounPlural || '';
-        const emojiEl = document.getElementById('cfg-empty-cart-emoji');
-        if (emojiEl) emojiEl.value = l.emptyCartEmoji || '';
+
+        if (window.lucide) lucide.createIcons();
     } catch (err) {
         console.error('Error al cargar configuración:', err);
         showToast('No se pudo cargar la configuración de la tienda.', 'error');
     }
 }
 
+// Inicialización de escuchadores de eventos
+initSettingsTabs();
+setupSingleImageUploader('btn-upload-logo', 'file-logo-image', 'cfg-logo-image', 'preview-logo-img', 'placeholder-logo');
+setupSingleImageUploader('btn-upload-og', 'file-og-image', 'cfg-og-image', 'preview-og-img', 'placeholder-og');
+
+// Botones de agregar elementos dinámicos
+const btnAddSlide = document.getElementById('btn-add-hero-slide');
+if (btnAddSlide) {
+    btnAddSlide.addEventListener('click', () => {
+        const container = document.getElementById('hero-slides-list');
+        const count = container ? container.querySelectorAll('.hero-slide-row').length : 0;
+        const currentSlides = collectHeroSlides();
+        currentSlides.push({ image: '', alt: `Diapositiva ${count + 1}` });
+        renderHeroSlides(currentSlides);
+    });
+}
+
+const btnAddStat = document.getElementById('btn-add-hero-stat');
+if (btnAddStat) {
+    btnAddStat.addEventListener('click', () => {
+        const currentStats = collectHeroStats();
+        currentStats.push({ value: '+100', label: 'Nueva Métrica' });
+        renderHeroStats(currentStats);
+    });
+}
+
+const btnAddBenefit = document.getElementById('btn-add-benefit');
+if (btnAddBenefit) {
+    btnAddBenefit.addEventListener('click', () => {
+        const currentBenefits = collectBenefits();
+        currentBenefits.push({ icon: 'star', title: 'Nuevo Beneficio', description: 'Describe esta ventaja competitiva...' });
+        renderBenefits(currentBenefits);
+    });
+}
+
+const btnAddStep = document.getElementById('btn-add-process-step');
+if (btnAddStep) {
+    btnAddStep.addEventListener('click', () => {
+        const currentSteps = collectProcessSteps();
+        const nextNum = currentSteps.length + 1;
+        currentSteps.push({ number: nextNum, title: `Paso ${nextNum}`, description: 'Descripción de este paso...' });
+        renderProcessSteps(currentSteps);
+    });
+}
+
+const btnAddTestimonial = document.getElementById('btn-add-testimonial');
+if (btnAddTestimonial) {
+    btnAddTestimonial.addEventListener('click', () => {
+        const currentTests = collectTestimonials();
+        currentTests.push({ name: 'Nuevo Cliente', role: 'Cliente', rating: 5, review: 'Excelente producto y atención.', avatar: '' });
+        renderTestimonials(currentTests);
+    });
+}
+
+const btnAddFaq = document.getElementById('btn-add-faq');
+if (btnAddFaq) {
+    btnAddFaq.addEventListener('click', () => {
+        const currentFaqs = collectFaqs();
+        currentFaqs.push({ q: '¿Pregunta frecuente?', a: 'Respuesta correspondiente...' });
+        renderFaq(currentFaqs);
+    });
+}
+
+// Funciones recolectoras de los formularios dinámicos
+function collectHeroSlides() {
+    const rows = document.querySelectorAll('.hero-slide-row');
+    const slides = [];
+    rows.forEach(r => {
+        const img = r.querySelector('.slide-img-input')?.value.trim();
+        const alt = r.querySelector('.slide-alt-input')?.value.trim();
+        if (img) slides.push({ image: img, alt: alt || '' });
+    });
+    return slides;
+}
+
+function collectHeroStats() {
+    const rows = document.querySelectorAll('.hero-stat-row');
+    const stats = [];
+    rows.forEach(r => {
+        const val = r.querySelector('.stat-value-input')?.value.trim();
+        const lbl = r.querySelector('.stat-label-input')?.value.trim();
+        if (val && lbl) stats.push({ value: val, label: lbl });
+    });
+    return stats;
+}
+
+function collectBenefits() {
+    const rows = document.querySelectorAll('.benefit-item-row');
+    const items = [];
+    rows.forEach(r => {
+        const icon = r.querySelector('.benefit-icon-select')?.value.trim();
+        const title = r.querySelector('.benefit-title-input')?.value.trim();
+        const desc = r.querySelector('.benefit-desc-input')?.value.trim();
+        if (title) items.push({ icon: icon || 'star', title, description: desc || '' });
+    });
+    return items;
+}
+
+function collectProcessSteps() {
+    const rows = document.querySelectorAll('.process-step-row');
+    const steps = [];
+    rows.forEach(r => {
+        const num = r.querySelector('.step-number-input')?.value.trim();
+        const title = r.querySelector('.step-title-input')?.value.trim();
+        const desc = r.querySelector('.step-desc-input')?.value.trim();
+        if (title) steps.push({ number: num || '1', title, description: desc || '' });
+    });
+    return steps;
+}
+
+function collectTestimonials() {
+    const rows = document.querySelectorAll('.testimonial-item-row');
+    const items = [];
+    rows.forEach(r => {
+        const name = r.querySelector('.test-name-input')?.value.trim();
+        const role = r.querySelector('.test-role-input')?.value.trim();
+        const rating = parseInt(r.querySelector('.test-rating-select')?.value || '5', 10);
+        const avatar = r.querySelector('.test-avatar-input')?.value.trim();
+        const review = r.querySelector('.test-review-input')?.value.trim();
+        if (name && review) {
+            items.push({ name, role: role || 'Cliente', rating, review, avatar: avatar || '' });
+        }
+    });
+    return items;
+}
+
+function collectFaqs() {
+    const rows = document.querySelectorAll('.faq-item-row');
+    const items = [];
+    rows.forEach(r => {
+        const q = r.querySelector('.faq-q-input')?.value.trim();
+        const a = r.querySelector('.faq-a-input')?.value.trim();
+        if (q && a) items.push({ q, a });
+    });
+    return items;
+}
+
+// Botón de Recargar
 const btnReloadSettings = document.getElementById('btn-reload-settings');
 if (btnReloadSettings) {
     btnReloadSettings.addEventListener('click', () => {
         loadStoreSettings();
-        showToast('Configuración recargada.', 'info');
+        showToast('Configuración recargada con éxito.', 'info');
     });
 }
 
+// Envío del Formulario Completo de Configuración
 const storeSettingsForm = document.getElementById('store-settings-form');
 if (storeSettingsForm) {
     storeSettingsForm.addEventListener('submit', async (e) => {
@@ -2106,6 +2863,54 @@ if (storeSettingsForm) {
                 description: document.getElementById('cfg-description')?.value.trim() || undefined,
                 logoTextPrimary: document.getElementById('cfg-logo-primary')?.value.trim() || undefined,
                 logoTextSecondary: document.getElementById('cfg-logo-secondary')?.value.trim() || undefined,
+                logoImage: document.getElementById('cfg-logo-image')?.value.trim() || undefined,
+                ogImage: document.getElementById('cfg-og-image')?.value.trim() || undefined,
+            },
+            landing: {
+                hero: {
+                    badgeText: document.getElementById('cfg-hero-badge')?.value.trim() || undefined,
+                    headline: document.getElementById('cfg-hero-headline')?.value.trim() || undefined,
+                    headlineHighlight: document.getElementById('cfg-hero-headline-highlight')?.value.trim() || undefined,
+                    subheadline: document.getElementById('cfg-hero-subheadline')?.value.trim() || undefined,
+                    ctaPrimaryText: document.getElementById('cfg-hero-cta1-text')?.value.trim() || undefined,
+                    ctaPrimaryLink: document.getElementById('cfg-hero-cta1-link')?.value.trim() || undefined,
+                    ctaSecondaryText: document.getElementById('cfg-hero-cta2-text')?.value.trim() || undefined,
+                    ctaSecondaryLink: document.getElementById('cfg-hero-cta2-link')?.value.trim() || undefined,
+                    slides: collectHeroSlides(),
+                    stats: collectHeroStats(),
+                },
+                catalog: {
+                    title: document.getElementById('cfg-catalog-title')?.value.trim() || undefined,
+                    titleHighlight: document.getElementById('cfg-catalog-title-highlight')?.value.trim() || undefined,
+                    subtitle: document.getElementById('cfg-catalog-subtitle')?.value.trim() || undefined,
+                    searchPlaceholder: document.getElementById('cfg-catalog-search-placeholder')?.value.trim() || undefined,
+                    addToCartText: document.getElementById('cfg-catalog-add-cart-text')?.value.trim() || undefined,
+                    emptyMessage: document.getElementById('cfg-catalog-empty-msg')?.value.trim() || undefined,
+                },
+                benefits: {
+                    title: document.getElementById('cfg-benefits-title')?.value.trim() || undefined,
+                    titleHighlight: document.getElementById('cfg-benefits-title-highlight')?.value.trim() || undefined,
+                    subtitle: document.getElementById('cfg-benefits-subtitle')?.value.trim() || undefined,
+                    items: collectBenefits(),
+                },
+                process: {
+                    title: document.getElementById('cfg-process-title')?.value.trim() || undefined,
+                    titleHighlight: document.getElementById('cfg-process-title-highlight')?.value.trim() || undefined,
+                    subtitle: document.getElementById('cfg-process-subtitle')?.value.trim() || undefined,
+                    steps: collectProcessSteps(),
+                },
+                testimonials: {
+                    title: document.getElementById('cfg-testimonials-title')?.value.trim() || undefined,
+                    titleHighlight: document.getElementById('cfg-testimonials-title-highlight')?.value.trim() || undefined,
+                    subtitle: document.getElementById('cfg-testimonials-subtitle')?.value.trim() || undefined,
+                    items: collectTestimonials(),
+                },
+                faq: {
+                    title: document.getElementById('cfg-faq-title')?.value.trim() || undefined,
+                    titleHighlight: document.getElementById('cfg-faq-title-highlight')?.value.trim() || undefined,
+                    subtitle: document.getElementById('cfg-faq-subtitle')?.value.trim() || undefined,
+                    items: collectFaqs(),
+                },
             },
             contact: {
                 whatsapp: document.getElementById('cfg-whatsapp')?.value.trim() || undefined,
@@ -2113,6 +2918,8 @@ if (storeSettingsForm) {
                 email: document.getElementById('cfg-email')?.value.trim() || undefined,
                 address: document.getElementById('cfg-address')?.value.trim() || undefined,
                 hours: document.getElementById('cfg-hours')?.value.trim() || undefined,
+                instagram: document.getElementById('cfg-instagram')?.value.trim() || undefined,
+                instagramHandle: document.getElementById('cfg-instagram-handle')?.value.trim() || undefined,
             },
             payment: {
                 pagoMovil: {
@@ -2147,7 +2954,7 @@ if (storeSettingsForm) {
 
             const data = await res.json();
             if (res.ok && data.success) {
-                showToast('✅ ¡Configuración guardada exitosamente!', 'success');
+                showToast('✅ ¡Toda la tienda ha sido actualizada exitosamente!', 'success');
                 if (payload.business.name) {
                     const subTitle = document.getElementById('dashboard-subtitle');
                     if (subTitle && subTitle.textContent.includes('FOGÓN')) {
@@ -2169,5 +2976,6 @@ if (storeSettingsForm) {
         }
     });
 }
+
 
 

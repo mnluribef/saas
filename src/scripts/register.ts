@@ -112,7 +112,7 @@
                     body: JSON.stringify(payload)
                 });
 
-                const data = await response.json();
+                const data = (await response.json()) as any;
 
                 if (response.ok) {
                     form.classList.add('hidden');

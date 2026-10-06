@@ -57,6 +57,7 @@ export interface StoreBusinessConfig {
   logoTextPrimary: string;
   logoTextSecondary?: string;
   logoIcon?: string; // SVG path or SVG string
+  logoImage?: string; // URL o DataURL del logo
   siteUrl: string;
   ogImage: string;
 }

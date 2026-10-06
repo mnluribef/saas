@@ -39,6 +39,8 @@ export interface CatalogProduct {
     type_id?: string;
     category?: string;
     icon?: string;
+    brand?: string;
+    model?: string;
     attributes?: CatalogProductAttribute[];
     sizes?: string;
 }

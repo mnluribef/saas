@@ -8,6 +8,7 @@ import { OrderService } from './services/order.service';
 import { CartUIController } from './controllers/cart.controller';
 import { CatalogController } from './controllers/catalog.controller';
 import { initScrollReveal } from './utils/reveal.util';
+import { syncStoreWithSettings } from './services/store-sync.service';
 
 export function createStoreConfig(): StoreMetaConfig {
     const storeMetaEl = document.getElementById('catalog-store-meta');
@@ -63,13 +64,15 @@ export function initCatalogApp(): void {
     cartController.render();
 
     // Sincronizar en vivo configuraciones personalizadas del tenant si existen
-    fetch('/api/settings').then(res => res.json()).then(data => {
+    fetch('/api/settings').then(res => res.json() as Promise<any>).then((data: any) => {
         if (data.success && data.tenant?.config) {
             const cfg = data.tenant.config;
             const pm = cfg.payment?.pagoMovil;
             const z = cfg.payment?.zelle;
             const c = cfg.contact;
-            const b = cfg.business;
+
+            // Actualizar todos los textos, imágenes de portada, catálogo, beneficios, testimonios y FAQs
+            syncStoreWithSettings(cfg);
 
             // Actualizar datos de pago móvil en el DOM si fueron configurados
             if (pm?.banco) {

@@ -2,21 +2,20 @@
 // src/pages/register.astro
 import Layout from '../layouts/BaseLayout.astro';
 import { createStoreConfig } from '../config/store.config';
+import { techTemplate } from '../config/templates/tech';
 
 // Tema premium claro para el onboarding SaaS
 const config = createStoreConfig('tech', {
     business: {
+        ...techTemplate.business,
         name: 'Vendly SaaS',
         description: 'Crea tu tienda online en minutos.'
     },
     theme: {
-        colors: {
-            primary: '#6366f1',
-            secondary: '#10b981',
-            background: '#f8fafc',
-            text: '#0f172a',
-            surface: '#ffffff'
-        }
+        ...techTemplate.theme,
+        primaryColor: '#6366f1',
+        accentColor: '#10b981',
+        bgPage: '#f8fafc',
     }
 });
 import '../styles/register.css';
