@@ -16,9 +16,17 @@ export class OrderService implements IOrderService {
     }
 
     async submitOrder(data: OrderSubmissionData, items: CartItem[]): Promise<{ orderId: string }> {
-        const res = await fetch('/api/orders', {
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (this.config.tenantId) {
+            headers['X-Tenant-Id'] = this.config.tenantId;
+        }
+        const orderUrl = this.config.tenantId
+            ? `/api/orders?tenant=${encodeURIComponent(this.config.tenantId)}`
+            : '/api/orders';
+
+        const res = await fetch(orderUrl, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify({
                 clientName: data.clientName,
                 clientPhone: data.clientPhone,

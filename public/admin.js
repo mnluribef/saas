@@ -2519,7 +2519,7 @@ async function loadStoreSettings() {
             if (data.tenant?.domain) {
                 previewBtn.href = `https://${data.tenant.domain}`;
             } else if (tenantId && tenantId !== 'demo') {
-                previewBtn.href = `/demo/${template}?tenant=${tenantId}`;
+                previewBtn.href = `/${tenantId}`;
             } else {
                 previewBtn.href = `/demo/${template}`;
             }

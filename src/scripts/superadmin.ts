@@ -104,8 +104,8 @@ let masterToken = sessionStorage.getItem('sa_token') || '';
 
             return `
                 <tr>
-                    <td><strong>${t.id}</strong>.vendly.app</td>
-                    <td>${t.name} <br><small style="color:#94a3b8">${t.template}</small></td>
+                    <td><a href="/${t.id}" target="_blank">/${t.id}</a></td>
+                    <td>${t.name} <br><small class="text-muted">${t.template}</small></td>
                     <td>
                         <select class="action-select" onchange="window.changePlan('${t.id}', this.value)">
                             <option value="basic" ${t.plan === 'basic' ? 'selected' : ''}>Básico (Lim: 20 prod)</option>

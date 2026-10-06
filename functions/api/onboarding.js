@@ -79,9 +79,10 @@ export async function onRequestPost(context) {
             } catch (e) { console.error("Webhook error:", e); }
         }
 
+        const host = new URL(request.url).host;
         return new Response(JSON.stringify({
             success: true,
-            message: `¡Registro exitoso! Tu tienda está disponible en ${tenantSlug}.vendly.app`,
+            message: `¡Registro exitoso! Tu tienda está disponible en ${host}/${tenantSlug}`,
             tenantId: tenantSlug
         }), { status: 201, headers: { 'Content-Type': 'application/json' } });
 

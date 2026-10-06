@@ -17,29 +17,50 @@ export async function resolveTenant(request, db) {
     const url = new URL(request.url);
     const host = url.hostname; // e.g. 'fogon.vendly.app' or 'fogon.com'
 
-    // 0.1 Query Parameter (direct navigation)
+    // 0.1 Query Parameter (direct navigation / fetch)
     const qsTenant = url.searchParams.get('tenant');
     if (qsTenant) {
         const tenant = await getTenantById(db, qsTenant);
         if (tenant) return { id: qsTenant, tenant };
     }
 
-    // 0.2 Referer Header (API calls from the frontend on localhost/pages.dev)
+    // 0.2 Header explícito (útil en desarrollo local, testing y super-admin)
+    const headerTenantId = request.headers.get('X-Tenant-Id');
+    if (headerTenantId) {
+        const tenant = await getTenantById(db, headerTenantId);
+        if (tenant) return { id: headerTenantId, tenant };
+    }
+
+    // 0.3 Referer Header (API calls desde páginas del frontend como vendly-20w.pages.dev/mitienda)
     const referer = request.headers.get('Referer');
-    if (referer && (host.includes('localhost') || host.includes('pages.dev'))) {
+    if (referer) {
         try {
             const refererUrl = new URL(referer);
+            // 1. Query parameter en Referer
             const refererTenant = refererUrl.searchParams.get('tenant');
             if (refererTenant) {
                 const tenant = await getTenantById(db, refererTenant);
                 if (tenant) return { id: refererTenant, tenant };
             }
-        } catch (e) {
+            // 2. Primer segmento del path en Referer (ej: /mitienda o /s/mitienda)
+            const refPathParts = refererUrl.pathname.split('/').filter(Boolean);
+            if (refPathParts.length > 0) {
+                let candidate = refPathParts[0].toLowerCase();
+                if (candidate === 's' && refPathParts.length > 1) {
+                    candidate = refPathParts[1].toLowerCase();
+                }
+                const SYSTEM_PATHS = new Set(['api', 'admin', 'login', 'register', 'precios', 'superadmin', 'demo', 'assets', '_astro']);
+                if (candidate && !SYSTEM_PATHS.has(candidate) && !candidate.includes('.')) {
+                    const tenant = await getTenantById(db, candidate);
+                    if (tenant) return { id: candidate, tenant };
+                }
+            }
+        } catch (_) {
             // Ignore invalid referer URLs
         }
     }
 
-    // 0.3 Cookie de Sesión (si el usuario ya inició sesión en el panel admin)
+    // 0.4 Cookie de Sesión (si el usuario ya inició sesión en el panel admin)
     const cookieHeader = request.headers.get('Cookie');
     if (cookieHeader) {
         const cookies = cookieHeader.split(';').reduce((acc, cookie) => {
@@ -62,22 +83,21 @@ export async function resolveTenant(request, db) {
         }
     }
 
-    // 1. Header explícito (útil en desarrollo local y super-admin)
-    const headerTenantId = request.headers.get('X-Tenant-Id');
-    if (headerTenantId) {
-        const tenant = await getTenantById(db, headerTenantId);
-        if (tenant) return { id: headerTenantId, tenant };
+    // 1. Path-based directo en URL de la request: /s/{tenant_id} o /{tenant_id}
+    const pathParts = url.pathname.split('/').filter(Boolean);
+    if (pathParts.length > 0) {
+        let candidate = pathParts[0].toLowerCase();
+        if (candidate === 's' && pathParts.length > 1) {
+            candidate = pathParts[1].toLowerCase();
+        }
+        const SYSTEM_PATHS = new Set(['api', 'admin', 'login', 'register', 'precios', 'superadmin', 'demo', 'assets', '_astro']);
+        if (candidate && !SYSTEM_PATHS.has(candidate) && !candidate.includes('.')) {
+            const tenant = await getTenantById(db, candidate);
+            if (tenant) return { id: candidate, tenant };
+        }
     }
 
-    // 2. Path-based: /s/{tenant_id}/...
-    const pathMatch = url.pathname.match(/^\/s\/([a-z0-9_-]+)(\/|$)/i);
-    if (pathMatch) {
-        const tenantId = pathMatch[1].toLowerCase();
-        const tenant = await getTenantById(db, tenantId);
-        if (tenant) return { id: tenantId, tenant };
-    }
-
-    // 3. Subdominio: fogon.vendly.app (excluir 'www', 'app', 'admin', 'demo')
+    // 2. Subdominio: fogon.vendly.app (excluir 'www', 'app', 'admin', 'demo', 'api')
     const SYSTEM_SUBDOMAINS = new Set(['www', 'app', 'admin', 'demo', 'api']);
     const parts = host.split('.');
     if (parts.length >= 3) {
@@ -88,13 +108,13 @@ export async function resolveTenant(request, db) {
         }
     }
 
-    // 4. Custom domain lookup (para clientes con dominio propio)
+    // 3. Custom domain lookup (para clientes con dominio propio)
     if (!host.includes('vendly') && !host.includes('localhost') && !host.includes('pages.dev')) {
         const tenant = await getTenantByDomain(db, host);
         if (tenant) return { id: tenant.id, tenant };
     }
 
-    // 5. Fallback al tenant demo (compatibilidad hacia atrás)
+    // 4. Fallback al tenant demo (compatibilidad hacia atrás)
     return { id: 'demo', tenant: null };
 }
 

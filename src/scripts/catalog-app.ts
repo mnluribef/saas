@@ -10,8 +10,35 @@ import { CatalogController } from './controllers/catalog.controller';
 import { initScrollReveal } from './utils/reveal.util';
 import { syncStoreWithSettings } from './services/store-sync.service';
 
+function resolveActiveTenantId(): string | undefined {
+    const storeMetaEl = document.getElementById('catalog-store-meta');
+    if (storeMetaEl?.dataset.tenant) return storeMetaEl.dataset.tenant;
+
+    const metaTag = document.querySelector('meta[name="vendly-tenant"]');
+    const metaTenant = metaTag?.getAttribute('content');
+    if (metaTenant) return metaTenant;
+
+    const qs = new URLSearchParams(window.location.search).get('tenant');
+    if (qs) return qs;
+
+    const pathParts = window.location.pathname.split('/').filter(Boolean);
+    if (pathParts.length > 0) {
+        let candidate = pathParts[0].toLowerCase();
+        if (candidate === 's' && pathParts.length > 1) {
+            candidate = pathParts[1].toLowerCase();
+        }
+        const SYSTEM_PATHS = new Set(['api', 'admin', 'login', 'register', 'precios', 'superadmin', 'demo', 'assets', '_astro']);
+        if (candidate && !SYSTEM_PATHS.has(candidate) && !candidate.includes('.')) {
+            return candidate;
+        }
+    }
+
+    return undefined;
+}
+
 export function createStoreConfig(): StoreMetaConfig {
     const storeMetaEl = document.getElementById('catalog-store-meta');
+    const tenantId = resolveActiveTenantId();
     return {
         whatsappNumber: storeMetaEl?.dataset.whatsapp || '584124756191',
         defaultCurrency: storeMetaEl?.dataset.currency || '$',
@@ -24,13 +51,23 @@ export function createStoreConfig(): StoreMetaConfig {
         deliveryPrice: parseFloat(storeMetaEl?.dataset.deliveryPrice || '5'),
         pickupName: storeMetaEl?.dataset.pickupName || 'Retiro en local',
         storePrefix: storeMetaEl?.dataset.storePrefix || 'VEN',
+        tenantId,
     };
 }
 
 export function initCatalogApp(): void {
     const config = createStoreConfig();
-    const storeKey = config.businessName.toLowerCase().replace(/[^a-z0-9]/g, '_') || 'default';
+    const storeKey = (config.tenantId || config.businessName).toLowerCase().replace(/[^a-z0-9]/g, '_') || 'default';
     const storageKey = `vendly_cart_${config.template}_${storeKey}`;
+
+    // Hidratación instantánea si fue inyectada por el servidor
+    const injectedConfigEl = document.getElementById('injected-tenant-config');
+    if (injectedConfigEl && injectedConfigEl.textContent) {
+        try {
+            const preloadedConfig = JSON.parse(injectedConfigEl.textContent);
+            syncStoreWithSettings(preloadedConfig);
+        } catch (_) {}
+    }
 
     // Services (Dependency Inversion & Single Responsibility)
     const toastService = new ToastService();
@@ -64,7 +101,16 @@ export function initCatalogApp(): void {
     cartController.render();
 
     // Sincronizar en vivo configuraciones personalizadas del tenant si existen
-    fetch('/api/settings').then(res => res.json() as Promise<any>).then((data: any) => {
+    const settingsUrl = config.tenantId
+        ? `/api/settings?tenant=${encodeURIComponent(config.tenantId)}`
+        : '/api/settings';
+
+    const reqHeaders: Record<string, string> = {};
+    if (config.tenantId) {
+        reqHeaders['X-Tenant-Id'] = config.tenantId;
+    }
+
+    fetch(settingsUrl, { headers: reqHeaders }).then(res => res.json() as Promise<any>).then((data: any) => {
         if (data.success && data.tenant?.config) {
             const cfg = data.tenant.config;
             const pm = cfg.payment?.pagoMovil;

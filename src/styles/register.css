@@ -258,6 +258,24 @@
         align-items: center;
     }
 
+    .input-group .addon.prefix {
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+        border-top-left-radius: 10px;
+        border-bottom-left-radius: 10px;
+        border-right: none;
+        user-select: none;
+    }
+
+    .input-group input.with-prefix {
+        border-top-left-radius: 0 !important;
+        border-bottom-left-radius: 0 !important;
+        border-left: none !important;
+        border-top-right-radius: 10px !important;
+        border-bottom-right-radius: 10px !important;
+        border-right: 1px solid #cbd5e1 !important;
+    }
+
     .form-group small {
         display: block;
         margin-top: 0.6rem;

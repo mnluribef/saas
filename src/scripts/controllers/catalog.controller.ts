@@ -82,7 +82,14 @@ export class CatalogController {
 
     public async loadCatalog(): Promise<void> {
         try {
-            const res = await fetch(`/api/products?template=${encodeURIComponent(this.config.template)}`);
+            const tenantParam = this.config.tenantId ? `&tenant=${encodeURIComponent(this.config.tenantId)}` : '';
+            const reqHeaders: Record<string, string> = {};
+            if (this.config.tenantId) {
+                reqHeaders['X-Tenant-Id'] = this.config.tenantId;
+            }
+            const res = await fetch(`/api/products?template=${encodeURIComponent(this.config.template)}${tenantParam}`, {
+                headers: reqHeaders
+            });
             if (!res.ok) throw new Error();
             const responseData: any = await res.json();
             const products: CatalogProduct[] = Array.isArray(responseData)

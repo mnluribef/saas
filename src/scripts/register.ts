@@ -9,6 +9,10 @@
         const tenantNameInput = document.getElementById('tenantName') as HTMLInputElement;
         const tenantSlugInput = document.getElementById('tenantSlug') as HTMLInputElement;
         const dynamicBg = document.getElementById('dynamic-bg') as HTMLElement;
+        const domainPrefixEl = document.getElementById('domain-prefix');
+        if (domainPrefixEl) {
+            domainPrefixEl.textContent = `${window.location.host}/`;
+        }
         
         // Cambio dinámico de fondo
         const bgs: Record<string, string> = {
@@ -120,24 +124,12 @@
                     successState.classList.remove('hidden');
                     
                     const protocol = window.location.protocol;
-                    const hostParts = window.location.host.split('.');
+                    const baseDomain = window.location.host;
                     
-                    let baseDomain = window.location.host;
-                    if (hostParts.length > 2 && hostParts[0] !== 'www') {
-                        baseDomain = hostParts.slice(1).join('.');
-                    }
-                    
-                    if (baseDomain.startsWith('localhost') || baseDomain.includes('127.0.0.1') || baseDomain.includes('.pages.dev')) {
-                        const storeUrl = `${protocol}//${baseDomain}/?tenant=${data.tenantId}`;
-                        const adminUrl = `${protocol}//${baseDomain}/admin/?tenant=${data.tenantId}`;
-                        (document.getElementById('store-url') as HTMLAnchorElement).href = storeUrl;
-                        (document.getElementById('admin-url') as HTMLAnchorElement).href = adminUrl;
-                    } else {
-                        const storeUrl = `${protocol}//${data.tenantId}.${baseDomain}`;
-                        const adminUrl = `${storeUrl}/admin`;
-                        (document.getElementById('store-url') as HTMLAnchorElement).href = storeUrl;
-                        (document.getElementById('admin-url') as HTMLAnchorElement).href = adminUrl;
-                    }
+                    const storeUrl = `${protocol}//${baseDomain}/${data.tenantId}`;
+                    const adminUrl = `${protocol}//${baseDomain}/admin?tenant=${data.tenantId}`;
+                    (document.getElementById('store-url') as HTMLAnchorElement).href = storeUrl;
+                    (document.getElementById('admin-url') as HTMLAnchorElement).href = adminUrl;
                 } else {
                     let errMsg = data.error || 'Error al procesar el registro.';
                     if (data.details) {

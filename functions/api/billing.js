@@ -42,7 +42,7 @@ export async function onRequestGet(context) {
                 name: tenant.name,
                 plan: planDetails.name,
                 status: tenant.active === 1 ? 'Activo' : 'Suspendido',
-                domain: tenant.domain || `${tenant.id}.vendly.app`
+                domain: tenant.domain || `${new URL(request.url).host}/${tenant.id}`
             },
             usage: {
                 products: {

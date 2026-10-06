@@ -10,6 +10,7 @@ export interface StoreMetaConfig {
     deliveryPrice: number;
     pickupName: string;
     storePrefix: string;
+    tenantId?: string;
 }
 
 export interface CartItem {
