@@ -3,6 +3,11 @@
 
 # Local environment secrets
 .dev.vars
+.env
+.env.*
+!.env.example
+*.pem
+*.key
 
 # Dependencies
 node_modules/

@@ -226,7 +226,15 @@ export async function onRequestPost(context) {
             );
         }
 
-        if (data.deliveryType === 'delivery') totalPrice += 5.0;
+        let deliveryPrice = 5.0;
+        try {
+            const configJson = tenant?.config_json ? JSON.parse(tenant.config_json) : {};
+            if (configJson?.labels?.deliveryOptionPrice !== undefined) {
+                deliveryPrice = parseFloat(configJson.labels.deliveryOptionPrice);
+            }
+        } catch(e) {}
+
+        if (data.deliveryType === 'delivery') totalPrice += deliveryPrice;
         const totalBs = Math.round((totalPrice * finalBcvRate) * 100) / 100;
 
         statements.push(

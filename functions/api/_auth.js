@@ -84,6 +84,16 @@ export function bytesToHex(bytes) {
 }
 
 /**
+ * Genera el hash SHA-256 de una contraseña en texto plano (para retrocompatibilidad y hashing base)
+ */
+export async function hashSHA256(text) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(text);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    return bytesToHex(new Uint8Array(hashBuffer));
+}
+
+/**
  * Genera un salt aleatorio en formato hexadecimal (128 bits)
  */
 export function generateSalt() {

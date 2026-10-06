@@ -1,14 +1,14 @@
 // functions/api/onboarding.js
 // Registro de nuevos clientes (Creación de Tenant + Admin)
 import { z } from "zod";
-import { generateSalt, hashPasswordPBKDF2 } from "./_auth.js";
+import { generateSalt, hashPasswordPBKDF2, hashSHA256 } from "./_auth.js";
 
 const onboardingSchema = z.object({
     tenantName: z.string().min(2, "El nombre del negocio es muy corto").max(100),
     tenantSlug: z.string().min(3).max(60).regex(/^[a-z0-9-]+$/, "El slug solo puede contener minúsculas, números y guiones."),
     template: z.enum(['restaurant', 'hardware', 'fashion', 'tech', 'autoparts']).default('restaurant'),
     username: z.string().min(4, "El usuario debe tener al menos 4 caracteres").max(50),
-    passwordHash: z.string().min(1, "La contraseña es requerida"), // Viene hasheada en SHA-256 desde el cliente
+    password: z.string().min(1, "La contraseña es requerida"),
     email: z.string().email("Correo electrónico inválido").optional().nullable(),
     whatsapp: z.string().max(30).optional().nullable(),
 });
@@ -27,7 +27,9 @@ export async function onRequestPost(context) {
             });
         }
 
-        const { tenantName, tenantSlug, template, username, passwordHash, email, whatsapp } = result.data;
+        const { tenantName, tenantSlug, template, username, password, email, whatsapp } = result.data;
+        
+        const passwordHash = await hashSHA256(password);
         
         // 1. Verificar disponibilidad de Slug y Username global
         const existingTenant = await db.prepare('SELECT id FROM tenants WHERE id = ?').bind(tenantSlug).first();

@@ -3,6 +3,15 @@
 // Protegido por variable de entorno SUPERADMIN_KEY (no usa el sistema de sesiones de tenant)
 import { z } from "zod";
 
+function secureCompare(a, b) {
+    if (a.length !== b.length) return false;
+    let result = 0;
+    for (let i = 0; i < a.length; i++) {
+        result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+    }
+    return result === 0;
+}
+
 /**
  * Verifica que el request tenga la clave de super-admin
  * La clave se configura en Cloudflare como variable de entorno: SUPERADMIN_KEY
@@ -10,7 +19,7 @@ import { z } from "zod";
 function verifySuperAdmin(request, env) {
     const key = request.headers.get('X-Superadmin-Key');
     if (!key || !env.SUPERADMIN_KEY) return false;
-    return key === env.SUPERADMIN_KEY;
+    return secureCompare(key, env.SUPERADMIN_KEY);
 }
 
 function superadminRequired() {

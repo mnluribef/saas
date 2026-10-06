@@ -17,16 +17,16 @@ export async function onRequestGet(context) {
     try {
         if (statsOnly) {
             // Obtener ingresos de hoy
-            const { total_ingresos } = await db.prepare("SELECT SUM(monto) as total_ingresos FROM sales WHERE DATE(fecha) = DATE('now')").first();
+            const { total_ingresos } = await db.prepare("SELECT SUM(monto) as total_ingresos FROM sales WHERE tenant_id = ? AND DATE(fecha) = DATE('now')").bind(user.tenant_id).first();
             
             // Obtener datos para la gráfica (últimos 7 días)
             const { results: chartData } = await db.prepare(`
                 SELECT DATE(fecha) as date, SUM(monto) as total 
                 FROM sales 
-                WHERE fecha >= date('now', '-7 days') 
+                WHERE tenant_id = ? AND fecha >= date('now', '-7 days') 
                 GROUP BY DATE(fecha) 
                 ORDER BY date ASC
-            `).all();
+            `).bind(user.tenant_id).all();
 
             return new Response(JSON.stringify({
                 revenueToday: total_ingresos || 0,
@@ -46,8 +46,8 @@ export async function onRequestGet(context) {
         const dateFrom = url.searchParams.get("date_from");
         const dateTo = url.searchParams.get("date_to");
 
-        let conditions = [];
-        let params = [];
+        let conditions = ["s.tenant_id = ?"];
+        let params = [user.tenant_id];
 
         if (dateFrom) {
             conditions.push("DATE(s.fecha) >= ?");

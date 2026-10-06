@@ -27,12 +27,12 @@ export async function onRequestGet(context) {
         // Datos para Pagos Manuales (B2B Venezuela)
         // En un futuro, esto podría venir de una tabla de configuración del Super-Admin
         const paymentInfo = {
-            method: "Transferencia Bancaria / Pago Móvil",
-            bank: "Banesco",
-            phone: "0414-1234567",
-            id: "J-12345678-9",
-            binancePay: "pagos@vendly.app",
-            zelle: "pagos@vendly.app",
+            method: env.PAYMENT_METHOD || "Transferencia Bancaria / Pago Móvil",
+            bank: env.PAYMENT_BANK || "Banesco",
+            phone: env.PAYMENT_PHONE || "No disponible",
+            id: env.PAYMENT_ID || "No disponible",
+            binancePay: env.PAYMENT_BINANCE || "pagos@vendly.app",
+            zelle: env.PAYMENT_ZELLE || "pagos@vendly.app",
             monthlyPriceUsd: planKey === 'basic' ? 15 : planKey === 'pro' ? 30 : 99
         };
 

@@ -52,9 +52,22 @@ export async function onRequestPost(context) {
             });
         }
 
-        // Validar tipo de imagen
-        if (!file.type.startsWith("image/")) {
-            return new Response(JSON.stringify({ error: "El archivo debe ser una imagen." }), {
+        // Validar tipo de imagen con magic bytes para evitar bypass
+        const buffer = await file.arrayBuffer();
+        const arr = new Uint8Array(buffer).subarray(0, 4);
+        let header = "";
+        for(let i = 0; i < arr.length; i++) {
+            header += arr[i].toString(16);
+        }
+        
+        let isValidType = false;
+        if (header.startsWith("89504e47")) isValidType = true; // PNG
+        else if (header.startsWith("ffd8ff")) isValidType = true; // JPEG
+        else if (header.startsWith("52494646")) isValidType = true; // WEBP
+        else if (header.startsWith("47494638")) isValidType = true; // GIF
+
+        if (!isValidType) {
+            return new Response(JSON.stringify({ error: "El archivo debe ser una imagen válida." }), {
                 status: 400,
                 headers: { "Content-Type": "application/json" }
             });
@@ -65,8 +78,8 @@ export async function onRequestPost(context) {
         const randomString = Math.random().toString(36).substring(2, 10);
         const fileName = `${type || 'upload'}_${Date.now()}_${randomString}.${ext}`;
 
-        // Subir a R2
-        await env.STORAGE.put(fileName, file.stream(), {
+        // Subir a R2 (usamos el buffer validado)
+        await env.STORAGE.put(fileName, buffer, {
             httpMetadata: { contentType: file.type }
         });
 

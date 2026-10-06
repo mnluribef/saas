@@ -167,5 +167,5 @@ INSERT OR IGNORE INTO products (id, name, type_id, category, price, icon, descri
 
 -- Usuario Administrador por Defecto (admin / admin)
 -- Para credenciales personalizadas de producción, usa: pnpm run create-admin <usuario> <clave>
-INSERT OR IGNORE INTO users (id, username, password_hash, password_salt) 
-VALUES (1, 'admin', '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', NULL);
+-- INSERT OR IGNORE INTO users (id, username, password_hash, password_salt) 
+-- VALUES (1, 'admin', '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', NULL);

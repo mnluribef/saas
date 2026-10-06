@@ -4,24 +4,7 @@ import { verifySession, unauthorizedResponse } from "./_auth.js";
 const DEFAULT_FALLBACK_RATE = 853.50;
 const EXTERNAL_API_URL = "https://ve.dolarapi.com/v1/dolares/oficial";
 
-/**
- * Asegura la existencia de la tabla de settings en la base de datos
- */
-async function ensureSettingsTable(db) {
-    try {
-        await db.prepare(`
-            CREATE TABLE IF NOT EXISTS settings (\n                key TEXT PRIMARY KEY,\n                value TEXT NOT NULL,\n                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP\n            )\n        `).run();
-
-        await db.prepare(`
-            INSERT OR IGNORE INTO settings (key, value) VALUES 
-            ('bcv_rate', '853.50'),
-            ('bcv_auto_update', '1'),
-            ('bcv_updated_at', '1970-01-01T00:00:00Z')
-        `).run();
-    } catch (e) {
-        // Ignorar si ya existe
-    }
-}
+// ensureSettingsTable ha sido removido porque la migración/schema inicial ya se encarga de esto.
 
 /**
  * GET /api/bcv - Obtener la tasa oficial del día
@@ -31,7 +14,7 @@ export async function onRequestGet(context) {
     const { env, request } = context;
     const db = env.DB || env.vendly;
 
-    await ensureSettingsTable(db);
+    // Schema asegurado por migraciones
 
     try {
         const url = new URL(request.url);
@@ -124,7 +107,7 @@ export async function onRequestPut(context) {
     const { env, request } = context;
     const db = env.DB || env.vendly;
 
-    await ensureSettingsTable(db);
+    // Schema asegurado por migraciones
 
     try {
         const body = await request.json();

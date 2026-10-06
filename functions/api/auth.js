@@ -1,42 +1,54 @@
-import { verifySession, unauthorizedResponse, generateSalt, hashPasswordPBKDF2 } from "./_auth.js";
+import { verifySession, unauthorizedResponse, generateSalt, hashPasswordPBKDF2, hashSHA256 } from "./_auth.js";
 import { resolveTenant } from "./_tenant.js";
 
-// Rate limiting simple en memoria por IP para mitigar fuerza bruta
-const loginAttempts = new Map();
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_TIME_MS = 5 * 60 * 1000; // 5 minutos de bloqueo
 
-function checkRateLimit(ip) {
+async function checkRateLimit(db, ip) {
     const now = Date.now();
-    const record = loginAttempts.get(ip);
+    
+    let record;
+    try {
+        record = await db.prepare("SELECT * FROM rate_limits WHERE ip = ?").bind(ip).first();
+    } catch(e) { return { allowed: true }; } // Fallback si la tabla no existe aún
+    
     if (!record) return { allowed: true };
 
-    if (now < record.lockoutUntil) {
-        const remainingMinutes = Math.ceil((record.lockoutUntil - now) / 60000);
+    if (now < record.lockout_until) {
+        const remainingMinutes = Math.ceil((record.lockout_until - now) / 60000);
         return { allowed: false, remainingMinutes };
     }
 
-    // Si ya pasó el periodo de bloqueo, resetear
-    if (now - record.firstAttempt > LOCKOUT_TIME_MS) {
-        loginAttempts.delete(ip);
+    if (now - record.first_attempt > LOCKOUT_TIME_MS) {
+        await db.prepare("DELETE FROM rate_limits WHERE ip = ?").bind(ip).run();
         return { allowed: true };
     }
 
     return { allowed: true };
 }
 
-function recordFailedAttempt(ip) {
+async function recordFailedAttempt(db, ip) {
     const now = Date.now();
-    const record = loginAttempts.get(ip) || { count: 0, firstAttempt: now, lockoutUntil: 0 };
-    record.count++;
-    if (record.count >= MAX_ATTEMPTS) {
-        record.lockoutUntil = now + LOCKOUT_TIME_MS;
-    }
-    loginAttempts.set(ip, record);
+    try {
+        let record = await db.prepare("SELECT * FROM rate_limits WHERE ip = ?").bind(ip).first();
+        
+        if (!record) {
+            await db.prepare("INSERT INTO rate_limits (ip, count, first_attempt, lockout_until) VALUES (?, 1, ?, 0)").bind(ip, now).run();
+        } else {
+            let newCount = record.count + 1;
+            let newLockout = 0;
+            if (newCount >= MAX_ATTEMPTS) {
+                newLockout = now + LOCKOUT_TIME_MS;
+            }
+            await db.prepare("UPDATE rate_limits SET count = ?, lockout_until = ? WHERE ip = ?").bind(newCount, newLockout, ip).run();
+        }
+    } catch(e) {}
 }
 
-function clearRateLimit(ip) {
-    loginAttempts.delete(ip);
+async function clearRateLimit(db, ip) {
+    try {
+        await db.prepare("DELETE FROM rate_limits WHERE ip = ?").bind(ip).run();
+    } catch(e) {}
 }
 
 /**
@@ -82,7 +94,7 @@ export async function onRequestPost(context) {
     const { id: tenantId } = await resolveTenant(request, db);
 
     // 1. Verificar Rate Limit
-    const rateCheck = checkRateLimit(clientIp);
+    const rateCheck = await checkRateLimit(db, clientIp);
     if (!rateCheck.allowed) {
         return new Response(JSON.stringify({ 
             error: `Demasiados intentos fallidos. Por seguridad, espera ${rateCheck.remainingMinutes} minuto(s) antes de reintentar.` 
@@ -93,14 +105,16 @@ export async function onRequestPost(context) {
     }
 
     try {
-        const { username, passwordHash } = await request.json();
+        const { username, password } = await request.json();
 
-        if (!username || !passwordHash) {
+        if (!username || !password) {
             return new Response(JSON.stringify({ error: "Usuario y contraseña requeridos." }), {
                 status: 400,
                 headers: { "Content-Type": "application/json" }
             });
         }
+        
+        const passwordHash = await hashSHA256(password);
 
         // Buscar usuario en base de datos (scoped al tenant)
         const user = await db.prepare("SELECT * FROM users WHERE username = ? AND tenant_id = ?")
@@ -108,7 +122,7 @@ export async function onRequestPost(context) {
             .first();
 
         if (!user) {
-            recordFailedAttempt(clientIp);
+            await recordFailedAttempt(db, clientIp);
             return new Response(JSON.stringify({ error: "Credenciales inválidas." }), {
                 status: 401,
                 headers: { "Content-Type": "application/json" }
@@ -137,7 +151,7 @@ export async function onRequestPost(context) {
         }
 
         if (!isMatch) {
-            recordFailedAttempt(clientIp);
+            await recordFailedAttempt(db, clientIp);
             return new Response(JSON.stringify({ error: "Credenciales inválidas." }), {
                 status: 401,
                 headers: { "Content-Type": "application/json" }
@@ -145,7 +159,7 @@ export async function onRequestPost(context) {
         }
 
         // Login exitoso: limpiar intentos fallidos
-        clearRateLimit(clientIp);
+        await clearRateLimit(db, clientIp);
 
         // Generar un token seguro de sesión
         const sessionToken = crypto.randomUUID();
@@ -186,14 +200,17 @@ export async function onRequestPut(context) {
     const db = env.DB || env.vendly;
 
     try {
-        const { currentPasswordHash, newPasswordHash } = await request.json();
+        const { currentPassword, newPassword } = await request.json();
 
-        if (!currentPasswordHash || !newPasswordHash) {
+        if (!currentPassword || !newPassword) {
             return new Response(JSON.stringify({ error: "Debes enviar la contraseña actual y la nueva." }), {
                 status: 400,
                 headers: { "Content-Type": "application/json" }
             });
         }
+        
+        const currentPasswordHash = await hashSHA256(currentPassword);
+        const newPasswordHash = await hashSHA256(newPassword);
 
         const user = await db.prepare("SELECT * FROM users WHERE username = ?")
             .bind(sessionUser.username.toLowerCase().trim())

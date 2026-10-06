@@ -26,7 +26,7 @@ export async function resolveTenant(request, db) {
 
     // 0.2 Referer Header (API calls from the frontend on localhost/pages.dev)
     const referer = request.headers.get('Referer');
-    if (referer) {
+    if (referer && (host.includes('localhost') || host.includes('pages.dev'))) {
         try {
             const refererUrl = new URL(referer);
             const refererTenant = refererUrl.searchParams.get('tenant');

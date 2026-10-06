@@ -770,15 +770,12 @@ const config = createStoreConfig('tech', {
             const formData = new FormData(form);
             const passwordStr = formData.get('password') as string;
             
-            // Hash en SHA-256 localmente
-            const passwordHash = await SHA256(passwordStr);
-
             const payload = {
                 tenantName: formData.get('tenantName'),
                 tenantSlug: formData.get('tenantSlug'),
                 template: formData.get('template'),
                 username: formData.get('username'),
-                passwordHash: passwordHash,
+                password: passwordStr,
                 whatsapp: formData.get('whatsapp') || null
             };
 

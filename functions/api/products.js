@@ -68,10 +68,11 @@ export async function onRequestGet(context) {
         const { results: products } = await db.prepare(dataQuery).bind(...dataParams).all();
 
         if (products.length > 0) {
-            const productIds = products.map(p => `'${p.id}'`).join(',');
+            const productIds = products.map(p => p.id);
+            const placeholders = productIds.map(() => '?').join(',');
             const { results: allAttributes } = await db.prepare(
-                `SELECT * FROM product_attributes WHERE product_id IN (${productIds})`
-            ).all();
+                `SELECT * FROM product_attributes WHERE product_id IN (${placeholders})`
+            ).bind(...productIds).all();
 
             const attrsMap = {};
             for (const attr of allAttributes) {
