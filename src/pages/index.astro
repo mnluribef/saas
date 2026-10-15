@@ -1,10 +1,13 @@
 ---
+// src/pages/index.astro
+// Landing Page de Alta Conversión de Vendly SaaS (Tema Claro Premium)
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Header from '../components/layout/Header.astro';
 import Footer from '../components/layout/Footer.astro';
 import { techTemplate } from '../config/templates/tech';
+import '../styles/landing.css';
 
-// Configuración de alto contraste y profesional para el SaaS Vendly
+// Configuración visual en modo claro y corporativo para Vendly SaaS
 const saasConfig = {
     ...techTemplate,
     template: 'tech' as const,
@@ -12,103 +15,197 @@ const saasConfig = {
         ...techTemplate.business, 
         name: "Vendly", 
         shortName: "Vendly",
-        tagline: "Plataforma de E-commerce y Pedidos por WhatsApp",
+        tagline: "Plataforma de E-commerce y Catálogos para WhatsApp",
         logoTextPrimary: "VENDLY", 
         logoTextSecondary: "SAAS",
-        description: "La solución líder para crear tu tienda virtual en minutos y recibir pedidos directamente en tu WhatsApp.",
-        siteUrl: "https://vendly-20w.pages.dev"
+        description: "Crea tu catálogo interactivo en minutos, sincroniza inventario con tasa BCV y recibe pedidos estructurados en tu WhatsApp.",
+        siteUrl: "https://vendly.app"
     },
     seo: {
         title: "Vendly | Crea tu Tienda Online y Vende por WhatsApp en Minutos",
-        description: "Vendly te permite crear tu catálogo virtual interactivo, sincronizar tasa BCV en tiempo real y recibir pedidos directamente a WhatsApp sin comisiones.",
-        keywords: "tienda online venezuela, catalogo whatsapp, pedidos whatsapp, ecommerce venezuela, vendly, tasa bcv",
+        description: "Plataforma líder en Venezuela y LatAm para crear catálogos interactivos, convertir precios a tasa BCV en tiempo real y recibir pedidos directamente a WhatsApp sin comisiones.",
+        keywords: "tienda online venezuela, catalogo whatsapp, pedidos whatsapp, ecommerce venezuela, vendly, tasa bcv, catalogo digital",
         schemaType: "SoftwareApplication" as const,
         priceRange: "$"
     },
     nav: {
         links: [
-            { label: "Características", href: "#features" },
+            { label: "Beneficios", href: "#beneficios" },
+            { label: "Características", href: "#caracteristicas" },
+            { label: "Demos en Vivo", href: "#demos" },
+            { label: "Comparativa", href: "#comparativa" },
             { label: "Planes", href: "/precios" },
-            { label: "Demos", href: "#demos" },
-            { label: "Acceder", href: "/login" },
+            { label: "FAQ", href: "#faq" },
+            { label: "Iniciar Sesión", href: "/login" },
             { label: "Crear Tienda", href: "/register" }
         ]
     }
 };
-import '../styles/landing.css';
 ---
 
 <BaseLayout 
   config={saasConfig} 
   title="Vendly | Crea tu Tienda Online y Vende por WhatsApp en Minutos"
-  description="Vendly te permite crear tu catálogo virtual interactivo, sincronizar tasa BCV en tiempo real y recibir pedidos directamente a WhatsApp sin comisiones."
+  description="Vendly te permite crear tu catálogo interactivo, sincronizar tasa BCV en tiempo real y recibir pedidos directamente en tu WhatsApp sin comisiones."
 >
   <Header config={saasConfig} />
+
   <main>
-    <!-- Hero Section -->
-    <section class="hero-premium">
-      <div class="hero-premium-content">
-        <div class="pill-badge">
-          <span>🚀 Plataforma SaaS 2026 · <span class="highlight">0% Comisiones</span></span>
+    <!-- ===================== HERO SECTION ===================== -->
+    <section class="hero-light">
+      <div class="hero-ambient-glow"></div>
+      <div class="hero-aurora-blob blob-purple"></div>
+      <div class="hero-aurora-blob blob-cyan"></div>
+      <div class="hero-aurora-blob blob-emerald"></div>
+      <div class="hero-grid-pattern"></div>
+
+      <div class="hero-container">
+        <!-- Floating Pill Badge -->
+        <div class="hero-badge-pill">
+          <span class="pill-dot"></span>
+          <span>SaaS E-commerce 2026 · <strong>0% Comisiones por Venta</strong></span>
         </div>
-        <h1>
-          Escala tus ventas con <br/>
-          <span class="text-gradient">tu tienda </span> <span class="text-accent">WhatsApp</span>
+
+        <!-- Titular de Alta Conversión con Gradiente -->
+        <h1 class="hero-headline">
+          Tu Catálogo Online <span class="text-brand-gradient">en Minutos</span>.<br/>
+          Tus Ventas Cerradas por <span class="text-wa">WhatsApp</span>.
         </h1>
-        <p>
-          Crea tu catálogo interactivo en minutos, sincroniza inventario y recibe pedidos completos directamente en tu WhatsApp. Diseñado para emprendedores que buscan conversión rápida y sin fricción.
+
+        <!-- Subtítulo Enfocado en Dolor y Solución -->
+        <p class="hero-subhead">
+          Dile adiós a pasar horas respondiendo "¿precio al privado?", calcular la tasa del día manualmente y perseguir capturas de pago. Tus clientes eligen, compran y tú recibes pedidos listos para despachar.
         </p>
-        <div class="hero-actions">
-          <a href="/register" class="btn-primary-glow">
-            <span>Crear Tienda Gratis</span>
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+
+        <!-- Botones CTA Principales -->
+        <div class="hero-cta-group">
+          <a href="/register" class="btn-primary-hero" id="hero-cta-register">
+            <span>Crear mi Tienda Gratis</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
           </a>
-          <a href="#demos" class="btn-secondary-glass">Ver Tiendas Demo</a>
+          <a href="#demos" class="btn-secondary-hero" id="hero-cta-demos">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            <span>Ver Tiendas Demo en Vivo</span>
+          </a>
         </div>
 
-        <div class="dashboard-preview">
-          <div class="mockup-window">
-            <div class="mockup-header">
-              <div class="dots-group">
-                <span class="dot red"></span>
-                <span class="dot yellow"></span>
-                <span class="dot green"></span>
+        <!-- Badges de Confianza Rápidos -->
+        <div class="hero-trust-bullets">
+          <span class="hero-trust-item">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+            Sin tarjeta de crédito
+          </span>
+          <span class="hero-trust-item">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+            Configuración en 5 minutos
+          </span>
+          <span class="hero-trust-item">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+            Tasa Oficial BCV automatizada
+          </span>
+          <span class="hero-trust-item">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+            100% optimizado para celulares
+          </span>
+        </div>
+
+        <!-- Showcase Visual Hero (Mockup Dual Dashboard + WhatsApp) -->
+        <div class="hero-showcase">
+          <!-- Mockup Principal Desktop -->
+          <div class="mockup-desktop-card">
+            <div class="mockup-browser-bar">
+              <div class="browser-dots">
+                <span class="browser-dot red"></span>
+                <span class="browser-dot yellow"></span>
+                <span class="browser-dot green"></span>
               </div>
-              <div class="mockup-address-bar">https://admin.vendly.app</div>
+              <div class="browser-url-pill">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <span>https://mitienda.vendly.app</span>
+              </div>
             </div>
-            <div class="mockup-body">
-              <div class="mockup-sidebar">
-                <div class="sidebar-item active">📊 Métricas</div>
-                <div class="sidebar-item">📦 Productos</div>
-                <div class="sidebar-item">💬 Pedidos</div>
-                <div class="sidebar-item">⚙️ Configuración</div>
+
+            <div class="mockup-dashboard-grid">
+              <!-- Sidebar de Navegación -->
+              <aside class="mockup-dash-sidebar">
+                <div class="dash-nav-link active">📊 Panel y Métricas</div>
+                <div class="dash-nav-link">📦 Productos (124)</div>
+                <div class="dash-nav-link">💬 Pedidos WhatsApp</div>
+                <div class="dash-nav-link">🏷️ Cupones y Promos</div>
+                <div class="dash-nav-link">⚙️ Tasa BCV & Pagos</div>
+              </aside>
+
+              <!-- Panel Principal de Ventas -->
+              <div class="mockup-dash-main">
+                <div class="dash-stats-row">
+                  <div class="dash-stat-box stat-theme-indigo">
+                    <span class="dash-stat-label">Ventas del Mes</span>
+                    <div class="dash-stat-number">$3,420.00</div>
+                    <span class="dash-stat-badge">↑ +28% vs mes anterior</span>
+                  </div>
+                  <div class="dash-stat-box stat-theme-emerald">
+                    <span class="dash-stat-label">Tasa Oficial BCV</span>
+                    <div class="dash-stat-number">36.50 Bs</div>
+                    <span class="dash-stat-badge blue">Sincronizada en vivo</span>
+                  </div>
+                  <div class="dash-stat-box stat-theme-amber">
+                    <span class="dash-stat-label">Pedidos Completados</span>
+                    <div class="dash-stat-number">148</div>
+                    <span class="dash-stat-badge">98% satisfacción</span>
+                  </div>
+                </div>
+
+                <div class="dash-order-feed-heading">
+                  <span>Últimos Pedidos Recibidos</span>
+                  <span class="dash-order-pill">En Tiempo Real</span>
+                </div>
+
+                <div class="dash-order-item">
+                  <div class="dash-order-item-info">
+                    <strong>Hamburguesa Gourmet + Papas Trufadas (x2)</strong>
+                    <span>Cliente: Valeria Méndez · Pago Móvil Banesco</span>
+                  </div>
+                  <div class="dash-order-item-status">
+                    <span class="dash-order-price">$24.00</span>
+                    <span class="dash-order-pill">✓ Confirmado</span>
+                  </div>
+                </div>
+
+                <div class="dash-order-item">
+                  <div class="dash-order-item-info">
+                    <strong>Laptop Ultrabook Pro 16GB + Mouse Gamer</strong>
+                    <span>Cliente: Carlos Rivas · Zelle</span>
+                  </div>
+                  <div class="dash-order-item-status">
+                    <span class="dash-order-price">$650.00</span>
+                    <span class="dash-order-pill">✓ Despachado</span>
+                  </div>
+                </div>
               </div>
-              <div class="mockup-content">
-                <div class="mockup-top-metrics">
-                  <div class="metric-card">
-                    <span class="metric-title">Ingresos Mensuales</span>
-                    <strong class="metric-value">$8,450.00</strong>
-                    <span class="metric-change">↑ +24% vs mes anterior</span>
-                  </div>
-                  <div class="metric-card">
-                    <span class="metric-title">Conversión WhatsApp</span>
-                    <strong class="metric-value">68%</strong>
-                    <span class="metric-change">↑ +5% automatizado</span>
-                  </div>
-                </div>
-                <div class="mockup-order-preview">
-                  <div class="order-preview-header">
-                    <span class="order-tag">Última Venta #1049</span>
-                    <span>Hace 2 min</span>
-                  </div>
-                  <div class="order-preview-item">
-                    <div class="order-item-details">
-                      <strong>Zapatos Nike Air Max (x1)</strong>
-                      <span>Cliente: María Pérez · Pago Zelle</span>
-                    </div>
-                    <span class="order-price">$120.00</span>
-                  </div>
-                </div>
+            </div>
+          </div>
+
+          <!-- Mockup Móvil Flotante de WhatsApp -->
+          <div class="floating-phone-card">
+            <div class="phone-wa-header">
+              <div class="phone-wa-avatar">V</div>
+              <div class="phone-wa-info">
+                <h5>Vendly Bot · Pedido #1082</h5>
+                <span>En línea ahora</span>
+              </div>
+            </div>
+            <div class="phone-wa-body">
+              <div class="wa-speech-bubble">
+                <p>👋 <strong>¡Hola! Quiero confirmar mi pedido:</strong></p>
+                <p>• 1x Vestido Casual Lino (Talla M / Beige)<br/>• 1x Cartera Cuero Nude</p>
+                <p class="wa-bubble-price">Total: $45.00 ≈ Bs. 1.642,50</p>
+                <p>📍 <strong>Entrega:</strong> Delivery La Victoria<br/>📱 <strong>Pago:</strong> Pago Móvil (Comprobante adjunto)</p>
+                <span class="wa-bubble-time">14:32 ✓✓</span>
               </div>
             </div>
           </div>
@@ -116,118 +213,496 @@ import '../styles/landing.css';
       </div>
     </section>
 
-    <!-- Value Props / Features -->
-    <section id="features" class="features-premium">
-      <div class="container">
-        <div class="section-header">
-          <span class="badge">El Motor de tu Negocio</span>
-          <h2>Todo para vender más en piloto automático</h2>
-          <p>Vendly elimina el trabajo manual de vender por redes sociales. Tus clientes compran más rápido, tú gestionas sin estrés.</p>
+    <!-- ===================== STATS TICKER ===================== -->
+    <section class="stats-ticker-section">
+      <div class="stats-ticker-grid">
+        <div class="ticker-item ticker-color-indigo">
+          <div class="ticker-icon-bubble">🏪</div>
+          <h3>+500</h3>
+          <p>Tiendas y Comercios Activos</p>
         </div>
-        
+        <div class="ticker-item ticker-color-emerald">
+          <div class="ticker-icon-bubble">💰</div>
+          <h3>$1.2M+</h3>
+          <p>En Ventas sin Comisiones</p>
+        </div>
+        <div class="ticker-item ticker-color-cyan">
+          <div class="ticker-icon-bubble">⚡</div>
+          <h3>99.9%</h3>
+          <p>Uptime y Disponibilidad</p>
+        </div>
+        <div class="ticker-item ticker-color-amber">
+          <div class="ticker-icon-bubble">⏱️</div>
+          <h3>&lt; 3 min</h3>
+          <p>Tiempo Promedio por Pedido</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== ANTES VS DESPUÉS ===================== -->
+    <section id="beneficios" class="contrast-section">
+      <div class="contrast-container">
+        <div class="contrast-header">
+          <span class="contrast-tag">El Fin del Caos Manual</span>
+          <h2>Vender por WhatsApp no debería ser un dolor de cabeza</h2>
+          <p>Compara la forma tradicional de vender por mensajes directos frente al flujo automático de Vendly.</p>
+        </div>
+
+        <div class="contrast-cards-grid">
+          <!-- La Forma Tradicional -->
+          <div class="contrast-card bad">
+            <div class="contrast-card-header">
+              <div class="contrast-icon">✕</div>
+              <h3>Vender Manual por DM (Antes)</h3>
+            </div>
+            <ul class="contrast-list">
+              <li>
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                <span>Horas perdidas respondiendo "¿precio?", "¿qué colores tienes?" y reenviando fotos.</span>
+              </li>
+              <li>
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                <span>Calcular la tasa del dólar a mano cliente por cliente con riesgo de errores.</span>
+              </li>
+              <li>
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                <span>Clientes que se enfrían y abandonan la compra por falta de respuesta inmediata.</span>
+              </li>
+              <li>
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                <span>Direcciones de entrega incompletas y comprobantes de pago perdidos en el chat.</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Con Vendly -->
+          <div class="contrast-card good">
+            <div class="contrast-card-header">
+              <div class="contrast-icon">✓</div>
+              <h3>Con Vendly (Tu Máquina de Conversión)</h3>
+            </div>
+            <ul class="contrast-list">
+              <li>
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>Un solo enlace interactivo en tu bio de Instagram y TikTok con tu menú o catálogo completo.</span>
+              </li>
+              <li>
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>Cálculo automático de precios en dólares y bolívares según la tasa BCV oficial del día.</span>
+              </li>
+              <li>
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>El cliente arma su pedido, selecciona talla/color y te envía el resumen listo para despachar.</span>
+              </li>
+              <li>
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>Datos de contacto, dirección de entrega y comprobante de pago adjunto en un solo mensaje.</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== FEATURES / CARACTERÍSTICAS ===================== -->
+    <section id="caracteristicas" class="features-section">
+      <div class="features-container">
+        <div class="features-header">
+          <h2>Diseñado para vender más con menos esfuerzo</h2>
+          <p>Todas las herramientas que tu negocio necesita para operar como una gran marca desde el primer día.</p>
+        </div>
+
         <div class="features-grid">
-          <div class="feature-card-premium">
-            <div class="feature-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m13 2-2 2.5h3L11 9h3l-5 13 3-9H9l2-4.5H8L13 2z"/></svg>
+          <!-- Feature 1 -->
+          <div class="feature-box feature-color-1">
+            <div class="feature-box-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
             </div>
-            <h3>Lanzamiento en Minutos</h3>
-            <p>Configura tu inventario usando nuestras plantillas listas para vender. No necesitas conocimientos de código ni semanas de desarrollo.</p>
+            <h3>Catálogo Móvil Ultra-Rápido</h3>
+            <p>Carga instantánea en cualquier celular sin descargas. Filtros por categorías, buscador en vivo y fotos en alta definición.</p>
           </div>
-          
-          <div class="feature-card-premium">
-            <div class="feature-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
+
+          <!-- Feature 2 -->
+          <div class="feature-box feature-color-2">
+            <div class="feature-box-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
             </div>
-            <h3>Pedidos Consolidados</h3>
-            <p>Recibe los pedidos en tu WhatsApp con todos los datos: artículos, total, tasa de cambio y dirección de entrega de forma estructurada.</p>
+            <h3>Tasa Oficial BCV en Vivo</h3>
+            <p>Muestra precios en dólares y su equivalente en bolívares actualizado automáticamente con la tasa del Banco Central de Venezuela.</p>
           </div>
-          
-          <div class="feature-card-premium">
-            <div class="feature-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/></svg>
+
+          <!-- Feature 3 -->
+          <div class="feature-box feature-color-3">
+            <div class="feature-box-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             </div>
-            <h3>Tasa Oficial Automatizada</h3>
-            <p>Muestra tus precios en dólares y cobra en moneda local calculando automáticamente según la tasa BCV oficial del día. Cero errores.</p>
+            <h3>Cierre Directo en WhatsApp</h3>
+            <p>El cliente hace clic en "Enviar Pedido" y se abre un chat con el detalle exacto de su compra, listo para confirmar y cobrar.</p>
+          </div>
+
+          <!-- Feature 4 -->
+          <div class="feature-box feature-color-4">
+            <div class="feature-box-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            </div>
+            <h3>Recepción de Comprobantes</h3>
+            <p>Tus clientes pueden adjuntar la captura del Pago Móvil o Zelle directamente en el proceso de compra. Todo ordenado en un solo lugar.</p>
+          </div>
+
+          <!-- Feature 5 -->
+          <div class="feature-box feature-color-5">
+            <div class="feature-box-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+            </div>
+            <h3>Cupones y Descuentos</h3>
+            <p>Crea códigos promocionales (ej: PROMO10, ENVIOGRATIS) con límite de usos y fecha de vencimiento para impulsar tus ventas.</p>
+          </div>
+
+          <!-- Feature 6 -->
+          <div class="feature-box feature-color-6">
+            <div class="feature-box-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+            </div>
+            <h3>Control de Inventario y Stock</h3>
+            <p>Administra variantes de talla, color o porciones. Desactiva productos agotados con un clic para no vender lo que no tienes.</p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Demos Grid -->
-    <section id="demos" class="demos-premium">
-      <div class="container">
-        <div class="section-header">
-          <span class="badge">Plantillas Optimizadas</span>
-          <h2>Catálogos que convierten visitas en clientes</h2>
-          <p>Explora cómo se vería tu negocio hoy mismo. Cada plantilla fue diseñada pensando en la mejor experiencia móvil.</p>
+    <!-- ===================== DEMOS EN VIVO ===================== -->
+    <section id="demos" class="demos-section">
+      <div class="demos-container">
+        <div class="demos-header">
+          <h2>Explora tiendas reales según tu tipo de negocio</h2>
+          <p>Nuestras 5 plantillas especializadas vienen preconfiguradas con productos, colores y flujos optimizados para cada industria.</p>
         </div>
-        
-        <div class="demos-grid">
-          <a href="/demo/restaurant" class="demo-card" target="_blank" rel="noopener">
-            <div class="demo-img-wrapper">
-              <img src="/assets/hero_grill.webp" alt="Restaurante" loading="lazy" />
-            </div>
-            <div class="demo-content">
-              <h3>Gastronomía <span class="demo-arrow">→</span></h3>
-              <p>Optimizada para menús con extras y opciones de delivery.</p>
-            </div>
-          </a>
-          
-          <a href="/demo/tech" class="demo-card" target="_blank" rel="noopener">
-            <div class="demo-img-wrapper">
-              <img src="/assets/product_laptop.webp" alt="Tecnología" loading="lazy" />
-            </div>
-            <div class="demo-content">
-              <h3>Tecnología y Electrónica <span class="demo-arrow">→</span></h3>
-              <p>Ideal para specs técnicas y galerías de gadgets.</p>
-            </div>
-          </a>
-          
-          <a href="/demo/fashion" class="demo-card" target="_blank" rel="noopener">
-            <div class="demo-img-wrapper">
-              <img src="/assets/hero_fashion.webp" alt="Moda" loading="lazy" />
-            </div>
-            <div class="demo-content">
-              <h3>Moda y Boutiques <span class="demo-arrow">→</span></h3>
-              <p>Foco visual en prendas, tallas y variaciones de color.</p>
-            </div>
-          </a>
 
-          <a href="/demo/hardware" class="demo-card" target="_blank" rel="noopener">
-            <div class="demo-img-wrapper">
-              <img src="/assets/product_taladro.webp" alt="Ferretería" loading="lazy" />
+        <div class="demos-grid-modern">
+          <!-- Demo 1: Restaurante -->
+          <div class="demo-card-light demo-theme-food">
+            <div class="demo-thumbnail">
+              <span class="demo-badge-tag tag-food">Gastronomía</span>
+              <img src="/assets/hero_grill.webp" alt="Plantilla Restaurante" loading="lazy" />
             </div>
-            <div class="demo-content">
-              <h3>Ferretería y Taller <span class="demo-arrow">→</span></h3>
-              <p>Catálogo masivo para herramientas y repuestos técnicos.</p>
+            <div class="demo-info">
+              <div>
+                <h3>Gastronomía & Fast Food</h3>
+                <p>Ideal para restaurantes, hamburgueserías, areperas, cafeterías y reposterías con delivery y retiro.</p>
+              </div>
+              <a href="/demo/restaurant" class="demo-action-btn" target="_blank" rel="noopener">
+                <span>Probar Catálogo Restaurante</span>
+                <span>→</span>
+              </a>
             </div>
-          </a>
+          </div>
 
-          <a href="/demo/autoparts" class="demo-card" target="_blank" rel="noopener">
-            <div class="demo-img-wrapper">
-              <img src="/assets/product_frenos.webp" alt="Autopartes" loading="lazy" />
+          <!-- Demo 2: Tecnología -->
+          <div class="demo-card-light demo-theme-tech">
+            <div class="demo-thumbnail">
+              <span class="demo-badge-tag tag-tech">Tecnología</span>
+              <img src="/assets/product_laptop.webp" alt="Plantilla Tecnología" loading="lazy" />
             </div>
-            <div class="demo-content">
-              <h3>Auto Periquitos <span class="demo-arrow">→</span></h3>
-              <p>Estructura industrial para accesorios y recambios automotrices.</p>
+            <div class="demo-info">
+              <div>
+                <h3>Tecnología & Gadgets</h3>
+                <p>Especializada en especificaciones técnicas, memorias, marcas, accesorios gamer y componentes.</p>
+              </div>
+              <a href="/demo/tech" class="demo-action-btn" target="_blank" rel="noopener">
+                <span>Probar Catálogo Tech</span>
+                <span>→</span>
+              </a>
             </div>
-          </a>
+          </div>
+
+          <!-- Demo 3: Moda -->
+          <div class="demo-card-light demo-theme-fashion">
+            <div class="demo-thumbnail">
+              <span class="demo-badge-tag tag-fashion">Moda & Estilo</span>
+              <img src="/assets/hero_fashion.webp" alt="Plantilla Moda" loading="lazy" />
+            </div>
+            <div class="demo-info">
+              <div>
+                <h3>Moda, Ropa & Boutiques</h3>
+                <p>Enfoque fotográfico en prendas con selector interactivo de tallas (S, M, L) y círculos de colores.</p>
+              </div>
+              <a href="/demo/fashion" class="demo-action-btn" target="_blank" rel="noopener">
+                <span>Probar Catálogo Moda</span>
+                <span>→</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Demo 4: Ferretería -->
+          <div class="demo-card-light demo-theme-hardware">
+            <div class="demo-thumbnail">
+              <span class="demo-badge-tag tag-hardware">Ferretería</span>
+              <img src="/assets/product_taladro.webp" alt="Plantilla Ferretería" loading="lazy" />
+            </div>
+            <div class="demo-info">
+              <div>
+                <h3>Ferretería & Construcción</h3>
+                <p>Catálogo técnico para herramientas, materiales, plomería y electricidad con búsqueda rápida por código.</p>
+              </div>
+              <a href="/demo/hardware" class="demo-action-btn" target="_blank" rel="noopener">
+                <span>Probar Catálogo Ferretería</span>
+                <span>→</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Demo 5: Autopartes -->
+          <div class="demo-card-light demo-theme-autoparts">
+            <div class="demo-thumbnail">
+              <span class="demo-badge-tag tag-autoparts">Repuestos</span>
+              <img src="/assets/product_frenos.webp" alt="Plantilla Autopartes" loading="lazy" />
+            </div>
+            <div class="demo-info">
+              <div>
+                <h3>Autopartes & Accesorios</h3>
+                <p>Diseñada para repuestos automotrices, aceites, frenos, baterías y sonido con consulta directa a WhatsApp.</p>
+              </div>
+              <a href="/demo/autoparts" class="demo-action-btn" target="_blank" rel="noopener">
+                <span>Probar Catálogo Autopartes</span>
+                <span>→</span>
+              </a>
+            </div>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- Final CTA -->
-    <section class="cta-premium">
-      <div class="cta-box">
-        <h2>¿Listo para digitalizar tus ventas?</h2>
-        <p>No dejes que los clientes se escapen por fricción al comprar. Crea tu enlace, ponlo en tu Instagram y mira cómo crecen tus pedidos diarios.</p>
-        <div class="cta-actions">
-          <a href="/register" class="btn-primary-glow">Empezar a Vender</a>
+    <!-- ===================== COMPARATIVA ===================== -->
+    <section id="comparativa" class="comparison-section">
+      <div class="comparison-container">
+        <div class="contrast-header">
+          <span class="contrast-tag">Por Qué Vendly</span>
+          <h2>La solución exacta para vender en Venezuela y LatAm</h2>
+          <p>No pagues comisiones ocultas ni sufras configurando plataformas que no entienden tus métodos de pago.</p>
         </div>
+
+        <div class="comparison-table-wrapper">
+          <table class="comparison-table">
+            <thead>
+              <tr>
+                <th>Característica</th>
+                <th class="highlight-col">
+                  <div class="comp-col-badge">⭐ LA MEJOR OPCIÓN</div>
+                  <span>Vendly SaaS 🚀</span>
+                </th>
+                <th>Shopify / WooCommerce</th>
+                <th>Vender Manual por Chat</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Comisión por Venta</strong></td>
+                <td class="highlight-col"><span class="comp-check-pill">✓ 0% (Cero comisiones)</span></td>
+                <td><span class="comp-cross-pill">✕ Hasta 2% + pasarelas</span></td>
+                <td><span class="comp-neutral-pill">0% manual</span></td>
+              </tr>
+              <tr>
+                <td><strong>Tasa BCV Automatizada</strong></td>
+                <td class="highlight-col"><span class="comp-check-pill">✓ Nativa en tiempo real</span></td>
+                <td><span class="comp-cross-pill">✕ Requiere plugins caros</span></td>
+                <td><span class="comp-cross-pill">✕ Manual con calculadora</span></td>
+              </tr>
+              <tr>
+                <td><strong>Cierre de Pedidos por WhatsApp</strong></td>
+                <td class="highlight-col"><span class="comp-check-pill">✓ Instantáneo con un clic</span></td>
+                <td><span class="comp-cross-pill">✕ Flujos de email lentos</span></td>
+                <td><span class="comp-neutral-pill">✓ Desordenado</span></td>
+              </tr>
+              <tr>
+                <td><strong>Carga de Comprobante de Pago</strong></td>
+                <td class="highlight-col"><span class="comp-check-pill">✓ Integrada en el checkout</span></td>
+                <td><span class="comp-cross-pill">✕ No disponible por defecto</span></td>
+                <td><span class="comp-cross-pill">✕ Fotos perdidas en chat</span></td>
+              </tr>
+              <tr>
+                <td><strong>Tiempo de Lanzamiento</strong></td>
+                <td class="highlight-col"><span class="comp-check-pill">✓ Menos de 5 minutos</span></td>
+                <td><span class="comp-cross-pill">✕ Semanas de configuración</span></td>
+                <td><span class="comp-neutral-pill">Inmediato pero ineficiente</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== TESTIMONIOS ===================== -->
+    <section class="testimonials-section">
+      <div class="testimonials-container">
+        <div class="testimonials-header">
+          <span class="contrast-tag text-purple">Casos de Éxito</span>
+          <h2>Negocios reales que ya crecen con Vendly</h2>
+          <p>Conoce las historias de emprendedores que transformaron su WhatsApp en su canal de ventas más rentable.</p>
+        </div>
+
+        <div class="testimonials-grid-modern">
+          <!-- Testimonio 1 -->
+          <div class="testimonial-card-light test-theme-1">
+            <div>
+              <div class="test-stars-row">★★★★★</div>
+              <p class="test-quote">
+                "Antes perdía hasta 3 horas al día respondiendo precios y sacando cuentas de la tasa del día. Con Vendly mis clientes arman el pedido solos y me pagan en 2 minutos."
+              </p>
+            </div>
+            <div class="test-author-box">
+              <img src="/assets/client_maria.webp" alt="María González" class="test-avatar" loading="lazy" />
+              <div class="test-author-info">
+                <strong>María González</strong>
+                <span class="test-badge-city">Boutique Chic · Caracas</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Testimonio 2 -->
+          <div class="testimonial-card-light test-theme-2">
+            <div>
+              <div class="test-stars-row">★★★★★</div>
+              <p class="test-quote">
+                "Nuestras ventas por delivery aumentaron un 45% en el primer mes. A la gente le encanta ver las fotos de las hamburguesas y que el total en bolívares esté listo sin rodeos."
+              </p>
+            </div>
+            <div class="test-author-box">
+              <img src="/assets/client_jose.webp" alt="José Rodríguez" class="test-avatar" loading="lazy" />
+              <div class="test-author-info">
+                <strong>José Rodríguez</strong>
+                <span class="test-badge-city">Burger House · Valencia</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Testimonio 3 -->
+          <div class="testimonial-card-light test-theme-3">
+            <div>
+              <div class="test-stars-row">★★★★★</div>
+              <p class="test-quote">
+                "El control de stock y los cupones de descuento nos permitieron hacer campañas en Black Friday que se vendieron en horas. La mejor inversión que hicimos para el negocio."
+              </p>
+            </div>
+            <div class="test-author-box">
+              <img src="/assets/client_ana.webp" alt="Ana Martínez" class="test-avatar" loading="lazy" />
+              <div class="test-author-info">
+                <strong>Ana Martínez</strong>
+                <span class="test-badge-city">TechZone · Maracay</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Testimonio 4 -->
+          <div class="testimonial-card-light test-theme-4">
+            <div>
+              <div class="test-stars-row">★★★★★</div>
+              <p class="test-quote">
+                "Poder adjuntar la captura del Pago Móvil en el mismo pedido evita fraudes y agiliza el despacho. Nuestros clientes no paran de felicitarnos por la rapidez del catálogo."
+              </p>
+            </div>
+            <div class="test-author-box">
+              <img src="/assets/client_valentina.webp" alt="Valentina Silva" class="test-avatar" loading="lazy" />
+              <div class="test-author-info">
+                <strong>Valentina Silva</strong>
+                <span class="test-badge-city">AutoRepuestos Express · Barquisimeto</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== FAQ ACCORDION ===================== -->
+    <section id="faq" class="faq-saas-section">
+      <div class="faq-saas-container">
+        <div class="faq-saas-header">
+          <h2>Preguntas Frecuentes</h2>
+          <p>Todo lo que necesitas saber antes de lanzar tu tienda.</p>
+        </div>
+
+        <div class="faq-accordion-group">
+          <!-- FAQ 1 -->
+          <div class="faq-item-modern active">
+            <button type="button" class="faq-question-btn">
+              <span>¿Necesito saber de programación o diseño para usar Vendly?</span>
+              <svg class="faq-chevron" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div class="faq-answer-panel">
+              <p>No, en absoluto. Vendly fue creado para que cualquier persona cree su tienda en menos de 5 minutos. Solo eliges tu plantilla, subes tus fotos y precios desde un panel muy intuitivo y listo.</p>
+            </div>
+          </div>
+
+          <!-- FAQ 2 -->
+          <div class="faq-item-modern">
+            <button type="button" class="faq-question-btn">
+              <span>¿Cómo recibo el dinero de las compras de mis clientes?</span>
+              <svg class="faq-chevron" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div class="faq-answer-panel">
+              <p>El dinero va 100% directo a tus cuentas bancarias o billeteras. Puedes configurar tus datos de Pago Móvil, transferencias bancarias, Zelle o efectivo. Vendly no retiene tu dinero ni es intermediario financiero.</p>
+            </div>
+          </div>
+
+          <!-- FAQ 3 -->
+          <div class="faq-item-modern">
+            <button type="button" class="faq-question-btn">
+              <span>¿Vendly cobra comisión por cada venta que realice?</span>
+              <svg class="faq-chevron" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div class="faq-answer-panel">
+              <p>0% comisiones. A diferencia de otras plataformas que te cobran un porcentaje por cada transacción, en Vendly todo lo que vendes es 100% tuyo. Solo pagas una suscripción mensual fija.</p>
+            </div>
+          </div>
+
+          <!-- FAQ 4 -->
+          <div class="faq-item-modern">
+            <button type="button" class="faq-question-btn">
+              <span>¿Cómo funciona la sincronización con la Tasa Oficial BCV?</span>
+              <svg class="faq-chevron" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div class="faq-answer-panel">
+              <p>Nuestros servidores consultan diariamente la tasa oficial publicada por el Banco Central de Venezuela. Tus precios se convierten automáticamente al valor exacto en bolívares en el momento en que tu cliente abre el catálogo.</p>
+            </div>
+          </div>
+
+          <!-- FAQ 5 -->
+          <div class="faq-item-modern">
+            <button type="button" class="faq-question-btn">
+              <span>¿Puedo usar mi propio enlace y personalizar mis colores?</span>
+              <svg class="faq-chevron" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div class="faq-answer-panel">
+              <p>Sí, tu tienda tendrá su enlace exclusivo (ej: vendly.app/mitienda), tu propio logo, tus datos de contacto en redes y podrás elegir la plantilla que mejor represente tu marca.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== FINAL HIGH-CONVERTING CTA ===================== -->
+    <section class="cta-banner-section">
+      <div class="cta-banner-card">
+        <div class="cta-banner-badge">🚀 COMIENZA AHORA MISMO</div>
+        <h2>¿Listo para dejar de perder ventas por chat?</h2>
+        <p>Únete a más de 500 comerciantes que ya automatizaron sus pedidos. Crea tu tienda hoy mismo y compártela en tus redes.</p>
+        <div class="cta-banner-actions">
+          <a href="/register" class="btn-cta-white" id="final-cta-btn">
+            <span>Crear mi Tienda Gratis Ahora</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </a>
+        </div>
+        <span class="cta-guarantee-note">✓ Prueba gratuita sin tarjeta de crédito · Activación inmediata</span>
       </div>
     </section>
   </main>
+
   <Footer config={saasConfig} />
+
+  <!-- Script de Interacción (Cero inline scripts) -->
+  <script>
+    import '../scripts/landing';
+  </script>
 </BaseLayout>
-
-
