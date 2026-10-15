@@ -338,8 +338,14 @@ export const onRequestDelete: PagesHandler<Env> = async (context) => {
             return jsonResponse({ error: "ID de producto requerido." }, 400);
         }
 
+        // Verificar que el producto pertenece al tenant antes de eliminar
+        const existing = await db.prepare("SELECT id FROM products WHERE id = ? AND tenant_id = ?").bind(id, tenantId).first();
+        if (!existing) {
+            return jsonResponse({ error: "Producto no encontrado en esta tienda." }, 404);
+        }
+
         await db.batch([
-            db.prepare("DELETE FROM product_attributes WHERE product_id = ?").bind(id),
+            db.prepare("DELETE FROM product_attributes WHERE product_id = ? AND product_id IN (SELECT id FROM products WHERE tenant_id = ?)").bind(id, tenantId),
             db.prepare("DELETE FROM products WHERE id = ? AND tenant_id = ?").bind(id, tenantId)
         ]);
 

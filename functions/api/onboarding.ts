@@ -85,6 +85,137 @@ async function recordRegistrationAttempt(db: D1Database, ip: string): Promise<vo
     }
 }
 
+function getStarterProducts(tenantId: string, template: string) {
+    switch (template) {
+        case 'restaurant':
+            return [
+                {
+                    id: `${tenantId}-burger-especial`,
+                    name: 'Hamburguesa Especial Vendly',
+                    description: 'Carne 100% res 180g, queso cheddar fundido, tocineta crujiente, lechuga y salsa especial de la casa.',
+                    price: 8.50,
+                    category: 'principales',
+                    icon: 'utensils',
+                    image_url: '/assets/hero_grill.webp',
+                    stock: -1
+                },
+                {
+                    id: `${tenantId}-papas-crispy`,
+                    name: 'Papas Rústicas Crispy',
+                    description: 'Papas sazonadas con pimentón dulce, sal marina y dip de queso fundido.',
+                    price: 3.50,
+                    category: 'acompañantes',
+                    icon: 'package',
+                    image_url: '/assets/hero_grill.webp',
+                    stock: 50
+                },
+                {
+                    id: `${tenantId}-refresco-355ml`,
+                    name: 'Bebida Refrescante 355ml',
+                    description: 'Refresco en lata frío, variedad de sabores disponibles.',
+                    price: 1.50,
+                    category: 'bebidas',
+                    icon: 'coffee',
+                    image_url: '/assets/hero_grill.webp',
+                    stock: 100
+                }
+            ];
+        case 'hardware':
+            return [
+                {
+                    id: `${tenantId}-taladro-650w`,
+                    name: 'Taladro Percutor 1/2 650W',
+                    description: 'Velocidad variable reversible, empuñadura ergonómica, mandril metálico de 13mm.',
+                    price: 45.00,
+                    category: 'herramientas',
+                    icon: 'tool',
+                    image_url: '/assets/product_taladro.webp',
+                    stock: 15
+                },
+                {
+                    id: `${tenantId}-destornilladores-x6`,
+                    name: 'Juego de Destornilladores x6 Piezas',
+                    description: 'Puntas magnéticas de cromo vanadio, mangos bimateriales antideslizantes.',
+                    price: 12.00,
+                    category: 'manuales',
+                    icon: 'wrench',
+                    image_url: '/assets/product_taladro.webp',
+                    stock: 30
+                }
+            ];
+        case 'fashion':
+            return [
+                {
+                    id: `${tenantId}-camisa-lino`,
+                    name: 'Camisa Casual Lino Premium',
+                    description: 'Confeccionada en 100% lino fresco, corte slim fit, botones de madera natural.',
+                    price: 28.00,
+                    category: 'camisas',
+                    icon: 'tag',
+                    image_url: '/assets/hero_fashion.webp',
+                    stock: 25
+                },
+                {
+                    id: `${tenantId}-pantalon-chino`,
+                    name: 'Pantalón Chino Gabardina',
+                    description: 'Algodón elástico de alta resistencia, bolsillos laterales y traseros.',
+                    price: 35.00,
+                    category: 'pantalones',
+                    icon: 'tag',
+                    image_url: '/assets/hero_fashion.webp',
+                    stock: 20
+                }
+            ];
+        case 'tech':
+            return [
+                {
+                    id: `${tenantId}-auriculares-bt`,
+                    name: 'Auriculares Inalámbricos Pro ANC',
+                    description: 'Cancelación activa de ruido, Bluetooth 5.3, autonomía de 32 horas con estuche.',
+                    price: 29.99,
+                    category: 'audio',
+                    icon: 'headphones',
+                    image_url: '/assets/product_laptop.webp',
+                    stock: 20
+                },
+                {
+                    id: `${tenantId}-mouse-gamer`,
+                    name: 'Mouse Gamer RGB 6400 DPI',
+                    description: 'Sensor óptico de alta precisión, 6 botones programables y cable trenzado.',
+                    price: 16.50,
+                    category: 'perifericos',
+                    icon: 'mouse',
+                    image_url: '/assets/product_laptop.webp',
+                    stock: 40
+                }
+            ];
+        case 'autoparts':
+        default:
+            return [
+                {
+                    id: `${tenantId}-pastillas-freno`,
+                    name: 'Pastillas de Freno Cerámicas Delanteras',
+                    description: 'Compuesto cerámico de alta duración, frenado silencioso y baja emisión de polvo.',
+                    price: 26.00,
+                    category: 'frenos',
+                    icon: 'disc',
+                    image_url: '/assets/product_frenos.webp',
+                    stock: 18
+                },
+                {
+                    id: `${tenantId}-aceite-20w50`,
+                    name: 'Aceite de Motor 20W-50 Mineral 1L',
+                    description: 'Protección antidesgaste para altas temperaturas en motores a gasolina.',
+                    price: 7.50,
+                    category: 'lubricantes',
+                    icon: 'droplet',
+                    image_url: '/assets/product_frenos.webp',
+                    stock: 60
+                }
+            ];
+    }
+}
+
 export const onRequestPost: PagesHandler<Env> = async (context) => {
     const { request, env } = context;
     const db = getDB(env);
@@ -109,12 +240,22 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
 
         const { tenantName, tenantSlug, template, username, password, email, whatsapp } = result.data;
         
+        // Normalizar número de WhatsApp a formato internacional (E.164 Venezuela / LatAm)
+        let cleanWhatsApp = whatsapp ? whatsapp.replace(/[^0-9]/g, '') : null;
+        if (cleanWhatsApp) {
+            if (cleanWhatsApp.startsWith('0')) {
+                cleanWhatsApp = '58' + cleanWhatsApp.substring(1);
+            } else if (cleanWhatsApp.length === 10 && !cleanWhatsApp.startsWith('58')) {
+                cleanWhatsApp = '58' + cleanWhatsApp;
+            }
+        }
+
         const passwordHash = await hashSHA256(password);
         
-        // 2. Verificar disponibilidad de Slug y Username global
+        // 2. Verificar disponibilidad de Slug y Username
         const existingTenant = await db.prepare('SELECT id FROM tenants WHERE id = ?').bind(tenantSlug).first();
         if (existingTenant) {
-            return jsonResponse({ error: `El subdominio "${tenantSlug}" ya está en uso.` }, 400);
+            return jsonResponse({ error: `El subdominio o dirección "${tenantSlug}" ya está en uso.` }, 400);
         }
 
         const existingUser = await db.prepare('SELECT id FROM users WHERE username = ? AND tenant_id = ?')
@@ -127,7 +268,11 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
         const salt = generateSalt();
         const finalHash = await hashPasswordPBKDF2(passwordHash, salt);
 
-        // 4. Crear Tenant y Usuario en una transacción Batch atómica
+        // 4. Generar sesión automática para que el onboarding no requiera re-login
+        const sessionToken = crypto.randomUUID();
+        const maxAge = 7 * 24 * 60 * 60; // 7 días
+        const expiresAt = Math.floor(Date.now() / 1000) + maxAge;
+
         const legalMetadata = {
             legal: {
                 terms_version: 'v1.0',
@@ -137,10 +282,10 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
             }
         };
 
-        const statements = [
+        const statements: D1PreparedStatement[] = [
             db.prepare(
                 'INSERT INTO tenants (id, name, plan, template, config_json, whatsapp, active) VALUES (?, ?, ?, ?, ?, ?, ?)'
-            ).bind(tenantSlug, tenantName, 'basic', template, JSON.stringify(legalMetadata), whatsapp || null, 1),
+            ).bind(tenantSlug, tenantName, 'basic', template, JSON.stringify(legalMetadata), cleanWhatsApp || null, 1),
             
             db.prepare(
                 "INSERT INTO settings (key, value, tenant_id) VALUES ('bcv_rate', '36.50', ?)"
@@ -148,12 +293,26 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
 
             db.prepare(
                 'INSERT INTO users (username, password_hash, password_salt, role, tenant_id) VALUES (?, ?, ?, ?, ?)'
-            ).bind(username.toLowerCase().trim(), finalHash, salt, 'admin', tenantSlug)
+            ).bind(username.toLowerCase().trim(), finalHash, salt, 'admin', tenantSlug),
+
+            db.prepare(
+                'INSERT INTO sessions (token, username, expires_at, tenant_id) VALUES (?, ?, ?, ?)'
+            ).bind(sessionToken, username.toLowerCase().trim(), expiresAt, tenantSlug)
         ];
+
+        // 5. Sembrar productos iniciales de ejemplo para eliminar el efecto de "tablero vacío"
+        const starterProducts = getStarterProducts(tenantSlug, template);
+        for (const p of starterProducts) {
+            statements.push(
+                db.prepare(
+                    'INSERT INTO products (id, name, description, price, category, icon, image_url, template, stock, active, tenant_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+                ).bind(p.id, p.name, p.description, p.price, p.category, p.icon, p.image_url, template, p.stock, 1, tenantSlug)
+            );
+        }
 
         await db.batch(statements);
 
-        // 5. Registrar el intento exitoso en el rate limiter
+        // 6. Registrar el intento exitoso en el rate limiter
         await recordRegistrationAttempt(db, clientIp);
 
         // Notificar via webhook (asíncrono)
@@ -170,14 +329,19 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
         }
 
         const host = new URL(request.url).host;
+        const cookie = `vendly_session=${sessionToken}; Path=/; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Strict`;
+
         return jsonResponse({
             success: true,
             message: `¡Registro exitoso! Tu tienda está disponible en ${host}/${tenantSlug}`,
             tenantId: tenantSlug
-        }, 201);
+        }, 201, { "Set-Cookie": cookie });
 
-    } catch (err) {
+    } catch (err: any) {
         console.error('Error en POST /api/onboarding:', err);
-        return jsonResponse({ error: 'Error interno al registrar el negocio.' }, 500);
+        return jsonResponse({ 
+            error: err?.message || 'Error interno al registrar el negocio.',
+            detail: err?.cause?.message || err?.message || String(err)
+        }, 500);
     }
 };

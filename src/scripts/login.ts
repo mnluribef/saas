@@ -4,28 +4,34 @@ const errDiv = document.getElementById('login-error') as HTMLElement;
 
 const showError = (msg: string) => {
     errDiv.textContent = msg;
-    errDiv.style.display = 'block';
+    errDiv.classList.remove('hidden');
 };
 
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    errDiv.style.display = 'none';
+    errDiv.classList.add('hidden');
     btn.disabled = true;
     btn.textContent = 'Verificando...';
 
     const username = (document.getElementById('username') as HTMLInputElement).value.trim();
     const password = (document.getElementById('password') as HTMLInputElement).value;
+    const tenant = (document.getElementById('tenant') as HTMLInputElement)?.value.trim() || undefined;
 
     try {
         const res = await fetch('/api/auth', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password }),
+            body: JSON.stringify({ username, password, tenant }),
             credentials: 'include',
         });
-        const data = await res.json() as { success: boolean; error?: string };
+        const data = await res.json() as { success: boolean; tenant?: string; error?: string };
         if (data.success) {
-            window.location.href = '/admin';
+            const redirectTenant = data.tenant || tenant;
+            if (redirectTenant && redirectTenant !== 'default') {
+                window.location.href = `/admin?tenant=${encodeURIComponent(redirectTenant)}`;
+            } else {
+                window.location.href = '/admin';
+            }
         } else {
             showError(data.error || 'Credenciales incorrectas.');
         }

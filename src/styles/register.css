@@ -360,6 +360,14 @@
         text-decoration: none;
     }
 
+    .btn-icon-right {
+        margin-left: 8px;
+    }
+
+    .btn-icon-left {
+        margin-right: 8px;
+    }
+
     .btn-primary {
         background: linear-gradient(135deg, var(--primary) 0%, #6366f1 100%);
         color: white;

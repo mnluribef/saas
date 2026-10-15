@@ -10,6 +10,8 @@ import type { Env, PagesHandler } from '../types';
 export const loginSchema = z.object({
     username: z.string().min(1, "Usuario requerido"),
     password: z.string().min(1, "Contraseña requerida"),
+    tenant: z.string().max(60).optional(),
+    tenantId: z.string().max(60).optional(),
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;
@@ -107,7 +109,7 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
 
     if (user) {
         return jsonResponse(
-            { authenticated: true, username: user.username, role: user.role },
+            { authenticated: true, username: user.username, role: user.role, tenantId: user.tenant_id },
             200,
             { "Cache-Control": "no-store, no-cache, must-revalidate" }
         );
@@ -121,13 +123,12 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
 };
 
 /**
- * POST /api/auth - Inicia sesión (Login)
+ * POST /api/auth - Inicia sesión (Login Multi-Tenant)
  */
 export const onRequestPost: PagesHandler<Env> = async (context) => {
     const { request, env } = context;
     const db = getDB(env);
     const clientIp = request.headers.get("CF-Connecting-IP") || request.headers.get("x-real-ip") || "unknown";
-    const { id: tenantId } = await resolveTenant(request, db);
 
     // 1. Verificar Rate Limit
     const rateCheck = await checkRateLimit(db, clientIp);
@@ -145,17 +146,37 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
             return jsonResponse({ error: "Usuario y contraseña requeridos.", details: parseResult.error.issues }, 400);
         }
         
-        const { username, password } = parseResult.data;
+        const { username, password, tenant: bodyTenant, tenantId: bodyTenantId } = parseResult.data;
         const passwordHash = await hashSHA256(password);
 
-        // Buscar usuario en base de datos (scoped al tenant)
+        // Resolución Inteligente del Tenant
+        const urlTenant = new URL(request.url).searchParams.get('tenant');
+        let effectiveTenantId = (bodyTenant || bodyTenantId || urlTenant || '').trim().toLowerCase();
+
+        if (!effectiveTenantId) {
+            const { id: resolvedId } = await resolveTenant(request, db);
+            effectiveTenantId = resolvedId;
+        }
+
+        // Si aún no está especificado y cae en 'demo', buscar si este username pertenece a un único tenant
+        if (effectiveTenantId === 'demo') {
+            const userMatches = await db.prepare(
+                "SELECT tenant_id FROM users WHERE username = ?"
+            ).bind(username.toLowerCase().trim()).all<{ tenant_id: string }>();
+
+            if (userMatches?.results && userMatches.results.length === 1) {
+                effectiveTenantId = userMatches.results[0].tenant_id;
+            }
+        }
+
+        // Buscar usuario en base de datos (scoped al tenant resuelto)
         const user = await db.prepare("SELECT * FROM users WHERE username = ? AND tenant_id = ?")
-            .bind(username.toLowerCase().trim(), tenantId)
+            .bind(username.toLowerCase().trim(), effectiveTenantId)
             .first<UserDbRow>();
 
         if (!user) {
             await recordFailedAttempt(db, clientIp);
-            return jsonResponse({ error: "Credenciales inválidas." }, 401);
+            return jsonResponse({ error: "Credenciales inválidas o tienda no encontrada." }, 401);
         }
 
         let isMatch = false;
@@ -194,13 +215,13 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
 
         // Registrar la sesión en la base de datos (con tenant_id)
         await db.prepare("INSERT INTO sessions (token, username, expires_at, tenant_id) VALUES (?, ?, ?, ?)")
-            .bind(sessionToken, user.username, expiresAt, tenantId)
+            .bind(sessionToken, user.username, expiresAt, effectiveTenantId)
             .run();
 
         const cookie = `vendly_session=${sessionToken}; Path=/; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Strict`;
         
         return jsonResponse(
-            { success: true, username: user.username, role: user.role },
+            { success: true, username: user.username, role: user.role, tenantId: effectiveTenantId, tenant: effectiveTenantId },
             200,
             { "Set-Cookie": cookie }
         );
@@ -211,7 +232,7 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
 };
 
 /**
- * PUT /api/auth - Cambiar contraseña del administrador
+ * PUT /api/auth - Cambiar contraseña del administrador (Aislado por Tenant)
  */
 export const onRequestPut: PagesHandler<Env> = async (context) => {
     const sessionUser = await verifySession(context);
@@ -233,8 +254,9 @@ export const onRequestPut: PagesHandler<Env> = async (context) => {
         const currentPasswordHash = await hashSHA256(currentPassword);
         const newPasswordHash = await hashSHA256(newPassword);
 
-        const user = await db.prepare("SELECT * FROM users WHERE username = ?")
-            .bind(sessionUser.username.toLowerCase().trim())
+        // Búsqueda estrictamente aislada por username Y tenant_id
+        const user = await db.prepare("SELECT * FROM users WHERE username = ? AND tenant_id = ?")
+            .bind(sessionUser.username.toLowerCase().trim(), sessionUser.tenant_id)
             .first<UserDbRow>();
 
         if (!user) {
@@ -258,8 +280,8 @@ export const onRequestPut: PagesHandler<Env> = async (context) => {
         const newSalt = generateSalt();
         const newHash = await hashPasswordPBKDF2(newPasswordHash, newSalt);
 
-        await db.prepare("UPDATE users SET password_hash = ?, password_salt = ? WHERE id = ?")
-            .bind(newHash, newSalt, user.id)
+        await db.prepare("UPDATE users SET password_hash = ?, password_salt = ? WHERE id = ? AND tenant_id = ?")
+            .bind(newHash, newSalt, user.id, sessionUser.tenant_id)
             .run();
 
         return jsonResponse({ success: true, message: "Contraseña actualizada exitosamente." });

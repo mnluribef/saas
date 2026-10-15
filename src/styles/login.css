@@ -62,3 +62,27 @@ body {
 }
 .login-btn:hover { opacity: 0.9; transform: translateY(-1px); }
 .login-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+.hidden {
+  display: none !important;
+}
+
+.login-footer-links {
+  margin-top: 1.5rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.login-footer-links a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.login-footer-links a:hover {
+  text-decoration: underline;
+}

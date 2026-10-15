@@ -236,12 +236,12 @@ if (loginForm) {
         if (window.lucide) lucide.createIcons();
 
         try {
-            const passwordHash = await sha256(passwordPlain);
+            const urlTenant = new URLSearchParams(window.location.search).get('tenant') || undefined;
 
             const res = await fetch('/api/auth', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, passwordHash })
+                body: JSON.stringify({ username, password: passwordPlain, tenant: urlTenant })
             });
 
             const data = (await res.json()) as any;
