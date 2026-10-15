@@ -1,0 +1,318 @@
+---
+// src/pages/terminos.astro
+// Términos y Condiciones de Servicio, Política de Uso Aceptable (AUP) y Blindaje Legal Anti-Fraude
+import '../styles/legal.css';
+
+const lastUpdated = "15 de Octubre de 2026";
+const contactLegalEmail = "legal@vendly.app";
+---
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Términos y Condiciones de Servicio | Vendly SaaS</title>
+    <meta name="description" content="Términos y condiciones de uso, política de uso aceptable, protección contra fraudes y régimen de responsabilidad de Vendly." />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
+</head>
+<body class="legal-body">
+    <div class="legal-page-wrapper">
+        <div class="legal-bg-glow"></div>
+
+        <!-- Encabezado de Navegación -->
+        <header class="legal-header">
+            <div class="legal-header-container">
+                <a href="/" class="legal-brand-link" aria-label="Ir al inicio de Vendly">
+                    <svg class="legal-brand-logo" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
+                        <path d="M3 6h18" />
+                        <path d="M16 10a4 4 0 0 1-8 0" />
+                    </svg>
+                    <span>Vendly</span>
+                </a>
+                <a href="/" class="legal-back-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                    <span>Volver al Inicio</span>
+                </a>
+            </div>
+        </header>
+
+        <!-- Contenido Principal -->
+        <main class="legal-main-content">
+            <section class="legal-hero">
+                <span class="legal-badge">Marco Jurídico & Compliance</span>
+                <h1 class="legal-title">Términos y Condiciones de Servicio</h1>
+                <p class="legal-subtitle">
+                    Reglamento vinculante de uso, política de uso aceptable (AUP), prevención de fraudes y delimitación de responsabilidades de la plataforma Vendly.
+                </p>
+                <div class="legal-meta-row">
+                    <span class="legal-meta-item">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
+                            <line x1="16" y1="2" x2="16" y2="6" />
+                            <line x1="8" y1="2" x2="8" y2="6" />
+                            <line x1="3" y1="10" x2="21" y2="10" />
+                        </svg>
+                        Última actualización: {lastUpdated}
+                    </span>
+                    <span class="legal-meta-item">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
+                        </svg>
+                        Versión Vigente: v1.0
+                    </span>
+                </div>
+            </section>
+
+            <!-- Aviso Destacado de Safe Harbor -->
+            <div class="legal-callout legal-callout-safeharbor">
+                <svg class="legal-callout-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+                <div class="legal-callout-body">
+                    <h4>Declaración de Neutralidad e Infraestructura Tecnológica</h4>
+                    <p>
+                        Vendly es exclusivamente un proveedor de tecnología de software como servicio (SaaS). <strong>Vendly NO es una tienda online, no custodia inventarios, no fija precios, no percibe ni procesa el dinero de las compras de los consumidores y NO es parte de los contratos de compraventa celebrados entre las tiendas y sus compradores.</strong>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Tarjeta Central de Cláusulas Legales -->
+            <article class="legal-card">
+                <!-- Índice Rápido -->
+                <nav class="legal-toc" aria-label="Tabla de contenidos">
+                    <div class="legal-toc-title">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="8" y1="6" x2="21" y2="6"></line>
+                            <line x1="8" y1="12" x2="21" y2="12"></line>
+                            <line x1="8" y1="18" x2="21" y2="18"></line>
+                            <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                            <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                            <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                        </svg>
+                        Índice de Cláusulas
+                    </div>
+                    <ul class="legal-toc-grid">
+                        <li><a href="#clausula-1">1. Definiciones</a></li>
+                        <li><a href="#clausula-2">2. Naturaleza del Servicio</a></li>
+                        <li><a href="#clausula-3">3. Uso Aceptable y Prohibiciones</a></li>
+                        <li><a href="#clausula-4">4. Suspensión y Cierre de Cuentas</a></li>
+                        <li><a href="#clausula-5">5. Cláusula de Indemnidad</a></li>
+                        <li><a href="#clausula-6">6. Colaboración con Autoridades</a></li>
+                        <li><a href="#clausula-7">7. Procedimiento de Denuncias</a></li>
+                        <li><a href="#clausula-8">8. Límite de Responsabilidad</a></li>
+                        <li><a href="#clausula-9">9. Obligaciones Tributarias</a></li>
+                        <li><a href="#clausula-10">10. Modificaciones y Validez</a></li>
+                        <li><a href="#clausula-11">11. Ley Aplicable y Jurisdicción</a></li>
+                    </ul>
+                </nav>
+
+                <!-- Cláusula 1 -->
+                <section class="legal-clause" id="clausula-1">
+                    <div class="legal-clause-header">
+                        <span class="legal-clause-number">CLÁUSULA 01</span>
+                        <h2 class="legal-clause-title">Definiciones</h2>
+                    </div>
+                    <p class="legal-clause-text">
+                        A los efectos del presente contrato, las palabras y expresiones que a continuación se indican tendrán el significado que aquí se les atribuye:
+                    </p>
+                    <ul class="legal-clause-list">
+                        <li><strong>Plataforma / Software:</strong> El software como servicio (SaaS) desarrollado y operado bajo el nombre comercial Vendly, incluyendo sus aplicaciones web, APIs, bases de datos y servidores de catálogo.</li>
+                        <li><strong>Comerciante / Tienda:</strong> La persona natural o jurídica que contrata el Software para crear, personalizar y alojar su catálogo interactivo de productos o servicios.</li>
+                        <li><strong>Consumidor / Comprador Final:</strong> El usuario tercero que visualiza el catálogo de un Comerciante y acuerda de manera privada y directa la compra de bienes o servicios.</li>
+                        <li><strong>Transacción Comercial:</strong> Todo acuerdo, intercambio, cobro o despacho que se verifique de forma directa y privada entre el Comerciante y el Comprador Final.</li>
+                    </ul>
+                </section>
+
+                <!-- Cláusula 2 -->
+                <section class="legal-clause" id="clausula-2">
+                    <div class="legal-clause-header">
+                        <span class="legal-clause-number">CLÁUSULA 02</span>
+                        <h2 class="legal-clause-title">Naturaleza del Servicio y Principio de Neutralidad Tecnológica</h2>
+                    </div>
+                    <p class="legal-clause-text">
+                        2.1. <strong>Intermediación Tecnológica Exclusiva:</strong> Vendly otorga al Comerciante una licencia limitada, no exclusiva, revocable e intransferible para el uso de su infraestructura digital.
+                    </p>
+                    <p class="legal-clause-text">
+                        2.2. <strong>Inexistencia de Relación de Compraventa con el Comprador:</strong> Vendly expresamente declara que:
+                    </p>
+                    <ul class="legal-clause-list">
+                        <li>No actúa como vendedor, distribuidor, franquiciante, comisionista ni representante legal de los Comerciantes.</li>
+                        <li>No fija precios, no valida la existencia material ni la calidad física de los artículos publicados en los catálogos.</li>
+                        <li>No procesa pagos de ventas al detal, no es agente de retención ni custodia fondos dinerarios de consumidores finales. Todos los pagos (ej. Pago Móvil, transferencias bancarias, Zelle, efectivo) son coordinados privadamente y transferidos directamente a las cuentas del Comerciante.</li>
+                    </ul>
+                </section>
+
+                <!-- Cláusula 3 -->
+                <section class="legal-clause" id="clausula-3">
+                    <div class="legal-clause-header">
+                        <span class="legal-clause-number">CLÁUSULA 03</span>
+                        <h2 class="legal-clause-title">Política de Uso Aceptable (AUP) y Actividades Prohibidas</h2>
+                    </div>
+                    <p class="legal-clause-text">
+                        El Comerciante asume la obligación taxativa de cumplir con la legislación nacional e internacional vigente. Queda terminantemente prohibido utilizar el Software para ofertar, comercializar o coordinar transacciones de:
+                    </p>
+                    <ul class="legal-clause-list">
+                        <li><strong>Fraudes, Engaños y Estafas:</strong> Captación no autorizada de fondos, esquemas piramidales o Ponzi, venta de artículos inexistentes, ofrecimiento doloso de bienes sin intención de despacho o suplantación de marcas e identidades.</li>
+                        <li><strong>Falsificaciones y Violación de Propiedad Intelectual:</strong> Mercancía falsificada, réplicas no autorizadas, clones que vulneren derechos de autor, marcas registradas, patentes o secretos comerciales de terceros.</li>
+                        <li><strong>Sustancias Controladas, Narcóticos y Medicamentos:</strong> Estupefacientes, precursores químicos, medicamentos de prescripción médica que carezcan de los registros sanitarios y licencias farmacéuticas exigidas por la ley.</li>
+                        <li><strong>Armamento y Artículos Bélicos:</strong> Armas de fuego, municiones, componentes de explosivos, armas blancas ofensivas y artificios pirotécnicos peligrosos no regulados.</li>
+                        <li><strong>Contenido Ilegal o Explotación:</strong> Pornografía no consentida, proxenetismo, explotación infantil o trata de personas.</li>
+                        <li><strong>Bienes Ilícitos:</strong> Mercancía robada, hurtada, producto del contrabando o sobre la cual pesen medidas cautelares o litigios.</li>
+                        <li><strong>Delitos Financieros:</strong> Actividades vinculadas a la Legitimación de Capitales, Financiamiento al Terrorismo o transacciones financieras no reguladas.</li>
+                    </ul>
+                </section>
+
+                <!-- Cláusula 4 -->
+                <section class="legal-clause" id="clausula-4">
+                    <div class="legal-clause-header">
+                        <span class="legal-clause-number">CLÁUSULA 04</span>
+                        <h2 class="legal-clause-title">Facultad de Supervisión, Suspensión Inmediata y Cierre Definitivo</h2>
+                    </div>
+                    <p class="legal-clause-text">
+                        4.1. Vendly se reserva el derecho de supervisar y auditar la actividad de las tiendas cuando medien reportes de terceros o sospechas fundadas de actividad fraudulenta.
+                    </p>
+                    <p class="legal-clause-text">
+                        4.2. <strong>Baja Cautelar Inmediata:</strong> Vendly podrá suspender temporalmente el catálogo, restringir el acceso al panel administrativo o eliminar de forma definitiva la cuenta de un Comerciante, <em>sin necesidad de orden judicial ni notificación previa</em>, ante cualquiera de las siguientes causales:
+                    </p>
+                    <ul class="legal-clause-list">
+                        <li>Denuncias reiteradas de compradores por falta de entrega o estafa no desvirtuadas por el Comerciante.</li>
+                        <li>Notificación formal de titulares de marcas registradas por venta de réplicas falsificadas.</li>
+                        <li>Violación manifiesta de la Política de Uso Aceptable (Cláusula 03).</li>
+                        <li>Requerimiento expreso de autoridades policiales, tributarias o judiciales.</li>
+                    </ul>
+                    <p class="legal-clause-text">
+                        4.3. <strong>Pérdida de Suscripción (Sin Reembolso):</strong> En caso de expulsión por fraude, falsificación o actividades ilegales, el Comerciante perderá todo derecho a reembolso de las cuotas de suscripción pagadas, las cuales serán retenidas en su totalidad en concepto de cláusula penal por daños a la plataforma.
+                    </p>
+                </section>
+
+                <!-- Cláusula 5 -->
+                <section class="legal-clause" id="clausula-5">
+                    <div class="legal-clause-header">
+                        <span class="legal-clause-number">CLÁUSULA 05</span>
+                        <h2 class="legal-clause-title">Cláusula de Indemnidad Absoluta (Hold Harmless)</h2>
+                    </div>
+                    <p class="legal-clause-text">
+                        El Comerciante se compromete de forma expresa, irrevocable e incondicional a <strong>defender, indemnizar y mantener plenamente indemne a Vendly</strong>, sus fundadores, desarrolladores, directivos, empleados y aliados estratégicos respecto a:
+                    </p>
+                    <ul class="legal-clause-list">
+                        <li>Cualquier demanda, querella, denuncia o reclamo administrativo o judicial incoado por Compradores Finales o terceros derivado de los productos, precios, entregas o cobros de la Tienda.</li>
+                        <li>Cualquier sanción, multa o reparo fiscal o administrativo impuesto por entes reguladores de precios, tributos o aduanas.</li>
+                        <li>Todos los gastos procesales y <strong>honorarios profesionales razonables de abogados</strong> en los que Vendly deba incurrir para su defensa judicial o extrajudicial motivada por la conducta del Comerciante.</li>
+                    </ul>
+                </section>
+
+                <!-- Cláusula 6 -->
+                <section class="legal-clause" id="clausula-6">
+                    <div class="legal-clause-header">
+                        <span class="legal-clause-number">CLÁUSULA 06</span>
+                        <h2 class="legal-clause-title">Colaboración con Autoridades Policiales y Judiciales</h2>
+                    </div>
+                    <p class="legal-clause-text">
+                        Vendly mantiene una política de cooperación irrestricta con la administración de justicia y los cuerpos de investigaciones penales, científicas y criminalísticas. En caso de investigación penal por presuntos delitos informáticos, estafa o comercio ilegal, Vendly queda expresamente facultado para preservar datos y entregar a las autoridades competentes la información técnica disponible sobre la Tienda investigada (incluyendo direcciones IP de registro y acceso, números telefónicos, correos y registros de transacciones), sin que ello represente vulneración de deberes de confidencialidad.
+                    </p>
+                </section>
+
+                <!-- Cláusula 7 -->
+                <section class="legal-clause" id="clausula-7">
+                    <div class="legal-clause-header">
+                        <span class="legal-clause-number">CLÁUSULA 07</span>
+                        <h2 class="legal-clause-title">Procedimiento de Denuncias y Retirada ("Notice & Takedown")</h2>
+                    </div>
+                    <p class="legal-clause-text">
+                        Cualquier persona natural o jurídica afectada por el accionar ilícito o fraudulento de una Tienda alojada en Vendly podrá activar el protocolo de retirada enviando una denuncia fundamentada al correo oficial de compliance legal:
+                    </p>
+                    
+                    <div class="legal-notice-box">
+                        <h3>Canal Oficial de Reportes y Denuncias</h3>
+                        <p>
+                            Si fuiste víctima de estafa, detectaste venta de réplicas falsificadas o bienes ilícitos en una tienda de nuestra plataforma, envía tu reporte con las evidencias pertinentes (enlace de la tienda, capturas de pantalla y comprobantes de pago) para proceder a la inhabilitación cautelar.
+                        </p>
+                        <a href={`mailto:${contactLegalEmail}?subject=Denuncia%20de%20Tienda%20Fraudulenta%20en%20Vendly`} class="legal-denuncia-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                                <line x1="12" y1="9" x2="12" y2="13"></line>
+                                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                            </svg>
+                            Reportar Tienda Infractora a {contactLegalEmail}
+                        </a>
+                    </div>
+                </section>
+
+                <!-- Cláusula 8 -->
+                <section class="legal-clause" id="clausula-8">
+                    <div class="legal-clause-header">
+                        <span class="legal-clause-number">CLÁUSULA 08</span>
+                        <h2 class="legal-clause-title">Límite Patrimonial Máximo de Responsabilidad (Liability Cap)</h2>
+                    </div>
+                    <p class="legal-clause-text">
+                        8.1. El Software se provee "tal cual" (as is) y "según disponibilidad". Vendly no otorga garantías expresas sobre el éxito comercial, número de ventas o posicionamiento en el mercado del Comerciante.
+                    </p>
+                    <p class="legal-clause-text">
+                        8.2. En ningún caso Vendly será responsable por daños indirectos, lucro cesante, pérdida de ingresos o daño moral.
+                    </p>
+                    <p class="legal-clause-text">
+                        8.3. En cualquier eventualidad en que un tribunal determine responsabilidad imputable a Vendly, <strong>la indemnización total y acumulada a pagar al Comerciante no superará bajo ninguna circunstancia el monto equivalente a una (1) mensualidad de la tarifa de suscripción efectivamente pagada por dicho Comerciante en los treinta (30) días previos al evento generador</strong>.
+                    </p>
+                </section>
+
+                <!-- Cláusula 9 -->
+                <section class="legal-clause" id="clausula-9">
+                    <div class="legal-clause-header">
+                        <span class="legal-clause-number">CLÁUSULA 09</span>
+                        <h2 class="legal-clause-title">Obligaciones Tributarias y Cumplimiento Fiscal</h2>
+                    </div>
+                    <p class="legal-clause-text">
+                        Cada Comerciante es el único e individual responsable de la tributación derivada de sus ventas, incluyendo la emisión de facturas fiscales, cobro y enteramiento de impuestos al valor agregado, declaraciones sobre la renta y pago de patentes comerciales. Vendly no es agente de percepción de tributos comerciales de terceros.
+                    </p>
+                </section>
+
+                <!-- Cláusula 10 -->
+                <section class="legal-clause" id="clausula-10">
+                    <div class="legal-clause-header">
+                        <span class="legal-clause-number">CLÁUSULA 10</span>
+                        <h2 class="legal-clause-title">Modificaciones, Divisibilidad y Validez</h2>
+                    </div>
+                    <p class="legal-clause-text">
+                        10.1. Vendly podrá actualizar estos Términos en cualquier momento mediante aviso en el panel de administración o correo electrónico. El uso continuado del Software tras la publicación de los cambios constituirá aceptación vinculante de las nuevas cláusulas.
+                    </p>
+                    <p class="legal-clause-text">
+                        10.2. Si cualquier disposición de este contrato fuere declarada inválida por un tribunal competente, dicha nulidad no afectará la plena vigencia de las demás cláusulas.
+                    </p>
+                </section>
+
+                <!-- Cláusula 11 -->
+                <section class="legal-clause" id="clausula-11">
+                    <div class="legal-clause-header">
+                        <span class="legal-clause-number">CLÁUSULA 11</span>
+                        <h2 class="legal-clause-title">Ley Aplicable y Jurisdicción Competente</h2>
+                    </div>
+                    <p class="legal-clause-text">
+                        El presente contrato se rige e interpretará con arreglo a la legislación aplicable en materia de comercio electrónico, mensajes de datos y contratos mercantiles. Para dirimir cualquier litigio o controversia que surja de la interpretación o ejecución de este acuerdo, las partes se someten a la jurisdicción exclusiva de los Tribunales Ordinarios competentes correspondientes al domicilio del Proveedor, renunciando expresamente a cualquier otro fuero territorial.
+                    </p>
+                </section>
+            </article>
+        </main>
+
+        <!-- Pie de Página -->
+        <footer class="legal-footer">
+            <div class="legal-footer-links">
+                <a href="/">Inicio</a>
+                <a href="/precios">Planes y Precios</a>
+                <a href="/register">Crear Tienda</a>
+                <a href={`mailto:${contactLegalEmail}`}>Contacto Legal</a>
+            </div>
+            <p>&copy; {new Date().getFullYear()} Vendly SaaS. Todos los derechos reservados.</p>
+        </footer>
+    </div>
+</body>
+</html>

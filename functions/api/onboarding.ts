@@ -14,6 +14,7 @@ export const onboardingSchema = z.object({
     password: z.string().min(1, "La contraseña es requerida"),
     email: z.email().optional().nullable(),
     whatsapp: z.string().max(30).optional().nullable(),
+    acceptTerms: z.boolean().optional(),
 });
 
 export type OnboardingInput = z.infer<typeof onboardingSchema>;
@@ -127,10 +128,19 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
         const finalHash = await hashPasswordPBKDF2(passwordHash, salt);
 
         // 4. Crear Tenant y Usuario en una transacción Batch atómica
+        const legalMetadata = {
+            legal: {
+                terms_version: 'v1.0',
+                terms_accepted: true,
+                accepted_at: new Date().toISOString(),
+                registration_ip: clientIp
+            }
+        };
+
         const statements = [
             db.prepare(
                 'INSERT INTO tenants (id, name, plan, template, config_json, whatsapp, active) VALUES (?, ?, ?, ?, ?, ?, ?)'
-            ).bind(tenantSlug, tenantName, 'basic', template, '{}', whatsapp || null, 1),
+            ).bind(tenantSlug, tenantName, 'basic', template, JSON.stringify(legalMetadata), whatsapp || null, 1),
             
             db.prepare(
                 "INSERT INTO settings (key, value, tenant_id) VALUES ('bcv_rate', '36.50', ?)"

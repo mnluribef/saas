@@ -106,8 +106,13 @@ const currentYear = new Date().getFullYear();
     </div>
 
     <div class="footer-bottom">
-      <p>&copy; {currentYear} {business.name}. Todos los derechos reservados.</p>
-      <p class="dev-credit">Hecho por <a href="https://manueluribe.dev" target="_blank" rel="noopener">Manuel Uribe</a></p>
+      <div class="footer-legal-col">
+        <p class="footer-copyright">&copy; {currentYear} {business.name}. Todos los derechos reservados.</p>
+        <p class="footer-disclaimer">
+          Tecnología SaaS provista por Vendly. Vendly no es parte de la venta ni custodia fondos de compras minoristas.
+          <a href="/terminos" class="footer-terms-link" target="_blank" rel="noopener">Términos, Condiciones & Política Anti-Fraude</a>
+        </p>
+      </div>
     </div>
   </div>
 </footer>
@@ -277,21 +282,41 @@ a.footer-contact-link:hover {
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 1rem;
+    gap: 1.5rem;
     padding-top: 2rem;
     border-top: 1px solid rgba(255, 255, 255, 0.12);
     font-size: 0.84rem;
     color: rgba(255, 255, 255, 0.65);
 }
 
-.dev-credit a {
-    color: rgba(255, 255, 255, 0.85);
-    font-weight: 600;
-    transition: color 0.25s;
+.footer-legal-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
 }
 
-.dev-credit a:hover {
-    color: #FFFFFF;
+.footer-copyright {
+    margin: 0;
+    font-weight: 500;
+}
+
+.footer-disclaimer {
+    margin: 0;
+    font-size: 0.76rem;
+    color: rgba(255, 255, 255, 0.5);
+    line-height: 1.5;
+    max-width: 650px;
+}
+
+.footer-terms-link {
+    color: var(--primary-light, #818cf8);
     text-decoration: underline;
+    margin-left: 0.35rem;
+    transition: color 0.2s ease;
+    font-weight: 500;
+}
+
+.footer-terms-link:hover {
+    color: #ffffff;
 }
 </style>

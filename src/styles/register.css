@@ -493,6 +493,49 @@
         gap: 1rem;
     }
 
+    /* Terms & Conditions Checkbox */
+    .terms-checkbox-group {
+        margin: 1.25rem 0 0.5rem;
+        padding: 0.85rem 1rem;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+    }
+
+    .terms-checkbox-label {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .terms-checkbox {
+        width: 18px;
+        height: 18px;
+        margin-top: 2px;
+        accent-color: var(--primary, #6366f1);
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+
+    .terms-text {
+        font-size: 0.85rem;
+        color: #475569;
+        line-height: 1.5;
+    }
+
+    .terms-link {
+        color: var(--primary, #6366f1);
+        font-weight: 600;
+        text-decoration: underline;
+        transition: color 0.2s;
+    }
+
+    .terms-link:hover {
+        color: #4338ca;
+    }
+
     @media (max-width: 480px) {
         .register-card {
             padding: 2rem 1.5rem;

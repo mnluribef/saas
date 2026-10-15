@@ -99,6 +99,16 @@
 
             const formData = new FormData(form);
             const passwordStr = formData.get('password') as string;
+            const acceptTerms = formData.get('acceptTerms') === 'on' || formData.get('acceptTerms') === 'true';
+
+            if (!acceptTerms) {
+                errorMsg.textContent = 'Debes aceptar los Términos y Condiciones y la Política Anti-Fraude para continuar.';
+                errorMsg.classList.remove('hidden');
+                submitBtn.disabled = false;
+                submitBtn.querySelector('.btn-text')?.classList.remove('hidden');
+                submitBtn.querySelector('.spinner')?.classList.add('hidden');
+                return;
+            }
             
             const payload = {
                 tenantName: formData.get('tenantName'),
@@ -106,7 +116,8 @@
                 template: formData.get('template'),
                 username: formData.get('username'),
                 password: passwordStr,
-                whatsapp: formData.get('whatsapp') || null
+                whatsapp: formData.get('whatsapp') || null,
+                acceptTerms: true
             };
 
             try {
