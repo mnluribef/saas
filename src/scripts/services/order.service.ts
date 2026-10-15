@@ -35,6 +35,7 @@ export class OrderService implements IOrderService {
                 paymentMethod: data.paymentMethod,
                 paymentReference: data.paymentReference,
                 paymentReceipt: data.paymentReceipt,
+                couponCode: data.couponCode || undefined,
                 bcvRate: this.currencyService.getRate(),
                 storePrefix: this.config.storePrefix,
                 template: this.config.template,
@@ -120,6 +121,10 @@ export class OrderService implements IOrderService {
 
         if (data.paymentReceipt) {
             msg += `\n*Comprobante:* ✅ Adjuntado en el sistema web`;
+        }
+
+        if (data.couponCode) {
+            msg += `\n*Cupón Promocional:* ${data.couponCode}`;
         }
 
         const totalBsFormatted = this.currencyService.formatBs(totalPrice);

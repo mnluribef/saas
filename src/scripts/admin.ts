@@ -1,10 +1,21 @@
-// Lógica del Panel Administrativo - FOGÓN Restaurante
+// src/scripts/admin.ts
+// Panel Administrativo - Vendly SaaS
+export {};
+
+declare const lucide: any;
+declare const Chart: any;
+
+declare global {
+    interface Window {
+        [key: string]: any;
+    }
+}
 
 // Variables de estado
-let currentAdmin = null;
-let ordersList = [];
-let productsList = [];
-let salesList = [];
+let currentAdmin: string | null = null;
+let ordersList: any[] = [];
+let productsList: any[] = [];
+let salesList: any[] = [];
 let currentBcvRate = 853.50;
 let currentBcvAuto = true;
 let lastBcvUpdated = '';
@@ -13,7 +24,7 @@ let ordersSearchQuery = '';
 let ordersStatusFilter = '';
 let salesSearchQuery = '';
 let productsSearchQuery = '';
-let lastKnownOrderCount = null;
+let lastKnownOrderCount: number | null = null;
 let soundEnabled = localStorage.getItem('admin_sound_enabled') !== 'false';
 
 // Paginación State
@@ -24,12 +35,34 @@ let productsTotalPages = 1;
 let salesPage = 1;
 let salesTotalPages = 1;
 
+
+// Helper DOM accessors
+function $val(id: string): string {
+    const el = document.getElementById(id) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null;
+    return el ? el.value.trim() : '';
+}
+function setVal(id: string, val: any) {
+    const el = document.getElementById(id) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null;
+    if (el) el.value = val !== undefined && val !== null ? String(val) : '';
+}
+function $input(id: string): HTMLInputElement | null {
+    return document.getElementById(id) as HTMLInputElement | null;
+}
+function $btn(id: string): HTMLButtonElement | null {
+    return document.getElementById(id) as HTMLButtonElement | null;
+}
+
+function getRowVal(r: Element, selector: string): string {
+    const el = r.querySelector(selector) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null;
+    return el ? el.value.trim() : '';
+}
+
 // Elementos del DOM
 const loader = document.getElementById('page-loader');
 const loginContainer = document.getElementById('login-container');
 const dashboardContainer = document.getElementById('dashboard-container');
-const loginForm = document.getElementById('login-form');
-const btnLogout = document.getElementById('btn-logout');
+const loginForm = document.getElementById('login-form') as HTMLFormElement | null;
+const btnLogout = document.getElementById('btn-logout') as HTMLButtonElement | null;
 const toastContainer = document.getElementById('toast-container');
 
 // Navegación Sidebar
@@ -39,39 +72,38 @@ const dashboardTitle = document.getElementById('dashboard-title');
 const dashboardSubtitle = document.getElementById('dashboard-subtitle');
 
 // Formularios e Inventario
-const productForm = document.getElementById('product-form');
-const btnCancelEdit = document.getElementById('btn-cancel-edit');
+const productForm = document.getElementById('product-form') as HTMLFormElement | null;
+const btnCancelEdit = document.getElementById('btn-cancel-edit') as HTMLButtonElement | null;
 const formProductTitle = document.getElementById('form-product-title');
-const btnSubmitProduct = document.getElementById('btn-submit-product');
-const btnToggleProductForm = document.getElementById('btn-toggle-product-form');
+const btnSubmitProduct = document.getElementById('btn-submit-product') as HTMLButtonElement | null;
+const btnToggleProductForm = document.getElementById('btn-toggle-product-form') as HTMLButtonElement | null;
 
 // Modal Detalles Pedido
 const orderModal = document.getElementById('order-detail-modal');
-const btnCloseModal = document.getElementById('btn-close-modal');
-const btnCloseModalFooter = document.getElementById('btn-modal-close-footer');
+const btnCloseModal = document.getElementById('btn-close-modal') as HTMLButtonElement | null;
+const btnCloseModalFooter = document.getElementById('btn-modal-close-footer') as HTMLButtonElement | null;
 
 // Modal Registrar Pago
 const paymentModal = document.getElementById('payment-modal');
-const btnClosePaymentModal = document.getElementById('btn-close-payment-modal');
-const btnCancelPaymentModal = document.getElementById('btn-cancel-payment-modal');
-const paymentForm = document.getElementById('payment-form');
-const paymentMethodSelect = document.getElementById('payment-method-select');
-const paymentReferenceInput = document.getElementById('payment-reference');
-const referenceGroup = document.getElementById('reference-group');
-const paymentModalOrderId = document.getElementById('payment-modal-order-id');
+const btnClosePaymentModal = document.getElementById('btn-close-payment-modal') as HTMLButtonElement | null;
+const btnCancelPaymentModal = document.getElementById('btn-cancel-payment-modal') as HTMLButtonElement | null;
+const paymentForm = document.getElementById('payment-form') as HTMLFormElement | null;
+const paymentMethodSelect = document.getElementById('payment-method-select') as HTMLSelectElement | null;
+const paymentReferenceInput = document.getElementById('payment-reference') as HTMLInputElement | null;
+const paymentModalOrderId = document.getElementById('payment-modal-order-id') as HTMLInputElement | null;
 
 // Modal Cambiar Contraseña
 const changePasswordModal = document.getElementById('change-password-modal');
-const btnOpenChangePassword = document.getElementById('btn-open-change-password');
-const btnClosePasswordModal = document.getElementById('btn-close-password-modal');
-const btnCancelPasswordModal = document.getElementById('btn-cancel-password-modal');
-const changePasswordForm = document.getElementById('change-password-form');
+const btnOpenChangePassword = document.getElementById('btn-open-change-password') as HTMLButtonElement | null;
+const btnClosePasswordModal = document.getElementById('btn-close-password-modal') as HTMLButtonElement | null;
+const btnCancelPasswordModal = document.getElementById('btn-cancel-password-modal') as HTMLButtonElement | null;
+const changePasswordForm = document.getElementById('change-password-form') as HTMLFormElement | null;
 
-let pendingPaymentOrderId = null;
-let pendingPaymentStatus = null;
+let pendingPaymentOrderId: string | null = null;
+let pendingPaymentStatus: string | null = null;
 
 // --- UTILIDAD DE SANITIZACIÓN CONTRA STORED XSS ---
-function escapeHtml(str) {
+function escapeHtml(str: any): string {
     if (str === null || str === undefined) return '';
     return String(str)
         .replace(/&/g, '&amp;')
@@ -86,7 +118,7 @@ function escapeHtml(str) {
  * Hashea una contraseña usando SHA-256 nativo del navegador (hexadecimal)
  * @param {string} password 
  */
-async function sha256(password) {
+async function sha256(password: string): Promise<string> {
     const msgBuffer = new TextEncoder().encode(password);
     const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
@@ -100,7 +132,7 @@ async function sha256(password) {
  * @param {string} message 
  * @param {string} type - 'success', 'error', 'warning', 'info'
  */
-function showToast(message, type = 'success') {
+function showToast(message: string, type: string = 'success') {
     if (!toastContainer) return;
 
     const toast = document.createElement('div');
@@ -129,7 +161,7 @@ function showToast(message, type = 'success') {
 async function checkSession() {
     try {
         const res = await fetch('/api/auth');
-        const data = await res.json();
+        const data = (await res.json()) as any;
 
         if (data.authenticated) {
             currentAdmin = data.username;
@@ -191,14 +223,16 @@ if (loginForm) {
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        const username = document.getElementById('login-username').value.trim();
-        const passwordPlain = document.getElementById('login-password').value;
-        const submitBtn = document.getElementById('login-btn-submit');
+        const username = $val('login-username');
+        const passwordPlain = ($input('login-password')?.value || '');
+        const submitBtn = $btn('login-btn-submit');
 
         if (!username || !passwordPlain) return;
 
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i data-lucide="loader" class="spin"></i> Verificando...';
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i data-lucide="loader" class="spin"></i> Verificando...';
+        }
         if (window.lucide) lucide.createIcons();
 
         try {
@@ -210,7 +244,7 @@ if (loginForm) {
                 body: JSON.stringify({ username, passwordHash })
             });
 
-            const data = await res.json();
+            const data = (await res.json()) as any;
 
             if (res.ok && data.success) {
                 currentAdmin = data.username;
@@ -224,8 +258,10 @@ if (loginForm) {
             console.error(err);
             showToast('Error de red al intentar iniciar sesión', 'error');
         } finally {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = 'Iniciar Sesión <i data-lucide="arrow-right"></i>';
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Iniciar Sesión <i data-lucide="arrow-right"></i>';
+            }
             if (window.lucide) lucide.createIcons();
         }
     });
@@ -272,10 +308,10 @@ if (changePasswordForm) {
     changePasswordForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const currentPass = document.getElementById('current-password-input')?.value;
-        const newPass = document.getElementById('new-password-input')?.value;
-        const confirmPass = document.getElementById('confirm-password-input')?.value;
-        const submitBtn = document.getElementById('btn-submit-password');
+        const currentPass = $val('current-password-input');
+        const newPass = $val('new-password-input');
+        const confirmPass = $val('confirm-password-input');
+        const submitBtn = $btn('btn-submit-password');
 
         if (!currentPass || !newPass || !confirmPass) {
             showToast('Por favor completa todos los campos.', 'warning');
@@ -292,8 +328,10 @@ if (changePasswordForm) {
             return;
         }
 
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i data-lucide="loader" class="spin"></i> Actualizando...';
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i data-lucide="loader" class="spin"></i> Actualizando...';
+        }
         if (window.lucide) lucide.createIcons();
 
         try {
@@ -306,7 +344,7 @@ if (changePasswordForm) {
                 body: JSON.stringify({ currentPasswordHash, newPasswordHash })
             });
 
-            const data = await res.json();
+            const data = (await res.json()) as any;
 
             if (res.ok && data.success) {
                 showToast('¡Contraseña cambiada exitosamente!', 'success');
@@ -319,8 +357,10 @@ if (changePasswordForm) {
             console.error(err);
             showToast('Error de red al actualizar contraseña.', 'error');
         } finally {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i data-lucide="save"></i> Actualizar Clave';
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i data-lucide="save"></i> Actualizar Clave';
+            }
             if (window.lucide) lucide.createIcons();
         }
     });
@@ -365,7 +405,7 @@ sidebarLinks.forEach(link => {
 
 document.querySelectorAll('.view-all-orders-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-        const ordersTab = document.querySelector('.sidebar-link[data-target="section-orders"]');
+        const ordersTab = document.querySelector('.sidebar-link[data-target="section-orders"]') as HTMLElement | null;
         if (ordersTab) ordersTab.click();
     });
 });
@@ -378,7 +418,7 @@ async function loadBcvRate() {
     try {
         const res = await fetch('/api/bcv');
         if (res.ok) {
-            const data = await res.json();
+            const data = (await res.json()) as any;
             currentBcvRate = parseFloat(data.rate) || 853.50;
             currentBcvAuto = data.autoUpdate !== false;
             lastBcvUpdated = data.lastUpdated || '';
@@ -387,11 +427,11 @@ async function loadBcvRate() {
             const display = document.getElementById('admin-bcv-val');
             if (display) display.textContent = `${currentBcvRate.toFixed(2)} Bs.`;
             
-            const input = document.getElementById('bcv-rate-input');
-            const toggle = document.getElementById('bcv-auto-toggle');
-            const syncLabel = document.getElementById('bcv-last-sync-label') || document.getElementById('bcv-last-sync-text');
-            if (input) input.value = currentBcvRate.toFixed(2);
+            const rateIn = $input('bcv-rate-input');
+            if (rateIn) rateIn.value = currentBcvRate.toFixed(2);
+            const toggle = $input('bcv-auto-toggle');
             if (toggle) toggle.checked = currentBcvAuto;
+            const syncLabel = document.getElementById('bcv-last-sync-label') || document.getElementById('bcv-last-sync-text');
             if (syncLabel) {
                 const dateStr = lastBcvUpdated ? new Date(lastBcvUpdated).toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' }) : 'reciente';
                 syncLabel.textContent = `Última sincronización: ${dateStr} (${lastBcvSource === 'bcv_api' ? 'Oficial BCV' : 'Manual'})`;
@@ -406,7 +446,7 @@ async function loadBillingData() {
     try {
         const res = await fetch('/api/billing');
         if (res.ok) {
-            const data = await res.json();
+            const data = (await res.json()) as any;
             
             // Info de Plan
             const elPlanName = document.getElementById('billing-plan-name');
@@ -422,29 +462,29 @@ async function loadBillingData() {
             const elOrdCurrent = document.getElementById('billing-orders-current');
             if (elOrdCurrent) {
                 elOrdCurrent.textContent = data.usage.ordersThisMonth.current;
-                document.getElementById('billing-orders-limit').textContent = data.usage.ordersThisMonth.limit;
-                document.getElementById('billing-orders-bar').style.width = data.usage.ordersThisMonth.percentage + '%';
-                document.getElementById('billing-orders-percent').textContent = data.usage.ordersThisMonth.percentage + '% utilizado';
+                (document.getElementById('billing-orders-limit') as HTMLElement).textContent = data.usage.ordersThisMonth.limit;
+                (document.getElementById('billing-orders-bar') as HTMLElement).style.width = data.usage.ordersThisMonth.percentage + '%';
+                const bop = document.getElementById('billing-orders-percent'); if (bop) bop.textContent = data.usage.ordersThisMonth.percentage + '% utilizado';
             }
             
             // Consumo de Productos
             const elProdCurrent = document.getElementById('billing-products-current');
             if (elProdCurrent) {
                 elProdCurrent.textContent = data.usage.products.current;
-                document.getElementById('billing-products-limit').textContent = data.usage.products.limit;
-                document.getElementById('billing-products-bar').style.width = data.usage.products.percentage + '%';
-                document.getElementById('billing-products-percent').textContent = data.usage.products.percentage + '% utilizado';
+                const bpl = document.getElementById('billing-products-limit'); if (bpl) bpl.textContent = data.usage.products.limit;
+                const bpb = document.getElementById('billing-products-bar'); if (bpb) bpb.style.width = data.usage.products.percentage + '%';
+                const bpp = document.getElementById('billing-products-percent'); if (bpp) bpp.textContent = data.usage.products.percentage + '% utilizado';
             }
             
             // Pagos
             const elBank = document.getElementById('pay-bank');
             if (elBank) {
                 elBank.textContent = data.billing.bank;
-                document.getElementById('pay-phone').textContent = data.billing.phone;
-                document.getElementById('pay-id').textContent = data.billing.id;
-                document.getElementById('pay-binance').textContent = data.billing.binancePay;
-                document.getElementById('pay-zelle').textContent = data.billing.zelle;
-                document.getElementById('pay-amount').textContent = data.billing.monthlyPriceUsd;
+                const pp = document.getElementById('pay-phone'); if (pp) pp.textContent = data.billing.phone;
+                const pid = document.getElementById('pay-id'); if (pid) pid.textContent = data.billing.id;
+                const pb = document.getElementById('pay-binance'); if (pb) pb.textContent = data.billing.binancePay;
+                const pz = document.getElementById('pay-zelle'); if (pz) pz.textContent = data.billing.zelle;
+                const pa = document.getElementById('pay-amount'); if (pa) pa.textContent = data.billing.monthlyPriceUsd;
             }
         }
     } catch (e) {
@@ -459,7 +499,8 @@ async function refreshAllData() {
         loadProducts(),
         loadSales(),
         loadStats(),
-        loadBillingData()
+        loadBillingData(),
+        loadCoupons()
     ]);
     renderMetrics();
 }
@@ -470,7 +511,7 @@ async function loadOrders(page = 1) {
         ordersPage = page;
         const res = await fetch(`/api/orders?page=${page}&limit=50`);
         if (!res.ok) throw new Error('No autorizado');
-        const responseData = await res.json();
+        const responseData = (await res.json()) as any;
         
         if (responseData.meta) {
             ordersTotalPages = responseData.meta.totalPages || 1;
@@ -506,7 +547,7 @@ async function loadProducts(page = 1) {
         productsPage = page;
         const res = await fetch(`/api/products?admin=true&page=${page}&limit=50`);
         if (!res.ok) throw new Error('No autorizado');
-        const responseData = await res.json();
+        const responseData = (await res.json()) as any;
         
         if (responseData.meta) {
             productsTotalPages = responseData.meta.totalPages || 1;
@@ -525,15 +566,15 @@ async function loadProducts(page = 1) {
 }
 
 // 2.5 Cargar Registro de Ventas de la API
-async function loadSales(dateFrom = null, dateTo = null, page = 1) {
+async function loadSales(dateFrom: string | null = null, dateTo: string | null = null, page: number = 1) {
     try {
         salesPage = page;
         let url = '/api/sales';
         const params = new URLSearchParams();
         if (dateFrom) params.append('date_from', dateFrom);
         if (dateTo) params.append('date_to', dateTo);
-        params.append('page', page);
-        params.append('limit', 50);
+        params.append('page', String(page));
+        params.append('limit', '50');
         
         if (params.toString()) {
             url += '?' + params.toString();
@@ -541,7 +582,7 @@ async function loadSales(dateFrom = null, dateTo = null, page = 1) {
         
         const res = await fetch(url);
         if (!res.ok) throw new Error('No autorizado');
-        const responseData = await res.json();
+        const responseData = (await res.json()) as any;
         
         if (responseData.meta) {
             salesTotalPages = responseData.meta.totalPages || 1;
@@ -560,12 +601,12 @@ async function loadSales(dateFrom = null, dateTo = null, page = 1) {
 }
 
 // 2.6 Cargar Estadísticas (Ingresos y Gráfica)
-let salesChartInstance = null;
+let salesChartInstance: any = null;
 async function loadStats() {
     try {
         const res = await fetch('/api/sales?stats=true');
         if (!res.ok) throw new Error('No autorizado');
-        const data = await res.json();
+        const data = (await res.json()) as any;
         
         // Actualizar métrica de ingresos de hoy
         const metricRevenue = document.getElementById('metric-revenue');
@@ -576,19 +617,150 @@ async function loadStats() {
         
         // Renderizar gráfica
         renderChart(data.chartData || []);
+        await loadAnalytics();
     } catch (err) {
         console.error(err);
     }
 }
 
-function renderChart(chartData) {
+async function loadAnalytics() {
+    try {
+        const res = await fetch('/api/analytics');
+        if (!res.ok) return;
+        const data = (await res.json()) as any;
+        
+        // 1. Ingresos Mes Actual y Crecimiento
+        const monthRevEl = document.getElementById('metric-month-revenue');
+        const growthContainer = document.getElementById('metric-growth-container');
+        if (monthRevEl && data.summary) {
+            const revMonth = parseFloat(data.summary.revenueThisMonth) || 0;
+            monthRevEl.textContent = `Bs ${(Math.round(revMonth * 100) / 100).toLocaleString('es-VE')}`;
+            
+            if (growthContainer) {
+                const growth = data.summary.monthlyGrowthPercentage || 0;
+                let badgeClass = 'badge-growth neutral';
+                let arrow = '•';
+                if (growth > 0) {
+                    badgeClass = 'badge-growth positive';
+                    arrow = '↑';
+                } else if (growth < 0) {
+                    badgeClass = 'badge-growth negative';
+                    arrow = '↓';
+                }
+                growthContainer.innerHTML = `<span class="${badgeClass}">${arrow} ${Math.abs(growth)}% vs mes ant.</span>`;
+            }
+        }
+        
+        // 2. Ticket Promedio
+        const avgTicketEl = document.getElementById('metric-average-ticket');
+        if (avgTicketEl && data.summary) {
+            const avg = parseFloat(data.summary.averageTicket) || 0;
+            avgTicketEl.textContent = `Bs ${(Math.round(avg * 100) / 100).toLocaleString('es-VE')}`;
+        }
+        
+        // 3. Top 5 Productos
+        const topProdContainer = document.getElementById('top-products-container');
+        if (topProdContainer) {
+            if (!data.topProducts || data.topProducts.length === 0) {
+                topProdContainer.innerHTML = `<p class="analytics-empty-note">Sin ventas registradas para generar ranking.</p>`;
+            } else {
+                topProdContainer.innerHTML = data.topProducts.map((p: any, idx: number) => {
+                    const rankClass = idx === 0 ? 'rank-1' : idx === 1 ? 'rank-2' : idx === 2 ? 'rank-3' : '';
+                    return `
+                        <div class="top-product-row">
+                            <div class="top-product-info">
+                                <div class="top-product-rank ${rankClass}">${idx + 1}</div>
+                                <div>
+                                    <div class="top-product-name">${escapeHtml(p.product_name)}</div>
+                                    <div class="top-product-sub">${p.total_qty} unidades vendidas</div>
+                                </div>
+                            </div>
+                            <div class="top-product-stat">
+                                <span class="top-product-qty">${p.total_qty} uds</span>
+                                <div class="top-product-revenue">$${parseFloat(p.total_revenue || 0).toFixed(2)}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+        
+        // 4. Métodos de Pago y Entregas
+        const breakdownContainer = document.getElementById('breakdown-container');
+        if (breakdownContainer) {
+            let html = '';
+            
+            // Pagos
+            const totalPaymentOrders = (data.paymentMethods || []).reduce((acc: number, curr: any) => acc + (curr.count || 0), 0) || 1;
+            html += `<div class="breakdown-section-title">Métodos de Pago</div>`;
+            if (!data.paymentMethods || data.paymentMethods.length === 0) {
+                html += `<p class="analytics-empty-note">Sin datos de métodos de pago.</p>`;
+            } else {
+                data.paymentMethods.forEach((pm: any) => {
+                    const pct = Math.round((pm.count / totalPaymentOrders) * 100);
+                    const name = pm.payment_method === 'pago_movil' ? 'Pago Móvil' :
+                                 pm.payment_method === 'efectivo' ? 'Efectivo' :
+                                 pm.payment_method === 'zelle' ? 'Zelle' :
+                                 pm.payment_method === 'punto' ? 'Punto de Venta' : pm.payment_method;
+                    html += `
+                        <div class="breakdown-item">
+                            <div class="breakdown-header">
+                                <span>${escapeHtml(name)}</span>
+                                <span class="breakdown-count">${pm.count} pedidos (${pct}%)</span>
+                            </div>
+                            <div class="breakdown-bar">
+                                <div class="breakdown-fill" data-pct="${pct}"></div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            // Entregas
+            const totalDeliveryOrders = (data.deliveryTypes || []).reduce((acc: number, curr: any) => acc + (curr.count || 0), 0) || 1;
+            html += `<div class="breakdown-section-title delivery-section">Tipo de Entrega</div>`;
+            if (!data.deliveryTypes || data.deliveryTypes.length === 0) {
+                html += `<p class="analytics-empty-note">Sin datos de entregas.</p>`;
+            } else {
+                data.deliveryTypes.forEach((dt: any) => {
+                    const pct = Math.round((dt.count / totalDeliveryOrders) * 100);
+                    const name = dt.delivery_type === 'delivery' ? 'Delivery / Domicilio' : 'Retiro en Tienda / Pick-up';
+                    html += `
+                        <div class="breakdown-item">
+                            <div class="breakdown-header">
+                                <span>${escapeHtml(name)}</span>
+                                <span class="breakdown-count">${dt.count} pedidos (${pct}%)</span>
+                            </div>
+                            <div class="breakdown-bar">
+                                <div class="breakdown-fill" data-pct="${pct}"></div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            breakdownContainer.innerHTML = html;
+            
+            // Aplicar anchos de progreso
+            breakdownContainer.querySelectorAll('.breakdown-fill').forEach(fill => {
+                const pct = fill.getAttribute('data-pct');
+                if (pct) (fill as HTMLElement).style.width = pct + '%';
+            });
+        }
+        
+    } catch (err) {
+        console.error("Error al cargar analíticas:", err);
+    }
+}
+
+function renderChart(chartData: any[]) {
     const ctx = document.getElementById('salesChart');
     if (!ctx) return;
     
     // Preparar etiquetas (fechas) y datos (totales)
     // Si no hay datos, mostrar 7 días vacíos
-    const labels = [];
-    const totals = [];
+    const labels: string[] = [];
+    const totals: number[] = [];
     
     // Asegurar 7 días
     for (let i = 6; i >= 0; i--) {
@@ -598,7 +770,7 @@ function renderChart(chartData) {
         
         labels.push(d.toLocaleDateString('es-VE', { weekday: 'short', day: 'numeric' }));
         
-        const dayData = chartData.find(c => c.date === dateStr);
+        const dayData = chartData.find((c: any) => c.date === dateStr);
         totals.push(dayData ? parseFloat(dayData.total) : 0);
     }
 
@@ -641,7 +813,7 @@ function renderChart(chartData) {
                     padding: 12,
                     displayColors: false,
                     callbacks: {
-                        label: function(context) {
+                        label: function(context: any) {
                             return 'Bs ' + context.parsed.y.toLocaleString('es-VE');
                         }
                     }
@@ -657,7 +829,7 @@ function renderChart(chartData) {
                     ticks: {
                         color: 'rgba(255,255,255,0.5)',
                         font: { family: 'Inter' },
-                        callback: function(value) {
+                        callback: function(value: any) {
                             return 'Bs ' + value.toLocaleString('es-VE');
                         }
                     },
@@ -691,7 +863,7 @@ function renderSales() {
     }
 
     if (filteredSales.length === 0) {
-        tableSales.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-secondary);">${salesSearchQuery ? 'No se encontraron ventas que coincidan con la búsqueda.' : 'No se han registrado ventas completadas todavía.'}</td></tr>`;
+        tableSales.innerHTML = `<tr><td colspan="7" class="table-empty-message">${salesSearchQuery ? 'No se encontraron ventas que coincidan con la búsqueda.' : 'No se han registrado ventas completadas todavía.'}</td></tr>`;
         return;
     }
 
@@ -710,12 +882,12 @@ function renderSales() {
         return `
             <tr>
                 <td><strong>#V-${escapeHtml(s.id)}</strong></td>
-                <td><code style="font-weight: 700; color: var(--primary);">${escapeHtml(s.order_id)}</code></td>
+                <td><code class="table-code-highlight">${escapeHtml(s.order_id)}</code></td>
                 <td>${escapeHtml(s.client_name)}</td>
                 <td>${escapeHtml(s.client_phone)}</td>
-                <td style="font-weight: 700; color: var(--success);">$${montoVal.toFixed(2)}</td>
-                <td><span style="background: rgba(34, 197, 94, 0.1); color: var(--success); padding: 0.25rem 0.5rem; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">${escapeHtml(s.metodo_pago)}</span></td>
-                <td style="font-size: 0.85rem; color: var(--text-secondary);">${dateString}</td>
+                <td class="table-amount-success">$${montoVal.toFixed(2)}</td>
+                <td><span class="table-badge-payment">${escapeHtml(s.metodo_pago)}</span></td>
+                <td class="table-text-secondary">${dateString}</td>
             </tr>
         `;
     }).join('');
@@ -726,29 +898,28 @@ function renderSales() {
 // --- RENDER DE MÉTRICAS ---
 function renderMetrics() {
     const metricProdCount = document.getElementById('metric-prod-count');
-    if (metricProdCount) metricProdCount.textContent = productsList.length;
+    if (metricProdCount) metricProdCount.textContent = String(productsList.length);
 
     const pendingOrders = ordersList.filter(o => o.status === 'pendiente');
     const prodOrders = ordersList.filter(o => o.status === 'en_produccion');
     
     const metricPending = document.getElementById('metric-pending-orders');
-    if (metricPending) metricPending.textContent = pendingOrders.length;
+    if (metricPending) metricPending.textContent = String(pendingOrders.length);
 
     const metricProd = document.getElementById('metric-prod-orders');
-    if (metricProd) metricProd.textContent = prodOrders.length;
+    if (metricProd) metricProd.textContent = String(prodOrders.length);
 
-    const completedOrders = ordersList.filter(o => o.status === 'completado');
     const metricSalesCount = document.getElementById('metric-sales-count');
     
     if (metricSalesCount) {
-        metricSalesCount.textContent = salesList.length;
+        metricSalesCount.textContent = String(salesList.length);
     }
     
     // Actualizar badge del sidebar
     const badgeOrders = document.getElementById('sidebar-badge-orders');
     if (badgeOrders) {
         if (pendingOrders.length > 0) {
-            badgeOrders.textContent = pendingOrders.length;
+            badgeOrders.textContent = String(pendingOrders.length);
             badgeOrders.style.display = 'inline-block';
         } else {
             badgeOrders.style.display = 'none';
@@ -788,7 +959,7 @@ function renderOrders() {
     // 1. Render en tabla general
     if (tableAll) {
         if (filteredOrders.length === 0) {
-            tableAll.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-secondary);">${(ordersSearchQuery || ordersStatusFilter) ? 'No hay pedidos que coincidan con los filtros aplicados.' : 'No hay pedidos en la base de datos.'}</td></tr>`;
+            tableAll.innerHTML = `<tr><td colspan="7" class="table-empty-message">${(ordersSearchQuery || ordersStatusFilter) ? 'No hay pedidos que coincidan con los filtros aplicados.' : 'No hay pedidos en la base de datos.'}</td></tr>`;
         } else {
             tableAll.innerHTML = filteredOrders.map(o => createOrderRowMarkup(o)).join('');
         }
@@ -797,7 +968,7 @@ function renderOrders() {
     // 2. Render en tabla recientes (máximo 5)
     if (tableRecent) {
         if (ordersList.length === 0) {
-            tableRecent.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-secondary);">No hay pedidos recientes.</td></tr>`;
+            tableRecent.innerHTML = `<tr><td colspan="7" class="table-empty-message">No hay pedidos recientes.</td></tr>`;
         } else {
             const recent = ordersList.slice(0, 5);
             tableRecent.innerHTML = recent.map(o => createOrderRowMarkup(o, false)).join('');
@@ -807,7 +978,7 @@ function renderOrders() {
     if (window.lucide) lucide.createIcons();
 }
 
-function createOrderRowMarkup(order, includeStatusSelector = true) {
+function createOrderRowMarkup(order: any, includeStatusSelector: boolean = true) {
     const dateObj = new Date(order.created_at);
     const dateString = dateObj.toLocaleDateString('es-VE', {
         day: '2-digit',
@@ -822,7 +993,7 @@ function createOrderRowMarkup(order, includeStatusSelector = true) {
     let statusSelector = '';
     if (includeStatusSelector) {
         statusSelector = `
-            <select class="status-select" onchange="updateOrderStatus('${escapeHtml(order.id)}', this.value)">
+            <select class="status-select" data-action="status-select" data-id="${escapeHtml(order.id)}">
                 <option value="pendiente" ${order.status === 'pendiente' ? 'selected' : ''}>Pendiente</option>
                 <option value="en_produccion" ${order.status === 'en_produccion' ? 'selected' : ''}>En Preparación</option>
                 <option value="listo_entrega" ${order.status === 'listo_entrega' ? 'selected' : ''}>Listo para Entrega</option>
@@ -835,23 +1006,23 @@ function createOrderRowMarkup(order, includeStatusSelector = true) {
     }
 
         const hasReceipt = Boolean(order.payment_receipt);
-        const receiptBadge = hasReceipt ? ' <span title="Comprobante de pago adjunto" style="cursor:help;">📸</span>' : '';
+        const receiptBadge = hasReceipt ? ' <span title="Comprobante de pago adjunto" class="table-receipt-badge">📸</span>' : '';
         return `
         <tr>
             <td><strong>#${escapeHtml(order.id)}</strong>${receiptBadge}</td>
             <td>${escapeHtml(order.client_name)}</td>
             <td>${escapeHtml(order.client_phone)}</td>
             <td>${escapeHtml(order.total_items)}</td>
-            <td style="font-weight: 600; color: var(--primary);">${priceText}</td>
-            <td style="font-size:0.8rem; color:var(--text-secondary);">${dateString}</td>
+            <td class="table-code-highlight">${priceText}</td>
+            <td class="table-text-xs-secondary">${dateString}</td>
             <td>${statusSelector}</td>
             <td>
-                <div style="display:flex; gap:0.5rem;">
-                    <button class="action-icon-btn edit" onclick="viewOrderDetails('${escapeHtml(order.id)}')" title="Ver Detalles">
-                        <i data-lucide="eye" style="width:18px; height:18px;"></i>
+                <div class="table-actions-group">
+                    <button class="action-icon-btn edit" data-action="view-order" data-id="${escapeHtml(order.id)}" title="Ver Detalles">
+                        <i data-lucide="eye" class="table-action-icon"></i>
                     </button>
-                    <button class="action-icon-btn delete" onclick="deleteOrder('${escapeHtml(order.id)}')" title="Eliminar Pedido">
-                        <i data-lucide="trash-2" style="width:18px; height:18px;"></i>
+                    <button class="action-icon-btn delete" data-action="delete-order" data-id="${escapeHtml(order.id)}" title="Eliminar Pedido">
+                        <i data-lucide="trash-2" class="table-action-icon"></i>
                     </button>
                 </div>
             </td>
@@ -860,7 +1031,7 @@ function createOrderRowMarkup(order, includeStatusSelector = true) {
 }
 
 // Actualizar estado de un pedido (Invocado desde onchange en la tabla)
-async function updateOrderStatus(orderId, newStatus) {
+async function updateOrderStatus(orderId: string, newStatus: string) {
     try {
         if (newStatus === 'completado') {
             openPaymentModal(orderId, newStatus);
@@ -874,8 +1045,16 @@ async function updateOrderStatus(orderId, newStatus) {
         });
 
         if (!response.ok) throw new Error('Error al actualizar estado');
+        const resData = await response.json();
         
         showToast(`Pedido #${orderId} actualizado a "${newStatus.replace('_', ' ')}"`, 'success');
+
+        if (resData && (resData as any).whatsappNotificationUrl) {
+            const shouldNotify = confirm(`¿Deseas abrir WhatsApp para notificar al cliente sobre el cambio a "${newStatus.replace('_', ' ')}"?`);
+            if (shouldNotify) {
+                window.open((resData as any).whatsappNotificationUrl, '_blank');
+            }
+        }
         refreshAllData();
     } catch (err) {
         console.error(err);
@@ -884,7 +1063,7 @@ async function updateOrderStatus(orderId, newStatus) {
 }
 
 // Eliminar un pedido
-async function deleteOrder(orderId) {
+async function deleteOrder(orderId: string) {
     if (!confirm(`¿Estás completamente seguro de eliminar el pedido #${orderId}? Esta acción borrará todos sus detalles permanentemente.`)) {
         return;
     }
@@ -905,11 +1084,11 @@ async function deleteOrder(orderId) {
 }
 
 // Ver detalles del pedido en Modal (Sanitizado contra XSS)
-async function viewOrderDetails(orderId) {
+async function viewOrderDetails(orderId: string) {
     try {
         const res = await fetch(`/api/orders?id=${encodeURIComponent(orderId)}`);
         if (!res.ok) throw new Error('Error al obtener detalles');
-        const order = await res.json();
+        const order = (await res.json()) as any;
 
         // Rellenar modal mediante textContent para seguridad total
         const titleElem = document.getElementById('modal-order-title');
@@ -955,9 +1134,9 @@ async function viewOrderDetails(orderId) {
 
         if (order.payment_receipt) {
             if (receiptContainer) receiptContainer.style.display = 'block';
-            if (receiptThumb) receiptThumb.src = order.payment_receipt;
-            if (receiptDownloadBtn) receiptDownloadBtn.href = order.payment_receipt;
-            if (receiptModalImg) receiptModalImg.src = order.payment_receipt;
+            if (receiptThumb) (receiptThumb as HTMLImageElement).src = order.payment_receipt;
+            if (receiptDownloadBtn) (receiptDownloadBtn as HTMLAnchorElement).href = order.payment_receipt;
+            if (receiptModalImg) (receiptModalImg as HTMLImageElement).src = order.payment_receipt;
         } else {
             if (receiptContainer) receiptContainer.style.display = 'none';
         }
@@ -1010,15 +1189,15 @@ async function viewOrderDetails(orderId) {
         const itemsList = document.getElementById('modal-items-list');
         if (itemsList) {
             if (!order.items || order.items.length === 0) {
-                itemsList.innerHTML = `<p style="color:var(--text-secondary); text-align:center;">No hay detalles de productos registrados.</p>`;
+                itemsList.innerHTML = `<p class="table-empty-message">No hay detalles de productos registrados.</p>`;
             } else {
-                itemsList.innerHTML = order.items.map(item => {
+                itemsList.innerHTML = order.items.map((item: any) => {
                     const sizeText = item.size ? ` [${escapeHtml(item.size)}]` : '';
                     const unitPrice = parseFloat(item.unit_price) || 0.0;
                     const subtotal = unitPrice * item.quantity;
 
                     return `
-                        <div class="detail-item" style="align-items: center;">
+                        <div class="detail-item items-center">
                             <div class="detail-item-info">
                                 <div class="detail-item-icon">
                                     <i data-lucide="utensils"></i>
@@ -1028,15 +1207,15 @@ async function viewOrderDetails(orderId) {
                                     <span>ID: ${escapeHtml(item.product_id)}${sizeText}</span>
                                 </div>
                             </div>
-                            <div style="text-align: right; display: flex; flex-direction: column; gap: 0.2rem; font-family: 'Outfit', sans-serif;">
-                                <div class="detail-item-qty" style="font-size: 1.05rem; font-weight: 600; color: var(--primary);">
+                            <div class="order-detail-qty-col">
+                                <div class="detail-item-qty order-detail-qty-val">
                                     x${item.quantity}
                                 </div>
-                                <div style="font-size: 0.75rem; color: var(--text-secondary);">
-                                    Precio: $${unitPrice.toFixed(2)}
+                                <div class="order-detail-unit-price">
+                                    Precio: ${unitPrice.toFixed(2)}
                                 </div>
-                                <div style="font-size: 0.8rem; font-weight: 500; color: var(--success);">
-                                    Subtotal: $${subtotal.toFixed(2)}
+                                <div class="order-detail-subtotal">
+                                    Subtotal: ${subtotal.toFixed(2)}
                                 </div>
                             </div>
                         </div>
@@ -1046,14 +1225,15 @@ async function viewOrderDetails(orderId) {
         }
 
         // Configurar botón de chatear
-        const btnChat = document.getElementById('btn-modal-chat');
+        const btnChat = document.getElementById('btn-modal-chat') as HTMLAnchorElement | null;
         if (btnChat) {
             const cleanPhone = String(order.client_phone || '').replace(/[^\d]/g, '');
-            const message = `¡Hola ${order.client_name}! Te contactamos de *FOGÓN Restaurante* con respecto a tu pedido *#${order.id}*...`;
+            const businessName = $val('cfg-business-name') || 'nuestra tienda';
+            const message = `¡Hola ${order.client_name}! Te contactamos de *${businessName}* con respecto a tu pedido *#${order.id}*...`;
             btnChat.href = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
         }
 
-        orderModal.classList.add('active');
+        orderModal?.classList.add('active');
         if (window.lucide) lucide.createIcons();
     } catch (err) {
         console.error(err);
@@ -1074,7 +1254,7 @@ if (orderModal) {
 }
 
 // --- LÓGICA DEL MODAL DE PAGO ---
-function openPaymentModal(orderId, newStatus) {
+function openPaymentModal(orderId: string, newStatus: string) {
     pendingPaymentOrderId = orderId;
     pendingPaymentStatus = newStatus;
     if (paymentModalOrderId) {
@@ -1084,7 +1264,8 @@ function openPaymentModal(orderId, newStatus) {
     const targetOrder = ordersList.find(o => o.id === orderId);
     const amountInput = document.getElementById('payment-amount');
     if (amountInput && targetOrder) {
-        amountInput.value = parseFloat(targetOrder.total_price || 0).toFixed(2);
+        (amountInput as HTMLInputElement).value = parseFloat(targetOrder.total_price || 0).toFixed(2);
+        
     }
 
     if (paymentMethodSelect && targetOrder?.payment_method) {
@@ -1128,7 +1309,7 @@ if (paymentForm) {
         const orderId = pendingPaymentOrderId;
         const status = pendingPaymentStatus;
         
-        const btnConfirm = document.getElementById('btn-confirm-payment');
+        const btnConfirm = $btn('btn-confirm-payment');
         const originalHTML = btnConfirm ? btnConfirm.innerHTML : '';
         if (btnConfirm) {
             btnConfirm.disabled = true;
@@ -1199,12 +1380,12 @@ function renderProductsTable() {
     const countTech = document.getElementById('count-tech');
     const countAuto = document.getElementById('count-autoparts');
 
-    if (countAll) countAll.textContent = productsList.length;
-    if (countRest) countRest.textContent = productsList.filter(p => (p.template || 'restaurant') === 'restaurant').length;
-    if (countHard) countHard.textContent = productsList.filter(p => p.template === 'hardware').length;
-    if (countFash) countFash.textContent = productsList.filter(p => p.template === 'fashion').length;
-    if (countTech) countTech.textContent = productsList.filter(p => p.template === 'tech').length;
-    if (countAuto) countAuto.textContent = productsList.filter(p => p.template === 'autoparts').length;
+    if (countAll) countAll.textContent = String(productsList.length);
+    if (countRest) countRest.textContent = String(productsList.filter(p => (p.template || 'restaurant') === 'restaurant').length);
+    if (countHard) countHard.textContent = String(productsList.filter(p => p.template === 'hardware').length);
+    if (countFash) countFash.textContent = String(productsList.filter(p => p.template === 'fashion').length);
+    if (countTech) countTech.textContent = String(productsList.filter(p => p.template === 'tech').length);
+    if (countAuto) countAuto.textContent = String(productsList.filter(p => p.template === 'autoparts').length);
 
     // Filtrar lista según pestaña activa
     let filteredProducts = activeProductTemplateFilter === 'all'
@@ -1221,7 +1402,7 @@ function renderProductsTable() {
     }
 
     if (filteredProducts.length === 0) {
-        tableProducts.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-secondary); padding: 2rem;">${productsSearchQuery ? 'No se encontraron productos que coincidan con la búsqueda.' : 'No hay productos registrados en esta plantilla. Agrega uno nuevo arriba.'}</td></tr>`;
+        tableProducts.innerHTML = `<tr><td colspan="10" class="table-empty-message">${productsSearchQuery ? 'No se encontraron productos que coincidan con la búsqueda.' : 'No hay productos registrados en esta plantilla. Agrega uno nuevo arriba.'}</td></tr>`;
         return;
     }
 
@@ -1234,25 +1415,38 @@ function renderProductsTable() {
         const tmpl = p.template || 'restaurant';
         const badge = templateBadges[tmpl] || `<span class="template-badge">${escapeHtml(tmpl)}</span>`;
 
+        const stockVal = p.stock !== undefined && p.stock !== null ? p.stock : -1;
+        let stockHtml = '';
+        if (stockVal === -1) {
+            stockHtml = '<span class="status-badge table-badge-stock-unlimited">♾️ Ilimitado</span>';
+        } else if (stockVal <= 0) {
+            stockHtml = '<span class="status-badge cancelado">0 (Agotado)</span>';
+        } else if (stockVal <= 5) {
+            stockHtml = `<span class="status-badge pendiente">${stockVal} (Bajo)</span>`;
+        } else {
+            stockHtml = `<span class="status-badge completado">${stockVal} disp.</span>`;
+        }
+
         return `
             <tr>
                 <td>
-                    <img src="${escapeHtml((p.image_url && (p.image_url.startsWith('http') || p.image_url.startsWith('/'))) ? p.image_url : `/${p.image_url || 'assets/favicon.svg'}`)}" alt="${escapeHtml(p.name)}" onerror="this.onerror=null; this.src='/assets/favicon.svg';" style="width:44px; height:44px; object-fit:cover; border-radius:8px; border:1px solid var(--border-color);">
+                    <img src="${escapeHtml((p.image_url && (p.image_url.startsWith('http') || p.image_url.startsWith('/'))) ? p.image_url : `/${p.image_url || 'assets/favicon.svg'}`)}" alt="${escapeHtml(p.name)}" onerror="this.onerror=null; this.src='/assets/favicon.svg';" class="table-product-thumb">
                 </td>
                 <td><code>${escapeHtml(p.id)}</code></td>
                 <td><strong>${escapeHtml(p.name)}</strong></td>
                 <td>${badge}</td>
-                <td><span style="font-size:0.8rem; background:rgba(255,255,255,0.03); padding:0.25rem 0.5rem; border-radius:6px;">${escapeHtml(categoryLabel)}</span></td>
+                <td><span class="table-badge-category">${escapeHtml(categoryLabel)}</span></td>
                 <td>${priceText}</td>
-                <td style="font-size:0.85rem; color:var(--text-secondary);">${escapeHtml(sizesText)}</td>
+                <td>${stockHtml}</td>
+                <td class="table-text-secondary">${escapeHtml(sizesText)}</td>
                 <td><span class="status-badge ${statusClass}">${statusText}</span></td>
                 <td>
-                    <div style="display:flex; gap:0.5rem;">
-                        <button class="action-icon-btn edit" onclick="startEditProduct('${escapeHtml(p.id)}')" title="Editar Producto">
-                            <i data-lucide="edit-3" style="width:18px; height:18px;"></i>
+                    <div class="table-actions-group">
+                        <button class="action-icon-btn edit" data-action="edit-product" data-id="${escapeHtml(p.id)}" title="Editar Producto">
+                            <i data-lucide="edit-3" class="table-action-icon"></i>
                         </button>
-                        <button class="action-icon-btn delete" onclick="deleteProduct('${escapeHtml(p.id)}')" title="Eliminar Producto">
-                            <i data-lucide="trash-2" style="width:18px; height:18px;"></i>
+                        <button class="action-icon-btn delete" data-action="delete-product" data-id="${escapeHtml(p.id)}" title="Eliminar Producto">
+                            <i data-lucide="trash-2" class="table-action-icon"></i>
                         </button>
                     </div>
                 </td>
@@ -1269,7 +1463,8 @@ function setupTemplateFilterTabs() {
     if (!tabsContainer) return;
 
     tabsContainer.addEventListener('click', (e) => {
-        const btn = e.target.closest('.filter-tab-btn');
+        const target = e.target as HTMLElement | null;
+        const btn = target?.closest('.filter-tab-btn');
         if (!btn) return;
 
         const filter = btn.getAttribute('data-filter');
@@ -1288,10 +1483,10 @@ setupTemplateFilterTabs();
 const prodTemplateSelect = document.getElementById('prod-template');
 if (prodTemplateSelect) {
     prodTemplateSelect.addEventListener('change', (e) => {
-        const selectedTmpl = e.target.value;
-        const catSelect = document.getElementById('prod-category');
-        if (catSelect && templateDefaultCategory[selectedTmpl]) {
-            catSelect.value = templateDefaultCategory[selectedTmpl];
+        const selectedTmpl = (e.target as HTMLSelectElement).value;
+        const catSelect = $input('prod-category');
+        if (catSelect && (templateDefaultCategory as any)[selectedTmpl]) {
+            catSelect.value = (templateDefaultCategory as any)[selectedTmpl];
         }
     });
 }
@@ -1301,23 +1496,25 @@ if (productForm) {
     productForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const method = document.getElementById('prod-method')?.value || 'POST';
-        const id = document.getElementById('prod-id')?.value.trim();
-        const template = document.getElementById('prod-template')?.value || 'restaurant';
-        const name = document.getElementById('prod-name')?.value.trim();
-        const category = document.getElementById('prod-category')?.value.trim();
-        const price = parseFloat(document.getElementById('prod-price')?.value) || 0.0;
-        const icon = document.getElementById('prod-icon')?.value.trim();
-        let image_url = document.getElementById('prod-image')?.value.trim();
-        const sizes = document.getElementById('prod-sizes')?.value.trim();
-        const brand = document.getElementById('prod-brand')?.value.trim();
-        const model = document.getElementById('prod-model')?.value.trim();
-        const active = parseInt(document.getElementById('prod-active')?.value) || 1;
-        const description = document.getElementById('prod-description')?.value.trim();
+        const method = $val('prod-method') || 'POST';
+        const id = $val('prod-id');
+        const template = $val('prod-template') || 'restaurant';
+        const name = $val('prod-name');
+        const category = $val('prod-category');
+        const price = parseFloat($val('prod-price')) || 0.0;
+        const icon = $val('prod-icon');
+        let image_url = $val('prod-image');
+        const sizes = $val('prod-sizes');
+        const brand = $val('prod-brand');
+        const model = $val('prod-model');
+        const stockInputVal = $val('prod-stock');
+        const stock = stockInputVal !== '' ? parseInt(stockInputVal, 10) : -1;
+        const active = parseInt($val('prod-active')) || 1;
+        const description = $val('prod-description');
         
-        const imageFile = document.getElementById('prod-image-file')?.files[0];
+        const imageFile = ($input('prod-image-file')?.files || [])[0];
 
-        const btnSave = document.getElementById('btn-submit-product');
+        const btnSave = $btn('btn-submit-product');
         if (btnSave) {
             btnSave.disabled = true;
             btnSave.innerHTML = '<i data-lucide="loader" class="spin"></i> Guardando...';
@@ -1330,7 +1527,7 @@ if (productForm) {
                 const formData = new FormData();
                 formData.append("file", imageFile);
                 const uploadRes = await fetch('/api/upload?type=product', { method: 'POST', body: formData });
-                const uploadData = await uploadRes.json();
+                const uploadData = (await uploadRes.json()) as any;
                 if (uploadRes.ok && uploadData.success) {
                     image_url = uploadData.url;
                 } else {
@@ -1343,11 +1540,12 @@ if (productForm) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     id, name, template, category, price, icon, image_url, sizes: sizes || null, active, description,
-                    brand: brand || null, model: model || null
+                    brand: brand || null, model: model || null,
+                    stock: isNaN(stock) ? -1 : stock
                 })
             });
 
-            const data = await response.json();
+            const data = (await response.json()) as any;
 
             if (response.ok && data.success) {
                 showToast(data.message || 'Producto guardado exitosamente.', 'success');
@@ -1370,39 +1568,23 @@ if (productForm) {
 }
 
 // Iniciar edición de un producto
-function startEditProduct(productId) {
+function startEditProduct(productId: string) {
     const product = productsList.find(p => p.id === productId);
     if (!product) return;
 
-    const methodEl = document.getElementById('prod-method');
-    const idEl = document.getElementById('prod-id');
-    const templateEl = document.getElementById('prod-template');
-    const nameEl = document.getElementById('prod-name');
-    const categoryEl = document.getElementById('prod-category');
-    const priceEl = document.getElementById('prod-price');
-    const iconEl = document.getElementById('prod-icon');
-    const imageEl = document.getElementById('prod-image');
-    const imageFileEl = document.getElementById('prod-image-file');
     const imagePreviewEl = document.getElementById('prod-image-preview');
-    const sizesEl = document.getElementById('prod-sizes');
-    const brandEl = document.getElementById('prod-brand');
-    const modelEl = document.getElementById('prod-model');
-    const activeEl = document.getElementById('prod-active');
-    const descEl = document.getElementById('prod-description');
 
-    if (methodEl) methodEl.value = 'PUT';
-    if (idEl) {
-        idEl.value = product.id;
-        idEl.disabled = true;
-    }
-    if (templateEl) templateEl.value = product.template || 'restaurant';
-    if (nameEl) nameEl.value = product.name;
-    if (categoryEl) categoryEl.value = product.category || product.type_id || 'principales';
-    if (priceEl) priceEl.value = product.price;
-    if (iconEl) iconEl.value = product.icon || '';
+    setVal('prod-method', 'PUT');
+    setVal('prod-id', product.id);
+    const idIn = $input('prod-id'); if (idIn) idIn.disabled = true;
+    setVal('prod-template', product.template || 'restaurant');
+    setVal('prod-name', product.name);
+    setVal('prod-category', product.category || product.type_id || 'principales');
+    setVal('prod-price', product.price);
+    setVal('prod-icon', product.icon || '');
     
-    if (imageEl) imageEl.value = product.image_url || '';
-    if (imageFileEl) imageFileEl.value = ''; // Reset file input
+    setVal('prod-image', product.image_url || '');
+    const imgFileIn = $input('prod-image-file'); if (imgFileIn) imgFileIn.value = ''; // Reset file input
     if (imagePreviewEl && product.image_url) {
         const url = (product.image_url.startsWith('http') || product.image_url.startsWith('/')) ? product.image_url : `/${product.image_url}`;
         imagePreviewEl.style.backgroundImage = `url('${url}')`;
@@ -1411,11 +1593,12 @@ function startEditProduct(productId) {
         imagePreviewEl.style.display = 'none';
     }
 
-    if (sizesEl) sizesEl.value = product.sizes || '';
-    if (brandEl) brandEl.value = product.brand || '';
-    if (modelEl) modelEl.value = product.model || '';
-    if (activeEl) activeEl.value = product.active !== undefined ? product.active : 1;
-    if (descEl) descEl.value = product.description || '';
+    setVal('prod-sizes', product.sizes || '');
+    setVal('prod-stock', (product.stock !== undefined && product.stock !== null) ? product.stock : -1);
+    setVal('prod-brand', product.brand || '');
+    setVal('prod-model', product.model || '');
+    setVal('prod-active', product.active !== undefined ? product.active : 1);
+    setVal('prod-description', product.description || '');
 
     if (formProductTitle) formProductTitle.textContent = `Editando Producto: ${product.name}`;
     if (btnSubmitProduct) btnSubmitProduct.innerHTML = '<i data-lucide="save"></i> Actualizar Producto';
@@ -1436,17 +1619,14 @@ function startEditProduct(productId) {
 // Cancelar Edición
 function resetProductForm() {
     if (productForm) productForm.reset();
-    const methodEl = document.getElementById('prod-method');
-    const idEl = document.getElementById('prod-id');
-    const templateEl = document.getElementById('prod-template');
     const imagePreviewEl = document.getElementById('prod-image-preview');
-    const imageFileEl = document.getElementById('prod-image-file');
     
-    if (methodEl) methodEl.value = 'POST';
-    if (idEl) idEl.disabled = false;
-    if (templateEl) templateEl.value = 'restaurant';
+    setVal('prod-method', 'POST');
+    const idInReset = $input('prod-id'); if (idInReset) idInReset.disabled = false; setVal('prod-id', '');
+    setVal('prod-template', 'restaurant');
+    setVal('prod-stock', '-1');
     if (imagePreviewEl) imagePreviewEl.style.display = 'none';
-    if (imageFileEl) imageFileEl.value = '';
+    const ife = $input('prod-image-file'); if (ife) ife.value = '';
     
     if (formProductTitle) formProductTitle.textContent = 'Añadir Nuevo Producto';
     if (btnSubmitProduct) btnSubmitProduct.innerHTML = '<i data-lucide="plus-circle"></i> Guardar Producto';
@@ -1462,7 +1642,7 @@ function resetProductForm() {
 if (btnCancelEdit) btnCancelEdit.addEventListener('click', resetProductForm);
 
 // Eliminar un producto
-async function deleteProduct(productId) {
+async function deleteProduct(productId: string) {
     if (!confirm(`¿Estás seguro de eliminar el producto "${productId}" del catálogo? Se borrará permanentemente de la base de datos.`)) {
         return;
     }
@@ -1499,7 +1679,7 @@ if (btnToggleProductForm) {
 const prodImageInput = document.getElementById('prod-image');
 if (prodImageInput) {
     prodImageInput.addEventListener('input', (e) => {
-        const val = e.target.value.trim();
+        const val = (e.target as HTMLSelectElement).value.trim();
         const preview = document.getElementById('prod-image-preview');
         if (preview) {
             if (val) {
@@ -1594,9 +1774,9 @@ const bcvForm = document.getElementById('bcv-form');
 
 function openBcvModal() {
     if (bcvModal) bcvModal.classList.add('active');
-    const input = document.getElementById('bcv-rate-input');
+    const input = $input('bcv-rate-input');
     if (input) input.value = currentBcvRate.toFixed(2);
-    const toggle = document.getElementById('bcv-auto-toggle');
+    const toggle = $input('bcv-auto-toggle');
     if (toggle) toggle.checked = currentBcvAuto;
 }
 function closeBcvModal() {
@@ -1615,9 +1795,9 @@ if (bcvModal) {
 if (bcvForm) {
     bcvForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const rateInput = document.getElementById('bcv-rate-input');
-        const autoToggle = document.getElementById('bcv-auto-toggle');
-        const newRate = parseFloat(rateInput?.value);
+        const rateInput = $input('bcv-rate-input');
+        const autoToggle = $input('bcv-auto-toggle');
+        const newRate = parseFloat(rateInput?.value || '0');
         const autoUpdate = autoToggle ? autoToggle.checked : true;
 
         if (!newRate || newRate <= 0) {
@@ -1631,7 +1811,7 @@ if (bcvForm) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ rate: newRate, autoUpdate })
             });
-            const data = await res.json();
+            const data = (await res.json()) as any;
             if (res.ok && data.success) {
                 showToast('✅ Tasa BCV actualizada correctamente.', 'success');
                 currentBcvRate = newRate;
@@ -1673,7 +1853,7 @@ if (receiptModal) {
 }
 
 // --- SINCRONIZACIÓN EN VIVO DESDE MODAL BCV ---
-const btnForceBcvSync = document.getElementById('btn-force-bcv-sync');
+const btnForceBcvSync = $btn('btn-force-bcv-sync');
 if (btnForceBcvSync) {
     btnForceBcvSync.addEventListener('click', async () => {
         btnForceBcvSync.disabled = true;
@@ -1683,15 +1863,15 @@ if (btnForceBcvSync) {
 
         try {
             const res = await fetch('/api/bcv?force=true');
-            const data = await res.json();
+            const data = (await res.json()) as any;
             if (res.ok && data.rate) {
                 currentBcvRate = parseFloat(data.rate);
                 currentBcvAuto = data.autoUpdate !== false;
                 lastBcvUpdated = data.lastUpdated || '';
                 lastBcvSource = data.source || 'bcv_api';
 
-                const input = document.getElementById('bcv-rate-input');
-                if (input) input.value = currentBcvRate.toFixed(2);
+                const bcvRateIn = $input('bcv-rate-input');
+                if (bcvRateIn) bcvRateIn.value = currentBcvRate.toFixed(2);
                 const display = document.getElementById('admin-bcv-val');
                 if (display) display.textContent = `${currentBcvRate.toFixed(2)} Bs.`;
                 const syncLabel = document.getElementById('bcv-last-sync-label') || document.getElementById('bcv-last-sync-text');
@@ -1718,9 +1898,9 @@ if (btnForceBcvSync) {
 function playOrderChime() {
     if (!soundEnabled) return;
     try {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContext) return;
-        const ctx = new AudioContext();
+        const AudioContextClass = window.AudioContext || window['webkitAudioContext'];
+        if (!AudioContextClass) return;
+        const ctx = new AudioContextClass();
         const now = ctx.currentTime;
 
         // Tono 1: Nota D5 (587.33 Hz)
@@ -1752,7 +1932,7 @@ function playOrderChime() {
 }
 
 let originalPageTitle = document.title;
-let titleFlashTimer = null;
+let titleFlashTimer: any = null;
 
 function flashPageTitle() {
     if (titleFlashTimer || document.hasFocus()) return;
@@ -1804,9 +1984,9 @@ if (btnToggleSound) {
 }
 
 // --- BÚSQUEDA Y FILTRADO REACTIVO EN TABLAS ---
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
+function debounce(func: (...args: any[]) => any, wait: number) {
+    let timeout: any;
+    return function executedFunction(...args: any[]) {
         const later = () => {
             clearTimeout(timeout);
             func(...args);
@@ -1829,7 +2009,7 @@ if (ordersSearchInput) {
 const ordersStatusFilterEl = document.getElementById('orders-status-filter');
 if (ordersStatusFilterEl) {
     ordersStatusFilterEl.addEventListener('change', (e) => {
-        ordersStatusFilter = e.target.value;
+        ordersStatusFilter = (e.target as HTMLSelectElement).value;
         renderOrders();
     });
 }
@@ -1838,7 +2018,7 @@ if (ordersStatusFilterEl) {
 const salesSearchInput = document.getElementById('sales-search-input');
 if (salesSearchInput) {
     salesSearchInput.addEventListener('input', debounce((e) => {
-        salesSearchQuery = e.target.value.trim();
+        salesSearchQuery = (e.target as HTMLInputElement).value.trim();
         renderSales();
     }, 300));
 }
@@ -1846,8 +2026,8 @@ if (salesSearchInput) {
 const btnFilterSalesDates = document.getElementById('btn-filter-sales-dates');
 if (btnFilterSalesDates) {
     btnFilterSalesDates.addEventListener('click', () => {
-        const dateFrom = document.getElementById('sales-date-from').value;
-        const dateTo = document.getElementById('sales-date-to').value;
+        const dateFrom = $val('sales-date-from');
+        const dateTo = $val('sales-date-to');
         loadSales(dateFrom, dateTo);
     });
 }
@@ -1856,7 +2036,7 @@ if (btnFilterSalesDates) {
 const productsSearchInput = document.getElementById('products-search-input');
 if (productsSearchInput) {
     productsSearchInput.addEventListener('input', debounce((e) => {
-        productsSearchQuery = e.target.value.trim();
+        productsSearchQuery = (e.target as HTMLInputElement).value.trim();
         renderProductsTable();
     }, 300));
 }
@@ -1864,41 +2044,42 @@ if (productsSearchInput) {
 // --- EXPORTACIÓN DE REPORTES A CSV (EXCEL FRIENDLY) ---
 
 // --- PAGINATION UI & EVENTS ---
-function updatePaginationUI(type, currentPage, totalPages) {
+function updatePaginationUI(type: string, currentPage: number, totalPages: number) {
     const btnPrev = document.getElementById(`btn-${type}-prev`);
     const btnNext = document.getElementById(`btn-${type}-next`);
     const pageInfo = document.getElementById(`${type}-page-info`);
     
     if (btnPrev && btnNext && pageInfo) {
         pageInfo.textContent = `Página ${currentPage} de ${totalPages}`;
-        btnPrev.disabled = currentPage <= 1;
-        btnNext.disabled = currentPage >= totalPages;
+        (btnPrev as HTMLButtonElement).disabled = currentPage <= 1;
+        (btnNext as HTMLButtonElement).disabled = currentPage >= totalPages;
     }
 }
 
 document.addEventListener('click', (e) => {
     // Orders Pagination
-    if (e.target.closest('#btn-orders-prev') && ordersPage > 1) loadOrders(ordersPage - 1);
-    if (e.target.closest('#btn-orders-next') && ordersPage < ordersTotalPages) loadOrders(ordersPage + 1);
+    const t = e.target as HTMLElement | null;
+    if (t?.closest('#btn-orders-prev') && ordersPage > 1) loadOrders(ordersPage - 1);
+    if (t?.closest('#btn-orders-next') && ordersPage < ordersTotalPages) loadOrders(ordersPage + 1);
     
     // Products Pagination
-    if (e.target.closest('#btn-products-prev') && productsPage > 1) loadProducts(productsPage - 1);
-    if (e.target.closest('#btn-products-next') && productsPage < productsTotalPages) loadProducts(productsPage + 1);
+    if (t?.closest('#btn-products-prev') && productsPage > 1) loadProducts(productsPage - 1);
+    if (t?.closest('#btn-products-next') && productsPage < productsTotalPages) loadProducts(productsPage + 1);
     
     // Sales Pagination
-    if (e.target.closest('#btn-sales-prev') && salesPage > 1) {
-        const dFrom = document.getElementById('sales-date-from')?.value;
-        const dTo = document.getElementById('sales-date-to')?.value;
+    if (t?.closest('#btn-sales-prev') && salesPage > 1) {
+        const dFrom = $val('sales-date-from');
+        const dTo = $val('sales-date-to');
         loadSales(dFrom, dTo, salesPage - 1);
     }
-    if (e.target.closest('#btn-sales-next') && salesPage < salesTotalPages) {
-        const dFrom = document.getElementById('sales-date-from')?.value;
-        const dTo = document.getElementById('sales-date-to')?.value;
+    if (t?.closest('#btn-sales-next') && salesPage < salesTotalPages) {
+        const dFrom = $val('sales-date-from');
+        const dTo = $val('sales-date-to');
         loadSales(dFrom, dTo, salesPage + 1);
     }
 });
 
-function downloadCSV(filename, csvContent) {
+function downloadCSV(filename: string, csvContent: string) {
     const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -1988,8 +2169,8 @@ function updateConnectionStatus() {
         connectionStatus.classList.add('online');
         connectionStatus.style.background = 'rgba(34, 197, 94, 0.1)';
         connectionStatus.style.borderColor = 'rgba(34, 197, 94, 0.3)';
-        connectionStatus.querySelector('.status-dot').style.background = 'var(--success)';
-        connectionStatus.querySelector('.status-dot').style.boxShadow = '0 0 8px var(--success)';
+        const dotSuccess = connectionStatus.querySelector('.status-dot') as HTMLElement | null;
+        if (dotSuccess) { dotSuccess.style.background = 'var(--success)'; dotSuccess.style.boxShadow = '0 0 8px var(--success)'; }
         connectionStatusText.style.color = 'var(--success)';
         connectionStatusText.textContent = 'En línea';
         // Refrescar al reconectar
@@ -1999,17 +2180,21 @@ function updateConnectionStatus() {
         connectionStatus.classList.add('offline');
         connectionStatus.style.background = 'rgba(239, 68, 68, 0.1)';
         connectionStatus.style.borderColor = 'rgba(239, 68, 68, 0.3)';
-        connectionStatus.querySelector('.status-dot').style.background = 'var(--danger)';
-        connectionStatus.querySelector('.status-dot').style.boxShadow = '0 0 8px var(--danger)';
+        const dotDanger = connectionStatus.querySelector('.status-dot') as HTMLElement | null;
+        if (dotDanger) { dotDanger.style.background = 'var(--danger)'; dotDanger.style.boxShadow = '0 0 8px var(--danger)'; }
         connectionStatusText.style.color = 'var(--danger)';
         connectionStatusText.textContent = 'Sin Conexión';
     }
 }
 
+window.addEventListener('online', updateConnectionStatus);
+window.addEventListener('offline', updateConnectionStatus);
+updateConnectionStatus();
+
 // --- GESTIÓN DE CONFIGURACIÓN INTEGRAL DE TIENDA (CRUD DE AJUSTES) ---
 
 // Helper para subir archivos de imagen con respaldo local
-async function uploadImageFile(file) {
+async function uploadImageFile(file: File): Promise<string | null> {
     if (!file) return null;
     if (file.size > 5 * 1024 * 1024) {
         showToast('La imagen supera los 5MB permitidos.', 'error');
@@ -2024,7 +2209,7 @@ async function uploadImageFile(file) {
             method: 'POST',
             body: formData
         });
-        const data = await res.json();
+        const data = (await res.json()) as any;
         if (res.ok && data.url) {
             return data.url;
         }
@@ -2035,13 +2220,13 @@ async function uploadImageFile(file) {
     // Respaldo en cliente con FileReader
     return new Promise((resolve) => {
         const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target.result);
+        reader.onload = (e) => resolve((e.target?.result as string) || null);
         reader.onerror = () => resolve(null);
         reader.readAsDataURL(file);
     });
 }
 
-function setPreviewImage(imgEl, placeholderEl, url) {
+function setPreviewImage(imgEl: any, placeholderEl: any, url?: string) {
     if (!imgEl) return;
     if (url && url.trim()) {
         imgEl.src = url;
@@ -2059,7 +2244,7 @@ function initSettingsTabs() {
     const tabButtons = document.querySelectorAll('.settings-tab-btn');
     tabButtons.forEach(btn => {
         btn.addEventListener('click', () => {
-            const targetTab = btn.dataset.tab;
+            const targetTab = (btn as HTMLElement).dataset.tab;
             if (!targetTab) return;
 
             tabButtons.forEach(b => b.classList.remove('active'));
@@ -2080,11 +2265,11 @@ function initSettingsTabs() {
 }
 
 // Configurar inputs de imagen simples (Logo y OG)
-function setupSingleImageUploader(btnId, fileInputId, textInputId, previewImgId, placeholderId) {
-    const btn = document.getElementById(btnId);
-    const fileInput = document.getElementById(fileInputId);
-    const textInput = document.getElementById(textInputId);
-    const previewImg = document.getElementById(previewImgId);
+function setupSingleImageUploader(btnId: string, fileInputId: string, textInputId: string, previewImgId: string, placeholderId: string) {
+    const btn = $btn(btnId);
+    const fileInput = $input(fileInputId);
+    const textInput = $input(textInputId);
+    const previewImg = document.getElementById(previewImgId) as HTMLImageElement | null;
     const placeholder = document.getElementById(placeholderId);
 
     if (btn && fileInput) {
@@ -2094,20 +2279,24 @@ function setupSingleImageUploader(btnId, fileInputId, textInputId, previewImgId,
     if (fileInput && textInput) {
         fileInput.addEventListener('change', async () => {
             if (fileInput.files && fileInput.files[0]) {
-                btn.disabled = true;
-                const originalText = btn.innerHTML;
-                btn.innerHTML = '<i data-lucide="loader" class="spin"></i> Subiendo...';
+                const originalText = btn ? btn.innerHTML : '';
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<i data-lucide="loader" class="spin"></i> Subiendo...';
+                }
                 if (window.lucide) lucide.createIcons();
 
                 const url = await uploadImageFile(fileInput.files[0]);
                 if (url) {
-                    textInput.value = url;
+                    if (textInput) textInput.value = url;
                     setPreviewImage(previewImg, placeholder, url);
                     showToast('Imagen cargada con éxito.', 'success');
                 }
 
-                btn.disabled = false;
-                btn.innerHTML = originalText;
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
                 if (window.lucide) lucide.createIcons();
             }
         });
@@ -2123,7 +2312,7 @@ function setupSingleImageUploader(btnId, fileInputId, textInputId, previewImgId,
 // --- RENDERIZADORES DE ELEMENTOS REPETITIVOS ---
 
 // 1. Hero Slides
-function renderHeroSlides(slides = []) {
+function renderHeroSlides(slides: any[] = []) {
     const container = document.getElementById('hero-slides-list');
     if (!container) return;
     container.innerHTML = '';
@@ -2170,10 +2359,10 @@ function renderHeroSlides(slides = []) {
         container.appendChild(row);
 
         // Eventos de la fila de slide
-        const fileIn = row.querySelector('.slide-file-input');
-        const uploadBtn = row.querySelector('.btn-slide-upload');
-        const textIn = row.querySelector('.slide-img-input');
-        const previewImg = row.querySelector('.slide-preview-img');
+        const fileIn = row.querySelector('.slide-file-input') as HTMLInputElement | null;
+        const uploadBtn = row.querySelector('.btn-slide-upload') as HTMLButtonElement | null;
+        const textIn = row.querySelector('.slide-img-input') as HTMLInputElement | null;
+        const previewImg = row.querySelector('.slide-preview-img') as HTMLImageElement | null;
         const placeholder = row.querySelector('.slide-placeholder');
         const delBtn = row.querySelector('.btn-del-slide');
 
@@ -2183,15 +2372,19 @@ function renderHeroSlides(slides = []) {
         if (fileIn && textIn) {
             fileIn.addEventListener('change', async () => {
                 if (fileIn.files && fileIn.files[0]) {
-                    uploadBtn.disabled = true;
-                    uploadBtn.innerHTML = '<i data-lucide="loader" class="spin"></i>...';
+                    if (uploadBtn) {
+                        uploadBtn.disabled = true;
+                        uploadBtn.innerHTML = '<i data-lucide="loader" class="spin"></i>...';
+                    }
                     const url = await uploadImageFile(fileIn.files[0]);
                     if (url) {
                         textIn.value = url;
                         setPreviewImage(previewImg, placeholder, url);
                     }
-                    uploadBtn.disabled = false;
-                    uploadBtn.innerHTML = '<i data-lucide="upload"></i> Subir';
+                    if (uploadBtn) {
+                        uploadBtn.disabled = false;
+                        uploadBtn.innerHTML = '<i data-lucide="upload"></i> Subir';
+                    }
                     if (window.lucide) lucide.createIcons();
                 }
             });
@@ -2222,7 +2415,7 @@ function renumberSlideBadges() {
 }
 
 // 2. Hero Stats
-function renderHeroStats(stats = []) {
+function renderHeroStats(stats: any[] = []) {
     const container = document.getElementById('hero-stats-list');
     if (!container) return;
     container.innerHTML = '';
@@ -2260,7 +2453,7 @@ function renderHeroStats(stats = []) {
 }
 
 // 3. Beneficios
-function renderBenefits(items = []) {
+function renderBenefits(items: any[] = []) {
     const container = document.getElementById('benefits-items-list');
     if (!container) return;
     container.innerHTML = '';
@@ -2313,7 +2506,7 @@ function renderBenefits(items = []) {
 }
 
 // 4. Proceso (Pasos)
-function renderProcessSteps(steps = []) {
+function renderProcessSteps(steps: any[] = []) {
     const container = document.getElementById('process-steps-list');
     if (!container) return;
     container.innerHTML = '';
@@ -2355,7 +2548,7 @@ function renderProcessSteps(steps = []) {
 }
 
 // 5. Testimonios
-function renderTestimonials(items = []) {
+function renderTestimonials(items: any[] = []) {
     const container = document.getElementById('testimonials-items-list');
     if (!container) return;
     container.innerHTML = '';
@@ -2417,10 +2610,10 @@ function renderTestimonials(items = []) {
         `;
         container.appendChild(row);
 
-        const fileIn = row.querySelector('.test-file-input');
-        const uploadBtn = row.querySelector('.btn-test-upload');
-        const textIn = row.querySelector('.test-avatar-input');
-        const previewImg = row.querySelector('.test-preview-img');
+        const fileIn = row.querySelector('.test-file-input') as HTMLInputElement | null;
+        const uploadBtn = row.querySelector('.btn-test-upload') as HTMLButtonElement | null;
+        const textIn = row.querySelector('.test-avatar-input') as HTMLInputElement | null;
+        const previewImg = row.querySelector('.test-preview-img') as HTMLImageElement | null;
         const placeholder = row.querySelector('.test-placeholder');
         const delBtn = row.querySelector('.btn-del-testimonial');
 
@@ -2430,15 +2623,19 @@ function renderTestimonials(items = []) {
         if (fileIn && textIn) {
             fileIn.addEventListener('change', async () => {
                 if (fileIn.files && fileIn.files[0]) {
-                    uploadBtn.disabled = true;
-                    uploadBtn.innerHTML = '<i data-lucide="loader" class="spin"></i>...';
+                    if (uploadBtn) {
+                        uploadBtn.disabled = true;
+                        uploadBtn.innerHTML = '<i data-lucide="loader" class="spin"></i>...';
+                    }
                     const url = await uploadImageFile(fileIn.files[0]);
                     if (url) {
                         textIn.value = url;
                         setPreviewImage(previewImg, placeholder, url);
                     }
-                    uploadBtn.disabled = false;
-                    uploadBtn.innerHTML = '<i data-lucide="upload"></i> Subir';
+                    if (uploadBtn) {
+                        uploadBtn.disabled = false;
+                        uploadBtn.innerHTML = '<i data-lucide="upload"></i> Subir';
+                    }
                     if (window.lucide) lucide.createIcons();
                 }
             });
@@ -2455,7 +2652,7 @@ function renderTestimonials(items = []) {
 }
 
 // 6. Preguntas Frecuentes (FAQ)
-function renderFaq(items = []) {
+function renderFaq(items: any[] = []) {
     const container = document.getElementById('faq-items-list');
     if (!container) return;
     container.innerHTML = '';
@@ -2495,7 +2692,7 @@ async function loadStoreSettings() {
     try {
         const res = await fetch('/api/settings');
         if (!res.ok) throw new Error('No se pudo cargar la configuración');
-        const data = await res.json();
+        const data = (await res.json()) as any;
         const cfg = data.tenant?.config || {};
         const b = cfg.business || {};
         const c = cfg.contact || {};
@@ -2512,7 +2709,7 @@ async function loadStoreSettings() {
         const l = cfg.labels || {};
 
         // Actualizar botón de vista previa "Ver Mi Tienda"
-        const previewBtn = document.getElementById('btn-preview-store');
+        const previewBtn = document.getElementById('btn-preview-store') as HTMLAnchorElement | null;
         if (previewBtn) {
             const template = data.tenant?.template || 'restaurant';
             const tenantId = data.tenant?.id;
@@ -2526,47 +2723,28 @@ async function loadStoreSettings() {
         }
 
         // TAB 1: IDENTIDAD
-        const nameEl = document.getElementById('cfg-business-name');
-        if (nameEl) nameEl.value = b.name || data.tenant?.name || '';
-        const tagEl = document.getElementById('cfg-tagline');
-        if (tagEl) tagEl.value = b.tagline || '';
-        const descEl = document.getElementById('cfg-description');
-        if (descEl) descEl.value = b.description || '';
-        const lpEl = document.getElementById('cfg-logo-primary');
-        if (lpEl) lpEl.value = b.logoTextPrimary || '';
-        const lsEl = document.getElementById('cfg-logo-secondary');
-        if (lsEl) lsEl.value = b.logoTextSecondary || '';
-        const prefEl = document.getElementById('cfg-store-prefix');
-        if (prefEl) prefEl.value = cfg.storePrefix || '';
+        setVal('cfg-business-name', b.name || data.tenant?.name || '');
+        setVal('cfg-tagline', b.tagline || '');
+        setVal('cfg-description', b.description || '');
+        setVal('cfg-logo-primary', b.logoTextPrimary || '');
+        setVal('cfg-logo-secondary', b.logoTextSecondary || '');
+        setVal('cfg-store-prefix', cfg.storePrefix || '');
 
-        const logoImgEl = document.getElementById('cfg-logo-image');
-        if (logoImgEl) {
-            logoImgEl.value = b.logoImage || '';
-            setPreviewImage(document.getElementById('preview-logo-img'), document.getElementById('placeholder-logo'), b.logoImage);
-        }
-        const ogImgEl = document.getElementById('cfg-og-image');
-        if (ogImgEl) {
-            ogImgEl.value = b.ogImage || '';
-            setPreviewImage(document.getElementById('preview-og-img'), document.getElementById('placeholder-og'), b.ogImage);
-        }
+        setVal('cfg-logo-image', b.logoImage || '');
+        setPreviewImage(document.getElementById('preview-logo-img'), document.getElementById('placeholder-logo'), b.logoImage);
+
+        setVal('cfg-og-image', b.ogImage || '');
+        setPreviewImage(document.getElementById('preview-og-img'), document.getElementById('placeholder-og'), b.ogImage);
 
         // TAB 2: HERO
-        const heroBadgeEl = document.getElementById('cfg-hero-badge');
-        if (heroBadgeEl) heroBadgeEl.value = h.badgeText || '';
-        const heroHeadEl = document.getElementById('cfg-hero-headline');
-        if (heroHeadEl) heroHeadEl.value = h.headline || '';
-        const heroHeadHighEl = document.getElementById('cfg-hero-headline-highlight');
-        if (heroHeadHighEl) heroHeadHighEl.value = h.headlineHighlight || '';
-        const heroSubEl = document.getElementById('cfg-hero-subheadline');
-        if (heroSubEl) heroSubEl.value = h.subheadline || '';
-        const cta1TextEl = document.getElementById('cfg-hero-cta1-text');
-        if (cta1TextEl) cta1TextEl.value = h.ctaPrimaryText || '';
-        const cta1LinkEl = document.getElementById('cfg-hero-cta1-link');
-        if (cta1LinkEl) cta1LinkEl.value = h.ctaPrimaryLink || '';
-        const cta2TextEl = document.getElementById('cfg-hero-cta2-text');
-        if (cta2TextEl) cta2TextEl.value = h.ctaSecondaryText || '';
-        const cta2LinkEl = document.getElementById('cfg-hero-cta2-link');
-        if (cta2LinkEl) cta2LinkEl.value = h.ctaSecondaryLink || '';
+        setVal('cfg-hero-badge', h.badgeText || '');
+        setVal('cfg-hero-headline', h.headline || '');
+        setVal('cfg-hero-headline-highlight', h.headlineHighlight || '');
+        setVal('cfg-hero-subheadline', h.subheadline || '');
+        setVal('cfg-hero-cta1-text', h.ctaPrimaryText || '');
+        setVal('cfg-hero-cta1-link', h.ctaPrimaryLink || '');
+        setVal('cfg-hero-cta2-text', h.ctaSecondaryText || '');
+        setVal('cfg-hero-cta2-link', h.ctaSecondaryLink || '');
 
         renderHeroSlides(h.slides || [
             { image: '/assets/hero_main.webp', alt: 'Portada 1' },
@@ -2580,33 +2758,21 @@ async function loadStoreSettings() {
         ]);
 
         // TAB 3: CATÁLOGO
-        const catTitleEl = document.getElementById('cfg-catalog-title');
-        if (catTitleEl) catTitleEl.value = cat.title || '';
-        const catTitleHighEl = document.getElementById('cfg-catalog-title-highlight');
-        if (catTitleHighEl) catTitleHighEl.value = cat.titleHighlight || '';
-        const catSubEl = document.getElementById('cfg-catalog-subtitle');
-        if (catSubEl) catSubEl.value = cat.subtitle || '';
-        const catSearchEl = document.getElementById('cfg-catalog-search-placeholder');
-        if (catSearchEl) catSearchEl.value = cat.searchPlaceholder || '';
-        const catAddEl = document.getElementById('cfg-catalog-add-cart-text');
-        if (catAddEl) catAddEl.value = cat.addToCartText || '';
-        const catEmptyEl = document.getElementById('cfg-catalog-empty-msg');
-        if (catEmptyEl) catEmptyEl.value = cat.emptyMessage || '';
+        setVal('cfg-catalog-title', cat.title || '');
+        setVal('cfg-catalog-title-highlight', cat.titleHighlight || '');
+        setVal('cfg-catalog-subtitle', cat.subtitle || '');
+        setVal('cfg-catalog-search-placeholder', cat.searchPlaceholder || '');
+        setVal('cfg-catalog-add-cart-text', cat.addToCartText || '');
+        setVal('cfg-catalog-empty-msg', cat.emptyMessage || '');
 
-        const nounSinEl = document.getElementById('cfg-item-noun-singular');
-        if (nounSinEl) nounSinEl.value = l.itemNounSingular || '';
-        const nounPluEl = document.getElementById('cfg-item-noun-plural');
-        if (nounPluEl) nounPluEl.value = l.itemNounPlural || '';
-        const emojiEl = document.getElementById('cfg-empty-cart-emoji');
-        if (emojiEl) emojiEl.value = l.emptyCartEmoji || '';
+        setVal('cfg-item-noun-singular', l.itemNounSingular || '');
+        setVal('cfg-item-noun-plural', l.itemNounPlural || '');
+        setVal('cfg-empty-cart-emoji', l.emptyCartEmoji || '');
 
         // TAB 4: BENEFICIOS
-        const benTitleEl = document.getElementById('cfg-benefits-title');
-        if (benTitleEl) benTitleEl.value = ben.title || '';
-        const benTitleHighEl = document.getElementById('cfg-benefits-title-highlight');
-        if (benTitleHighEl) benTitleHighEl.value = ben.titleHighlight || '';
-        const benSubEl = document.getElementById('cfg-benefits-subtitle');
-        if (benSubEl) benSubEl.value = ben.subtitle || '';
+        setVal('cfg-benefits-title', ben.title || '');
+        setVal('cfg-benefits-title-highlight', ben.titleHighlight || '');
+        setVal('cfg-benefits-subtitle', ben.subtitle || '');
 
         renderBenefits(ben.items || [
             { icon: 'flame', title: 'Cocina Artesanal', description: 'Recetas tradicionales preparadas al momento con ingredientes frescos del día.' },
@@ -2615,12 +2781,9 @@ async function loadStoreSettings() {
         ]);
 
         // TAB 5: PROCESO
-        const prcTitleEl = document.getElementById('cfg-process-title');
-        if (prcTitleEl) prcTitleEl.value = prc.title || '';
-        const prcTitleHighEl = document.getElementById('cfg-process-title-highlight');
-        if (prcTitleHighEl) prcTitleHighEl.value = prc.titleHighlight || '';
-        const prcSubEl = document.getElementById('cfg-process-subtitle');
-        if (prcSubEl) prcSubEl.value = prc.subtitle || '';
+        setVal('cfg-process-title', prc.title || '');
+        setVal('cfg-process-title-highlight', prc.titleHighlight || '');
+        setVal('cfg-process-subtitle', prc.subtitle || '');
 
         renderProcessSteps(prc.steps || [
             { number: 1, title: 'Elige tu Plato', description: 'Explora nuestro menú y selecciona tus opciones favoritas.' },
@@ -2630,12 +2793,9 @@ async function loadStoreSettings() {
         ]);
 
         // TAB 6: TESTIMONIOS
-        const tstTitleEl = document.getElementById('cfg-testimonials-title');
-        if (tstTitleEl) tstTitleEl.value = tst.title || '';
-        const tstTitleHighEl = document.getElementById('cfg-testimonials-title-highlight');
-        if (tstTitleHighEl) tstTitleHighEl.value = tst.titleHighlight || '';
-        const tstSubEl = document.getElementById('cfg-testimonials-subtitle');
-        if (tstSubEl) tstSubEl.value = tst.subtitle || '';
+        setVal('cfg-testimonials-title', tst.title || '');
+        setVal('cfg-testimonials-title-highlight', tst.titleHighlight || '');
+        setVal('cfg-testimonials-subtitle', tst.subtitle || '');
 
         renderTestimonials(tst.items || [
             { name: 'María González', role: 'Cliente frecuente', rating: 5, review: 'La comida llegó caliente y deliciosa. El pedido por WhatsApp fue súper rápido.', avatar: '/assets/client_maria.webp' },
@@ -2643,12 +2803,9 @@ async function loadStoreSettings() {
         ]);
 
         // TAB 7: FAQ
-        const fqTitleEl = document.getElementById('cfg-faq-title');
-        if (fqTitleEl) fqTitleEl.value = fq.title || '';
-        const fqTitleHighEl = document.getElementById('cfg-faq-title-highlight');
-        if (fqTitleHighEl) fqTitleHighEl.value = fq.titleHighlight || '';
-        const fqSubEl = document.getElementById('cfg-faq-subtitle');
-        if (fqSubEl) fqSubEl.value = fq.subtitle || '';
+        setVal('cfg-faq-title', fq.title || '');
+        setVal('cfg-faq-title-highlight', fq.titleHighlight || '');
+        setVal('cfg-faq-subtitle', fq.subtitle || '');
 
         renderFaq(fq.items || [
             { q: '¿Cómo pago mi pedido?', a: 'Aceptamos Pago Móvil, Zelle y Efectivo. Puedes adjuntar tu comprobante de pago al ordenar.' },
@@ -2656,39 +2813,24 @@ async function loadStoreSettings() {
         ]);
 
         // TAB 8: CONTACTO & PAGOS
-        const waEl = document.getElementById('cfg-whatsapp');
-        if (waEl) waEl.value = c.whatsapp || data.tenant?.whatsapp || '';
-        const waDispEl = document.getElementById('cfg-whatsapp-display');
-        if (waDispEl) waDispEl.value = c.whatsappDisplay || '';
-        const emailEl = document.getElementById('cfg-email');
-        if (emailEl) emailEl.value = c.email || '';
-        const addrEl = document.getElementById('cfg-address');
-        if (addrEl) addrEl.value = c.address || '';
-        const hoursEl = document.getElementById('cfg-hours');
-        if (hoursEl) hoursEl.value = c.hours || '';
-        const igEl = document.getElementById('cfg-instagram');
-        if (igEl) igEl.value = c.instagram || '';
-        const igHl = document.getElementById('cfg-instagram-handle');
-        if (igHl) igHl.value = c.instagramHandle || '';
+        setVal('cfg-whatsapp', c.whatsapp || data.tenant?.whatsapp || '');
+        setVal('cfg-whatsapp-display', c.whatsappDisplay || '');
+        setVal('cfg-email', c.email || '');
+        setVal('cfg-address', c.address || '');
+        setVal('cfg-hours', c.hours || '');
+        setVal('cfg-instagram', c.instagram || '');
+        setVal('cfg-instagram-handle', c.instagramHandle || '');
 
-        const pmBancoEl = document.getElementById('cfg-pm-banco');
-        if (pmBancoEl) pmBancoEl.value = pm.banco || '';
-        const pmTelEl = document.getElementById('cfg-pm-telefono');
-        if (pmTelEl) pmTelEl.value = pm.telefono || '';
-        const pmCedEl = document.getElementById('cfg-pm-cedula');
-        if (pmCedEl) pmCedEl.value = pm.cedula || '';
+        setVal('cfg-pm-banco', pm.banco || '');
+        setVal('cfg-pm-telefono', pm.telefono || '');
+        setVal('cfg-pm-cedula', pm.cedula || '');
 
-        const zEmailEl = document.getElementById('cfg-zelle-email');
-        if (zEmailEl) zEmailEl.value = z.email || '';
-        const zTitEl = document.getElementById('cfg-zelle-titular');
-        if (zTitEl) zTitEl.value = z.titular || '';
+        setVal('cfg-zelle-email', z.email || '');
+        setVal('cfg-zelle-titular', z.titular || '');
 
-        const delNameEl = document.getElementById('cfg-delivery-name');
-        if (delNameEl) delNameEl.value = l.deliveryOptionName || '';
-        const delPriceEl = document.getElementById('cfg-delivery-price');
-        if (delPriceEl) delPriceEl.value = l.deliveryOptionPrice !== undefined ? l.deliveryOptionPrice : '';
-        const pickNameEl = document.getElementById('cfg-pickup-name');
-        if (pickNameEl) pickNameEl.value = l.pickupOptionName || '';
+        setVal('cfg-delivery-name', l.deliveryOptionName || '');
+        setVal('cfg-delivery-price', l.deliveryOptionPrice !== undefined ? l.deliveryOptionPrice : '');
+        setVal('cfg-pickup-name', l.pickupOptionName || '');
 
         if (window.lucide) lucide.createIcons();
     } catch (err) {
@@ -2763,10 +2905,10 @@ if (btnAddFaq) {
 // Funciones recolectoras de los formularios dinámicos
 function collectHeroSlides() {
     const rows = document.querySelectorAll('.hero-slide-row');
-    const slides = [];
+    const slides: any[] = [];
     rows.forEach(r => {
-        const img = r.querySelector('.slide-img-input')?.value.trim();
-        const alt = r.querySelector('.slide-alt-input')?.value.trim();
+        const img = getRowVal(r, '.slide-img-input');
+        const alt = getRowVal(r, '.slide-alt-input');
         if (img) slides.push({ image: img, alt: alt || '' });
     });
     return slides;
@@ -2774,10 +2916,10 @@ function collectHeroSlides() {
 
 function collectHeroStats() {
     const rows = document.querySelectorAll('.hero-stat-row');
-    const stats = [];
+    const stats: any[] = [];
     rows.forEach(r => {
-        const val = r.querySelector('.stat-value-input')?.value.trim();
-        const lbl = r.querySelector('.stat-label-input')?.value.trim();
+        const val = getRowVal(r, '.stat-value-input');
+        const lbl = getRowVal(r, '.stat-label-input');
         if (val && lbl) stats.push({ value: val, label: lbl });
     });
     return stats;
@@ -2785,11 +2927,11 @@ function collectHeroStats() {
 
 function collectBenefits() {
     const rows = document.querySelectorAll('.benefit-item-row');
-    const items = [];
+    const items: any[] = [];
     rows.forEach(r => {
-        const icon = r.querySelector('.benefit-icon-select')?.value.trim();
-        const title = r.querySelector('.benefit-title-input')?.value.trim();
-        const desc = r.querySelector('.benefit-desc-input')?.value.trim();
+        const icon = getRowVal(r, '.benefit-icon-select');
+        const title = getRowVal(r, '.benefit-title-input');
+        const desc = getRowVal(r, '.benefit-desc-input');
         if (title) items.push({ icon: icon || 'star', title, description: desc || '' });
     });
     return items;
@@ -2797,11 +2939,11 @@ function collectBenefits() {
 
 function collectProcessSteps() {
     const rows = document.querySelectorAll('.process-step-row');
-    const steps = [];
+    const steps: any[] = [];
     rows.forEach(r => {
-        const num = r.querySelector('.step-number-input')?.value.trim();
-        const title = r.querySelector('.step-title-input')?.value.trim();
-        const desc = r.querySelector('.step-desc-input')?.value.trim();
+        const num = getRowVal(r, '.step-number-input');
+        const title = getRowVal(r, '.step-title-input');
+        const desc = getRowVal(r, '.step-desc-input');
         if (title) steps.push({ number: num || '1', title, description: desc || '' });
     });
     return steps;
@@ -2809,13 +2951,13 @@ function collectProcessSteps() {
 
 function collectTestimonials() {
     const rows = document.querySelectorAll('.testimonial-item-row');
-    const items = [];
+    const items: any[] = [];
     rows.forEach(r => {
-        const name = r.querySelector('.test-name-input')?.value.trim();
-        const role = r.querySelector('.test-role-input')?.value.trim();
-        const rating = parseInt(r.querySelector('.test-rating-select')?.value || '5', 10);
-        const avatar = r.querySelector('.test-avatar-input')?.value.trim();
-        const review = r.querySelector('.test-review-input')?.value.trim();
+        const name = getRowVal(r, '.test-name-input');
+        const role = getRowVal(r, '.test-role-input');
+        const rating = parseInt(getRowVal(r, '.test-rating-select') || '5', 10);
+        const avatar = getRowVal(r, '.test-avatar-input');
+        const review = getRowVal(r, '.test-review-input');
         if (name && review) {
             items.push({ name, role: role || 'Cliente', rating, review, avatar: avatar || '' });
         }
@@ -2825,10 +2967,10 @@ function collectTestimonials() {
 
 function collectFaqs() {
     const rows = document.querySelectorAll('.faq-item-row');
-    const items = [];
+    const items: any[] = [];
     rows.forEach(r => {
-        const q = r.querySelector('.faq-q-input')?.value.trim();
-        const a = r.querySelector('.faq-a-input')?.value.trim();
+        const q = getRowVal(r, '.faq-q-input');
+        const a = getRowVal(r, '.faq-a-input');
         if (q && a) items.push({ q, a });
     });
     return items;
@@ -2849,7 +2991,7 @@ if (storeSettingsForm) {
     storeSettingsForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const btnSave = document.getElementById('btn-save-settings');
+        const btnSave = $btn('btn-save-settings');
         if (btnSave) {
             btnSave.disabled = true;
             btnSave.innerHTML = '<i data-lucide="loader" class="spin"></i> Guardando cambios...';
@@ -2858,91 +3000,89 @@ if (storeSettingsForm) {
 
         const payload = {
             business: {
-                name: document.getElementById('cfg-business-name')?.value.trim() || undefined,
-                tagline: document.getElementById('cfg-tagline')?.value.trim() || undefined,
-                description: document.getElementById('cfg-description')?.value.trim() || undefined,
-                logoTextPrimary: document.getElementById('cfg-logo-primary')?.value.trim() || undefined,
-                logoTextSecondary: document.getElementById('cfg-logo-secondary')?.value.trim() || undefined,
-                logoImage: document.getElementById('cfg-logo-image')?.value.trim() || undefined,
-                ogImage: document.getElementById('cfg-og-image')?.value.trim() || undefined,
+                name: $val('cfg-business-name') || undefined,
+                tagline: $val('cfg-tagline') || undefined,
+                description: $val('cfg-description') || undefined,
+                logoTextPrimary: $val('cfg-logo-primary') || undefined,
+                logoTextSecondary: $val('cfg-logo-secondary') || undefined,
+                logoImage: $val('cfg-logo-image') || undefined,
+                ogImage: $val('cfg-og-image') || undefined,
             },
             landing: {
                 hero: {
-                    badgeText: document.getElementById('cfg-hero-badge')?.value.trim() || undefined,
-                    headline: document.getElementById('cfg-hero-headline')?.value.trim() || undefined,
-                    headlineHighlight: document.getElementById('cfg-hero-headline-highlight')?.value.trim() || undefined,
-                    subheadline: document.getElementById('cfg-hero-subheadline')?.value.trim() || undefined,
-                    ctaPrimaryText: document.getElementById('cfg-hero-cta1-text')?.value.trim() || undefined,
-                    ctaPrimaryLink: document.getElementById('cfg-hero-cta1-link')?.value.trim() || undefined,
-                    ctaSecondaryText: document.getElementById('cfg-hero-cta2-text')?.value.trim() || undefined,
-                    ctaSecondaryLink: document.getElementById('cfg-hero-cta2-link')?.value.trim() || undefined,
+                    badgeText: $val('cfg-hero-badge') || undefined,
+                    headline: $val('cfg-hero-headline') || undefined,
+                    headlineHighlight: $val('cfg-hero-headline-highlight') || undefined,
+                    subheadline: $val('cfg-hero-subheadline') || undefined,
+                    ctaPrimaryText: $val('cfg-hero-cta1-text') || undefined,
+                    ctaPrimaryLink: $val('cfg-hero-cta1-link') || undefined,
+                    ctaSecondaryText: $val('cfg-hero-cta2-text') || undefined,
+                    ctaSecondaryLink: $val('cfg-hero-cta2-link') || undefined,
                     slides: collectHeroSlides(),
                     stats: collectHeroStats(),
                 },
                 catalog: {
-                    title: document.getElementById('cfg-catalog-title')?.value.trim() || undefined,
-                    titleHighlight: document.getElementById('cfg-catalog-title-highlight')?.value.trim() || undefined,
-                    subtitle: document.getElementById('cfg-catalog-subtitle')?.value.trim() || undefined,
-                    searchPlaceholder: document.getElementById('cfg-catalog-search-placeholder')?.value.trim() || undefined,
-                    addToCartText: document.getElementById('cfg-catalog-add-cart-text')?.value.trim() || undefined,
-                    emptyMessage: document.getElementById('cfg-catalog-empty-msg')?.value.trim() || undefined,
+                    title: $val('cfg-catalog-title') || undefined,
+                    titleHighlight: $val('cfg-catalog-title-highlight') || undefined,
+                    subtitle: $val('cfg-catalog-subtitle') || undefined,
+                    searchPlaceholder: $val('cfg-catalog-search-placeholder') || undefined,
+                    addToCartText: $val('cfg-catalog-add-cart-text') || undefined,
+                    emptyMessage: $val('cfg-catalog-empty-msg') || undefined,
                 },
                 benefits: {
-                    title: document.getElementById('cfg-benefits-title')?.value.trim() || undefined,
-                    titleHighlight: document.getElementById('cfg-benefits-title-highlight')?.value.trim() || undefined,
-                    subtitle: document.getElementById('cfg-benefits-subtitle')?.value.trim() || undefined,
+                    title: $val('cfg-benefits-title') || undefined,
+                    titleHighlight: $val('cfg-benefits-title-highlight') || undefined,
+                    subtitle: $val('cfg-benefits-subtitle') || undefined,
                     items: collectBenefits(),
                 },
                 process: {
-                    title: document.getElementById('cfg-process-title')?.value.trim() || undefined,
-                    titleHighlight: document.getElementById('cfg-process-title-highlight')?.value.trim() || undefined,
-                    subtitle: document.getElementById('cfg-process-subtitle')?.value.trim() || undefined,
+                    title: $val('cfg-process-title') || undefined,
+                    titleHighlight: $val('cfg-process-title-highlight') || undefined,
+                    subtitle: $val('cfg-process-subtitle') || undefined,
                     steps: collectProcessSteps(),
                 },
                 testimonials: {
-                    title: document.getElementById('cfg-testimonials-title')?.value.trim() || undefined,
-                    titleHighlight: document.getElementById('cfg-testimonials-title-highlight')?.value.trim() || undefined,
-                    subtitle: document.getElementById('cfg-testimonials-subtitle')?.value.trim() || undefined,
+                    title: $val('cfg-testimonials-title') || undefined,
+                    titleHighlight: $val('cfg-testimonials-title-highlight') || undefined,
+                    subtitle: $val('cfg-testimonials-subtitle') || undefined,
                     items: collectTestimonials(),
                 },
                 faq: {
-                    title: document.getElementById('cfg-faq-title')?.value.trim() || undefined,
-                    titleHighlight: document.getElementById('cfg-faq-title-highlight')?.value.trim() || undefined,
-                    subtitle: document.getElementById('cfg-faq-subtitle')?.value.trim() || undefined,
+                    title: $val('cfg-faq-title') || undefined,
+                    titleHighlight: $val('cfg-faq-title-highlight') || undefined,
+                    subtitle: $val('cfg-faq-subtitle') || undefined,
                     items: collectFaqs(),
                 },
             },
             contact: {
-                whatsapp: document.getElementById('cfg-whatsapp')?.value.trim() || undefined,
-                whatsappDisplay: document.getElementById('cfg-whatsapp-display')?.value.trim() || undefined,
-                email: document.getElementById('cfg-email')?.value.trim() || undefined,
-                address: document.getElementById('cfg-address')?.value.trim() || undefined,
-                hours: document.getElementById('cfg-hours')?.value.trim() || undefined,
-                instagram: document.getElementById('cfg-instagram')?.value.trim() || undefined,
-                instagramHandle: document.getElementById('cfg-instagram-handle')?.value.trim() || undefined,
+                whatsapp: $val('cfg-whatsapp') || undefined,
+                whatsappDisplay: $val('cfg-whatsapp-display') || undefined,
+                email: $val('cfg-email') || undefined,
+                address: $val('cfg-address') || undefined,
+                hours: $val('cfg-hours') || undefined,
+                instagram: $val('cfg-instagram') || undefined,
+                instagramHandle: $val('cfg-instagram-handle') || undefined,
             },
             payment: {
                 pagoMovil: {
-                    banco: document.getElementById('cfg-pm-banco')?.value.trim() || undefined,
-                    telefono: document.getElementById('cfg-pm-telefono')?.value.trim() || undefined,
-                    cedula: document.getElementById('cfg-pm-cedula')?.value.trim() || undefined,
+                    banco: $val('cfg-pm-banco') || undefined,
+                    telefono: $val('cfg-pm-telefono') || undefined,
+                    cedula: $val('cfg-pm-cedula') || undefined,
                 },
                 zelle: {
-                    email: document.getElementById('cfg-zelle-email')?.value.trim() || undefined,
-                    titular: document.getElementById('cfg-zelle-titular')?.value.trim() || undefined,
+                    email: $val('cfg-zelle-email') || undefined,
+                    titular: $val('cfg-zelle-titular') || undefined,
                 }
             },
             labels: {
-                deliveryOptionName: document.getElementById('cfg-delivery-name')?.value.trim() || undefined,
-                deliveryOptionPrice: document.getElementById('cfg-delivery-price')?.value !== '' 
-                    ? parseFloat(document.getElementById('cfg-delivery-price').value) 
-                    : undefined,
-                pickupOptionName: document.getElementById('cfg-pickup-name')?.value.trim() || undefined,
-                itemNounSingular: document.getElementById('cfg-item-noun-singular')?.value.trim() || undefined,
-                itemNounPlural: document.getElementById('cfg-item-noun-plural')?.value.trim() || undefined,
-                emptyCartEmoji: document.getElementById('cfg-empty-cart-emoji')?.value.trim() || undefined,
+                deliveryOptionName: $val('cfg-delivery-name') || undefined,
+                deliveryOptionPrice: $val('cfg-delivery-price') !== '' ? parseFloat($val('cfg-delivery-price')) : undefined,
+                pickupOptionName: $val('cfg-pickup-name') || undefined,
+                itemNounSingular: $val('cfg-item-noun-singular') || undefined,
+                itemNounPlural: $val('cfg-item-noun-plural') || undefined,
+                emptyCartEmoji: $val('cfg-empty-cart-emoji') || undefined,
             },
-            storePrefix: document.getElementById('cfg-store-prefix')?.value.trim().toUpperCase() || undefined
+            storePrefix: $val('cfg-store-prefix').toUpperCase() || undefined
         };
 
         try {
@@ -2952,7 +3092,7 @@ if (storeSettingsForm) {
                 body: JSON.stringify(payload)
             });
 
-            const data = await res.json();
+            const data = (await res.json()) as any;
             if (res.ok && data.success) {
                 showToast('✅ ¡Toda la tienda ha sido actualizada exitosamente!', 'success');
                 if (payload.business.name) {
@@ -2973,6 +3113,157 @@ if (storeSettingsForm) {
                 btnSave.innerHTML = '<i data-lucide="save"></i> Guardar Todos los Cambios';
                 if (window.lucide) lucide.createIcons();
             }
+        }
+    });
+}
+
+// --- GESTIÓN DE CUPONES DE DESCUENTO ---
+let couponsList: any[] = [];
+
+async function loadCoupons() {
+    try {
+        const res = await fetch('/api/coupons');
+        if (!res.ok) return;
+        const data = (await res.json()) as any;
+        couponsList = data.coupons || [];
+        renderCouponsTable();
+    } catch (e) {
+        console.error("Error al cargar cupones:", e);
+    }
+}
+
+function renderCouponsTable() {
+    const tableEl = document.getElementById('table-coupons');
+    if (!tableEl) return;
+
+    if (couponsList.length === 0) {
+        tableEl.innerHTML = '<tr><td colspan="8" class="table-empty-message">No hay cupones creados aún. Crea el primero arriba.</td></tr>';
+        return;
+    }
+
+    tableEl.innerHTML = couponsList.map(c => {
+        const discountText = c.discount_type === 'percentage' ? `${c.discount_value}%` : `$${parseFloat(c.discount_value).toFixed(2)}`;
+        const minOrderText = c.min_order_amount > 0 ? `$${parseFloat(c.min_order_amount).toFixed(2)}` : 'Sin mínimo';
+        const usesText = c.max_uses > 0 ? `${c.uses_count} / ${c.max_uses}` : `${c.uses_count} (Ilimitado)`;
+        const expiresText = c.expires_at ? new Date(c.expires_at).toLocaleDateString('es-VE') : 'Permanente';
+        const isActive = c.active === 1;
+        const statusBadge = isActive
+            ? '<span class="status-badge completado">Activo</span>'
+            : '<span class="status-badge cancelado">Inactivo</span>';
+
+        return `
+            <tr>
+                <td><code><strong>${escapeHtml(c.code)}</strong></code></td>
+                <td>${c.discount_type === 'percentage' ? 'Porcentaje' : 'Monto Fijo'}</td>
+                <td><strong class="table-amount-success">${discountText}</strong></td>
+                <td>${minOrderText}</td>
+                <td>${usesText}</td>
+                <td>${expiresText}</td>
+                <td>${statusBadge}</td>
+                <td>
+                    <div class="table-actions-group">
+                        <button class="action-icon-btn edit" data-action="toggle-coupon" data-id="${c.id}" data-active="${c.active}" title="${isActive ? 'Desactivar' : 'Activar'}">
+                            <i data-lucide="${isActive ? 'pause' : 'play'}" class="table-action-icon-sm"></i>
+                        </button>
+                        <button class="action-icon-btn delete" data-action="delete-coupon" data-id="${c.id}" title="Eliminar Cupón">
+                            <i data-lucide="trash-2" class="table-action-icon-sm"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+
+    if (window.lucide) lucide.createIcons();
+}
+
+async function toggleCouponStatus(couponId: number, currentActive: number) {
+    try {
+        const newActive = currentActive === 1 ? 0 : 1;
+        const res = await fetch('/api/coupons', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: couponId, active: newActive })
+        });
+        if (!res.ok) throw new Error('Error al actualizar');
+        showToast(`Cupón ${newActive === 1 ? 'activado' : 'pausado'} con éxito.`, 'success');
+        loadCoupons();
+    } catch {
+        showToast('Error al cambiar estado del cupón.', 'error');
+    }
+}
+
+async function deleteCoupon(couponId: number) {
+    if (!confirm('¿Seguro que deseas eliminar este cupón de descuento?')) return;
+    try {
+        const res = await fetch(`/api/coupons?id=${couponId}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error('Error al eliminar');
+        showToast('Cupón eliminado con éxito.', 'info');
+        loadCoupons();
+    } catch {
+        showToast('Error al eliminar cupón.', 'error');
+    }
+}
+
+window.toggleCouponStatus = toggleCouponStatus;
+window.deleteCoupon = deleteCoupon;
+
+// Toggle formulario de cupón
+const btnToggleCouponForm = document.getElementById('btn-toggle-coupon-form');
+const couponFormCollapse = document.getElementById('coupon-form-collapse');
+if (btnToggleCouponForm && couponFormCollapse) {
+    btnToggleCouponForm.addEventListener('click', () => {
+        couponFormCollapse.classList.toggle('expanded');
+    });
+}
+
+// Refresh cupones
+const btnRefreshCoupons = document.getElementById('btn-refresh-coupons');
+if (btnRefreshCoupons) {
+    btnRefreshCoupons.addEventListener('click', loadCoupons);
+}
+
+// Submit cupón
+const couponForm = document.getElementById('coupon-form') as HTMLFormElement | null;
+if (couponForm) {
+    couponForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const code = $val('coupon-code').toUpperCase();
+        const discountType = $val('coupon-type');
+        const discountValue = parseFloat($val('coupon-value'));
+        const minOrderAmount = parseFloat($val('coupon-min-order')) || 0;
+        const maxUses = parseInt($val('coupon-max-uses')) || -1;
+        const expiresAt = $val('coupon-expires-at') || null;
+
+        const btnSubmit = $btn('btn-submit-coupon');
+        if (btnSubmit) btnSubmit.disabled = true;
+
+        try {
+            const res = await fetch('/api/coupons', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    code,
+                    discountType,
+                    discountValue,
+                    minOrderAmount,
+                    maxUses: isNaN(maxUses) ? -1 : maxUses,
+                    expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
+                    active: 1
+                })
+            });
+
+            const data = (await res.json()) as any;
+            if (!res.ok) throw new Error(data.error || 'Error al guardar');
+
+            showToast(`¡Cupón ${code} creado exitosamente!`, 'success');
+            couponForm.reset();
+            if (couponFormCollapse) couponFormCollapse.classList.remove('expanded');
+            loadCoupons();
+        } catch (err) {
+            showToast(err.message || 'Error al crear cupón.', 'error');
+        } finally {
+            if (btnSubmit) btnSubmit.disabled = false;
         }
     });
 }

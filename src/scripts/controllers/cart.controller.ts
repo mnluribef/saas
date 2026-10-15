@@ -17,6 +17,12 @@ export class CartUIController {
     private currentStep = 1;
     private uploadedReceiptBase64: string | null = null;
     private receiptFileInput: HTMLInputElement | null = null;
+    private appliedCoupon: {
+        code: string;
+        discountType: 'percentage' | 'fixed';
+        discountValue: number;
+        minOrderAmount: number;
+    } | null = null;
 
     constructor(
         cartService: CartService,
@@ -162,9 +168,9 @@ export class CartUIController {
         if (!totalAmount) return;
 
         const deliveryType = this.getSelectedDeliveryType();
-        const { subtotal, total } = this.cartService.calculateTotal(deliveryType);
+        const isDelivery = deliveryType === 'delivery';
+        const { subtotal } = this.cartService.calculateTotal(deliveryType);
         const bcvRate = this.currencyService.getRate();
-        const totalBs = this.currencyService.toBs(total);
 
         if (subtotal === 0) {
             totalAmount.textContent = 'A consultar';
@@ -173,10 +179,36 @@ export class CartUIController {
             return;
         }
 
-        const isDelivery = deliveryType === 'delivery';
+        let discount = 0;
+        const discountLabel = document.getElementById('cart-discount-label');
+        if (this.appliedCoupon) {
+            if (subtotal >= this.appliedCoupon.minOrderAmount) {
+                if (this.appliedCoupon.discountType === 'percentage') {
+                    discount = Math.round((subtotal * (this.appliedCoupon.discountValue / 100)) * 100) / 100;
+                } else {
+                    discount = Math.min(subtotal, this.appliedCoupon.discountValue);
+                }
+                if (discountLabel) {
+                    discountLabel.style.display = 'block';
+                    discountLabel.textContent = `Desc. Cupón ${this.appliedCoupon.code}: -$${discount.toFixed(2)}`;
+                }
+            } else {
+                if (discountLabel) {
+                    discountLabel.style.display = 'block';
+                    discountLabel.textContent = `Cupón mín. $${this.appliedCoupon.minOrderAmount.toFixed(2)}`;
+                }
+            }
+        } else {
+            if (discountLabel) discountLabel.style.display = 'none';
+        }
+
+        const discountedSubtotal = Math.max(0, subtotal - discount);
+        const finalTotal = discountedSubtotal + (isDelivery ? this.config.deliveryPrice : 0);
+        const totalBs = this.currencyService.toBs(finalTotal);
+
         totalAmount.innerHTML = isDelivery
-            ? `$${total.toFixed(2)} <span class="cart-delivery-note">(Incl. $${this.config.deliveryPrice} ${this.config.deliveryName})</span>`
-            : `$${total.toFixed(2)}`;
+            ? `$${finalTotal.toFixed(2)} <span class="cart-delivery-note">(Incl. $${this.config.deliveryPrice} ${this.config.deliveryName})</span>`
+            : `$${finalTotal.toFixed(2)}`;
 
         if (totalBsEl) {
             totalBsEl.innerHTML = `≈ Bs. ${totalBs.toFixed(2)} <span class="cart-bcv-note">(BCV: ${bcvRate.toFixed(2)})</span>`;
@@ -404,6 +436,71 @@ export class CartUIController {
         // Receipt dropzone & file handling
         this.bindReceiptUpload();
 
+        // Coupon code handling
+        const btnApplyCoupon = document.getElementById('btn-apply-coupon');
+        const couponInput = document.getElementById('cart-coupon-input') as HTMLInputElement | null;
+        const couponMsg = document.getElementById('cart-coupon-msg');
+
+        const applyCouponHandler = async () => {
+            const code = couponInput?.value.trim().toUpperCase();
+            if (!code) {
+                this.toastService.show('⚠️ Ingresa un código de cupón.');
+                return;
+            }
+
+            try {
+                if (btnApplyCoupon) btnApplyCoupon.textContent = 'Verificando...';
+                const tenantParam = this.config.tenantId ? `&tenant=${encodeURIComponent(this.config.tenantId)}` : '';
+                const headers: Record<string, string> = {};
+                if (this.config.tenantId) headers['X-Tenant-Id'] = this.config.tenantId;
+
+                const res = await fetch(`/api/coupons?code=${encodeURIComponent(code)}${tenantParam}`, { headers });
+                const data = (await res.json()) as any;
+
+                if (!res.ok || !data.valid) {
+                    throw new Error(data.error || 'Cupón inválido o expirado.');
+                }
+
+                this.appliedCoupon = {
+                    code: data.coupon.code,
+                    discountType: data.coupon.discount_type,
+                    discountValue: data.coupon.discount_value,
+                    minOrderAmount: data.coupon.min_order_amount || 0,
+                };
+
+                if (couponMsg) {
+                    couponMsg.style.display = 'block';
+                    couponMsg.style.color = '#22c55e';
+                    const desc = this.appliedCoupon.discountType === 'percentage'
+                        ? `${this.appliedCoupon.discountValue}%`
+                        : `$${this.appliedCoupon.discountValue.toFixed(2)}`;
+                    couponMsg.textContent = `✓ ¡Cupón ${code} aplicado (${desc} de descuento)!`;
+                }
+
+                this.toastService.show(`🎉 Cupón ${code} aplicado exitosamente`);
+                this.renderTotals();
+            } catch (err: any) {
+                this.appliedCoupon = null;
+                if (couponMsg) {
+                    couponMsg.style.display = 'block';
+                    couponMsg.style.color = '#ef4444';
+                    couponMsg.textContent = `✕ ${err.message || 'Error al validar cupón'}`;
+                }
+                this.toastService.show(`❌ ${err.message || 'Cupón inválido'}`);
+                this.renderTotals();
+            } finally {
+                if (btnApplyCoupon) btnApplyCoupon.textContent = 'Aplicar';
+            }
+        };
+
+        btnApplyCoupon?.addEventListener('click', applyCouponHandler);
+        couponInput?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                applyCouponHandler();
+            }
+        });
+
         // Submit order via WhatsApp
         document.getElementById('whatsapp-order-btn')?.addEventListener('click', () => this.handleOrderSubmit());
     }
@@ -492,6 +589,7 @@ export class CartUIController {
             paymentMethod,
             paymentReference,
             paymentReceipt: this.uploadedReceiptBase64,
+            couponCode: this.appliedCoupon?.code,
         };
 
         const items = this.cartService.getItems();
@@ -502,6 +600,12 @@ export class CartUIController {
 
             // Limpieza del carrito y formulario
             this.cartService.clear();
+            this.appliedCoupon = null;
+            const couponInput = document.getElementById('cart-coupon-input') as HTMLInputElement | null;
+            if (couponInput) couponInput.value = '';
+            const couponMsg = document.getElementById('cart-coupon-msg');
+            if (couponMsg) couponMsg.style.display = 'none';
+
             if (nameInput) nameInput.value = '';
             if (phoneInput) phoneInput.value = '';
             if (paymentSelect) paymentSelect.value = '';

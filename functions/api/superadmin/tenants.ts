@@ -2,7 +2,7 @@
 // Gestión de Tenants desde el panel Super-Admin integrado
 import { z } from 'zod';
 import { getDB, jsonResponse } from "../_helpers";
-import type { Env, PagesHandler, TenantRow } from '../../types';
+import type { Env, PagesHandler } from '../../types';
 
 export const superadminTenantActionSchema = z.object({
     tenantId: z.string().min(1),
@@ -33,10 +33,14 @@ export const onRequest: PagesHandler<Env> = async (context) => {
     if (request.method === 'GET') {
         try {
             const { results } = await db.prepare(`
-                SELECT id, name, plan, active, created_at, template 
-                FROM tenants 
-                ORDER BY created_at DESC
-            `).all<TenantRow>();
+                SELECT 
+                    t.id, t.name, t.plan, t.active, t.created_at, t.template,
+                    (SELECT COUNT(*) FROM products p WHERE p.tenant_id = t.id) as product_count,
+                    (SELECT COUNT(*) FROM orders o WHERE o.tenant_id = t.id AND strftime('%Y-%m', o.created_at) = strftime('%Y-%m', 'now')) as order_count_month,
+                    (SELECT COALESCE(SUM(s.monto), 0) FROM sales s WHERE s.tenant_id = t.id AND strftime('%Y-%m', s.fecha) = strftime('%Y-%m', 'now')) as revenue_month
+                FROM tenants t
+                ORDER BY t.created_at DESC
+            `).all();
 
             return jsonResponse(results);
         } catch (err) {

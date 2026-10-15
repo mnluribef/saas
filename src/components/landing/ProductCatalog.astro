@@ -484,11 +484,37 @@ const { business, contact, features } = config;
                     </button>
                 </div>
             </div>
+
+            <!-- Cupón de Descuento Promocional -->
+            <div id="cart-coupon-section" style="width: 100%; margin-top: 1rem; padding: 0.8rem; background: rgba(0,0,0,0.03); border: 1px dashed rgba(0,0,0,0.12); border-radius: 8px;">
+                <label for="cart-coupon-input" style="display: block; font-size: 0.75rem; margin-bottom: 0.35rem; color: var(--text-light); font-weight: 600;">
+                    ¿Tienes un cupón de descuento?
+                </label>
+                <div style="display: flex; gap: 0.5rem;">
+                    <input
+                        type="text"
+                        id="cart-coupon-input"
+                        placeholder="Ej. PROMO10"
+                        style="flex: 1; text-transform: uppercase; padding: 0.5rem 0.75rem; border: 1px solid rgba(0,0,0,0.15); border-radius: 6px; font-size: 0.85rem;"
+                    />
+                    <button
+                        type="button"
+                        id="btn-apply-coupon"
+                        style="padding: 0.5rem 0.9rem; background: var(--primary); color: white; border: none; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer;"
+                    >
+                        Aplicar
+                    </button>
+                </div>
+                <div id="cart-coupon-msg" style="display: none; font-size: 0.75rem; margin-top: 0.4rem;"></div>
+            </div>
         </div>
     </div>
 
     <div id="cart-total-fixed">
-        <span>Total:</span>
+        <div style="display: flex; flex-direction: column;">
+            <span>Total:</span>
+            <span id="cart-discount-label" style="display: none; font-size: 0.75rem; color: var(--success); font-weight: 600;"></span>
+        </div>
         <div class="cart-total-values">
             <div id="cart-total-amount">
                 $0.00

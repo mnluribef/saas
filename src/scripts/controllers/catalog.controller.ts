@@ -231,9 +231,17 @@ export class CatalogController {
                     unitBadge = `<span class="product-unit-badge">${unitMatch[1]}</span>`;
                 }
 
+                let isOutOfStock = p.stock !== undefined && p.stock !== null && p.stock === 0;
+                let stockBadge = '';
+                if (isOutOfStock) {
+                    stockBadge = `<span class="product-stock-badge" style="background:#ef4444; color:white; padding:2px 8px; border-radius:4px; font-size:0.75rem; font-weight:700;">Agotado</span>`;
+                } else if (p.stock !== undefined && p.stock !== null && p.stock > 0 && p.stock <= 5) {
+                    stockBadge = `<span class="product-stock-badge" style="background:#f59e0b; color:white; padding:2px 8px; border-radius:4px; font-size:0.75rem; font-weight:600;">¡Últimas ${p.stock} disp.!</span>`;
+                }
+
                 let brandBadge = p.brand ? `<span class="product-brand-badge">${p.brand}</span>` : '';
                 let modelBadge = p.model ? `<span class="product-model-badge">${p.model}</span>` : '';
-                let badgesHtml = (brandBadge || modelBadge) ? `<div class="product-badges" style="display:flex; gap:0.5rem; margin-bottom:0.5rem; font-size:0.75rem; font-weight:600; text-transform:uppercase; flex-wrap:wrap;">${brandBadge}${modelBadge}</div>` : '';
+                let badgesHtml = (brandBadge || modelBadge || stockBadge) ? `<div class="product-badges" style="display:flex; gap:0.5rem; margin-bottom:0.5rem; font-size:0.75rem; font-weight:600; text-transform:uppercase; flex-wrap:wrap;">${brandBadge}${modelBadge}${stockBadge}</div>` : '';
 
                 return `
           <div class="product-card reveal">
@@ -245,12 +253,16 @@ export class CatalogController {
               <p class="product-desc">${p.description || ''}</p>
               ${attributesHtml}${legacySizesHtml}
               <div class="product-actions">
-                <div class="main-qty-selector">
-                  <button class="qty-btn-main minus" data-id="${p.id}">-</button>
-                  <input type="number" value="1" min="1" id="qty-${p.id}" class="qty-input">
-                  <button class="qty-btn-main plus" data-id="${p.id}">+</button>
-                </div>
-                <button class="cta-btn product-cta add-to-cart" data-id="${p.id}" data-name="${p.name}" data-price="${p.price}" data-input="qty-${p.id}" data-icon="${p.icon || 'package'}">Agregar</button>
+                ${isOutOfStock ? `
+                  <button class="cta-btn product-cta add-to-cart" disabled style="opacity:0.55; cursor:not-allowed; background:#6b7280; width:100%;">Agotado</button>
+                ` : `
+                  <div class="main-qty-selector">
+                    <button class="qty-btn-main minus" data-id="${p.id}">-</button>
+                    <input type="number" value="1" min="1" max="${(p.stock !== undefined && p.stock > 0) ? p.stock : 99}" id="qty-${p.id}" class="qty-input">
+                    <button class="qty-btn-main plus" data-id="${p.id}">+</button>
+                  </div>
+                  <button class="cta-btn product-cta add-to-cart" data-id="${p.id}" data-name="${p.name}" data-price="${p.price}" data-input="qty-${p.id}" data-icon="${p.icon || 'package'}">Agregar</button>
+                `}
               </div>
             </div>
           </div>`;

@@ -63,8 +63,9 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
         const fileName = `${type || 'upload'}_${Date.now()}_${randomString}.${ext}`;
 
         // Si R2 está activo, subir al bucket
-        if (env.STORAGE) {
-            await env.STORAGE.put(fileName, buffer, {
+        const storage = env.STORAGE || env.BUCKET;
+        if (storage) {
+            await storage.put(fileName, buffer, {
                 httpMetadata: { contentType: file.type }
             });
             const publicUrl = `/api/assets/${fileName}`;

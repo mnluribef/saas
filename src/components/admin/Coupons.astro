@@ -1,0 +1,144 @@
+---
+// src/components/admin/Coupons.astro
+// Gestión de Cupones de Descuento Promocionales - Vendly SaaS
+---
+<div id="section-coupons" class="dashboard-section">
+    <div class="content-card">
+        <div class="card-header">
+            <div>
+                <h2>Cupones de Descuento Promocionales</h2>
+                <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:0.25rem;">
+                    Crea códigos promocionales porcentuales o de monto fijo para tus campañas de venta
+                </p>
+            </div>
+            <div class="card-actions">
+                <button class="btn-action" id="btn-toggle-coupon-form">
+                    <i data-lucide="plus"></i> Nuevo Cupón
+                </button>
+                <button class="btn-action secondary" id="btn-refresh-coupons">
+                    <i data-lucide="refresh-cw"></i> Actualizar
+                </button>
+            </div>
+        </div>
+
+        <!-- Formulario Crear Cupón (colapsable) -->
+        <div id="coupon-form-collapse" class="collapsible-content" style="padding: 0 2rem;">
+            <div style="padding: 2rem 0; border-bottom: 1px solid var(--border-color);">
+                <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.1rem; margin-bottom: 1.5rem; color: var(--primary);">
+                    Crear Código de Descuento
+                </h3>
+                <form id="coupon-form">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+                        <div class="form-group">
+                            <label for="coupon-code">Código del Cupón</label>
+                            <input
+                                type="text"
+                                id="coupon-code"
+                                class="form-control"
+                                placeholder="ej: BIENVENIDO10"
+                                style="text-transform: uppercase;"
+                                required
+                            />
+                            <span style="font-size:0.75rem; color:var(--text-secondary); margin-top: 4px; display:block;">
+                                Solo letras, números y guiones.
+                            </span>
+                        </div>
+                        <div class="form-group">
+                            <label for="coupon-type">Tipo de Descuento</label>
+                            <select id="coupon-type" class="form-control">
+                                <option value="percentage">Porcentaje (%)</option>
+                                <option value="fixed">Monto Fijo ($ USD)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="coupon-value">Valor del Descuento</label>
+                            <input
+                                type="number"
+                                id="coupon-value"
+                                class="form-control"
+                                placeholder="ej: 10 para 10% o 5 para 5$"
+                                step="0.01"
+                                min="0.01"
+                                required
+                            />
+                        </div>
+                        <div class="form-group">
+                            <label for="coupon-min-order">Pedido Mínimo ($ USD)</label>
+                            <input
+                                type="number"
+                                id="coupon-min-order"
+                                class="form-control"
+                                placeholder="0 para sin mínimo"
+                                step="0.01"
+                                min="0"
+                                value="0"
+                            />
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+                        <div class="form-group">
+                            <label for="coupon-max-uses">Límite Máximo de Usos</label>
+                            <input
+                                type="number"
+                                id="coupon-max-uses"
+                                class="form-control"
+                                placeholder="-1 para usos ilimitados"
+                                value="-1"
+                                min="-1"
+                            />
+                            <span style="font-size:0.75rem; color:var(--text-secondary); margin-top: 4px; display:block;">
+                                -1 = Ilimitado. O ingresa cuántas veces puede canjearse.
+                            </span>
+                        </div>
+                        <div class="form-group">
+                            <label for="coupon-expires-at">Fecha de Expiración</label>
+                            <input
+                                type="date"
+                                id="coupon-expires-at"
+                                class="form-control"
+                            />
+                            <span style="font-size:0.75rem; color:var(--text-secondary); margin-top: 4px; display:block;">
+                                Opcional. Dejar vacío si no caduca.
+                            </span>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 1rem; align-items: center;">
+                        <button type="submit" class="btn-action" id="btn-submit-coupon">
+                            <i data-lucide="plus-circle"></i> Guardar Cupón
+                        </button>
+                        <button type="button" class="btn-action secondary" id="btn-cancel-coupon" style="display: none;">
+                            Cancelar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tabla de Cupones -->
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Tipo</th>
+                        <th>Descuento</th>
+                        <th>Pedido Mín.</th>
+                        <th>Usos</th>
+                        <th>Expira</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="table-coupons">
+                    <tr>
+                        <td colspan="8" style="text-align: center; color: var(--text-secondary); padding: 2rem;">
+                            Cargando cupones...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

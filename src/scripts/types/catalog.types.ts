@@ -44,6 +44,7 @@ export interface CatalogProduct {
     model?: string;
     attributes?: CatalogProductAttribute[];
     sizes?: string;
+    stock?: number;
 }
 
 export interface TemplateCategory {
@@ -60,4 +61,5 @@ export interface OrderSubmissionData {
     paymentMethod: string;
     paymentReference: string;
     paymentReceipt: string | null;
+    couponCode?: string;
 }

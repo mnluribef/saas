@@ -6,6 +6,7 @@ export interface Env {
     DB: D1Database;
     vendly?: D1Database;
     STORAGE?: R2Bucket;
+    BUCKET?: R2Bucket;
     SUPERADMIN_KEY?: string;
     TURNSTILE_SECRET_KEY?: string;
     WEBHOOK_URL?: string;

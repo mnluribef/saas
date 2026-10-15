@@ -10,12 +10,13 @@ export const onRequestGet: PagesHandler<Env, 'key'> = async (context) => {
         return new Response("Asset not found", { status: 404 });
     }
 
-    if (!env.STORAGE) {
+    const storage = env.STORAGE || env.BUCKET;
+    if (!storage) {
         return new Response("R2 Storage not configured", { status: 500 });
     }
 
     try {
-        const object = await env.STORAGE.get(key);
+        const object = await storage.get(key);
 
         if (!object) {
             return new Response("Asset not found", { status: 404 });

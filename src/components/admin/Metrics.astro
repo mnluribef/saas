@@ -14,6 +14,25 @@
         </div>
         <div class="metric-card">
             <div class="metric-info">
+                <h3>Ingresos Mes Actual</h3>
+                <p id="metric-month-revenue">Bs 0.00</p>
+                <div id="metric-growth-container"></div>
+            </div>
+            <div class="metric-icon blue">
+                <i data-lucide="calendar"></i>
+            </div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-info">
+                <h3>Ticket Promedio</h3>
+                <p id="metric-average-ticket">Bs 0.00</p>
+            </div>
+            <div class="metric-icon yellow">
+                <i data-lucide="receipt"></i>
+            </div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-info">
                 <h3>Ventas Registradas</h3>
                 <p id="metric-sales-count">0</p>
             </div>
@@ -32,15 +51,6 @@
         </div>
         <div class="metric-card">
             <div class="metric-info">
-                <h3>En Preparación</h3>
-                <p id="metric-prod-orders">0</p>
-            </div>
-            <div class="metric-icon blue">
-                <i data-lucide="cooking-pot"></i>
-            </div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-info">
                 <h3>Total Productos</h3>
                 <p id="metric-prod-count">0</p>
             </div>
@@ -50,10 +60,32 @@
         </div>
     </div>
     
-    <div class="content-card" style="padding: 1.5rem; margin-bottom: 2rem;">
-        <h2 style="font-size: 1.25rem; font-family: 'Outfit', sans-serif; font-weight: 600; color: var(--white); margin-bottom: 1rem;">Tendencia de Ventas (7 Días)</h2>
-        <div style="width: 100%; height: 300px; position: relative;">
+    <div class="content-card chart-card">
+        <h2 class="chart-card-title">Tendencia de Ventas (7 Días)</h2>
+        <div class="chart-wrapper">
             <canvas id="salesChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Sección de Analíticas Avanzadas -->
+    <div class="analytics-row-grid">
+        <div class="content-card">
+            <div class="card-header">
+                <h2>Top 5 Productos Más Vendidos</h2>
+                <span class="badge-accent">Por Demanda</span>
+            </div>
+            <div id="top-products-container" class="top-products-list">
+                <p class="analytics-empty-note">Cargando métricas de productos...</p>
+            </div>
+        </div>
+        <div class="content-card">
+            <div class="card-header">
+                <h2>Canales de Pago & Entrega</h2>
+                <span class="badge-accent">Distribución</span>
+            </div>
+            <div id="breakdown-container" class="breakdown-list">
+                <p class="analytics-empty-note">Cargando canales de pago y entrega...</p>
+            </div>
         </div>
     </div>
 
@@ -80,10 +112,7 @@
                 </thead>
                 <tbody id="table-recent-orders">
                     <tr>
-                        <td
-                            colspan="8"
-                            style="text-align: center; color: var(--text-secondary);"
-                        >
+                        <td colspan="8" class="table-empty-cell">
                             Cargando pedidos recientes...
                         </td>
                     </tr>
