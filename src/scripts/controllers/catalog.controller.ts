@@ -19,27 +19,6 @@ export class CatalogController {
     private categoryNames: Record<string, string> = {};
     private currentModalProduct: CatalogProduct | null = null;
 
-    private readonly colorMap: Record<string, string> = {
-        pequeno: '#FFD4C2',
-        mediano: '#FF6B35',
-        grande: '#C1121F',
-        familiar: '#7B2D00',
-        res: '#8B1A1A',
-        pollo: '#D4822A',
-        cerdo: '#C0504D',
-        mixto: '#FF6B35',
-        veggie: '#2A9D4E',
-        blanco: '#F8FAFC',
-        negro: '#0F172A',
-        nude: '#E8CBB5',
-        beige: '#F5F5DC',
-        camel: '#C19A6B',
-        rojo: '#EF4444',
-        azul: '#3B82F6',
-        verde: '#10B981',
-        amarillo: '#EAB308',
-    };
-
     constructor(
         cartService: CartService,
         currencyService: ICurrencyService,
@@ -211,18 +190,10 @@ export class CatalogController {
                                 attr.type === 'color_swatch'
                                     ? `<div class="color-swatch-container" data-attribute="${attr.key}" data-label="${attr.label}" data-product="${p.id}">${attr.values
                                           .map((val: string, idx: number) => {
-                                              const hex =
-                                                  this.colorMap[val.toLowerCase().trim()] || val;
-                                              const lightClass = [
-                                                  'blanco',
-                                                  'amarillo',
-                                                  'beige',
-                                                  'white',
-                                                  'yellow',
-                                              ].includes(val.toLowerCase().trim())
-                                                  ? 'light-color'
-                                                  : '';
-                                              return `<button type="button" class="color-swatch-btn ${idx === 0 ? 'active' : ''} ${lightClass}" style="background-color:${hex};" data-value="${val}" title="${val}"></button>`;
+                                              const isLight = ['blanco', 'amarillo', 'beige', 'marfil', 'crema'].includes(val.toLowerCase().trim());
+                                              const lightClass = isLight ? 'light-color' : '';
+                                              const slug = val.toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+                                              return `<button type="button" class="color-swatch-btn color-swatch-${slug} ${idx === 0 ? 'active' : ''} ${lightClass}" data-value="${val}" title="${val}"></button>`;
                                           })
                                           .join('')}</div>`
                                     : `<div class="attribute-selector" data-attribute="${attr.key}" data-label="${attr.label}" data-product="${p.id}">${attr.values
@@ -353,6 +324,24 @@ export class CatalogController {
             priceUsdEl.textContent = product.price > 0 ? `$${parseFloat(String(product.price)).toFixed(2)}` : 'A consultar';
         }
 
+        // Descuento en modal
+        const priceOrigEl = document.getElementById('pdm-price-original');
+        const discountBadgeEl = document.getElementById('pdm-discount-badge');
+        if (product.original_price && product.original_price > product.price) {
+            if (priceOrigEl) {
+                priceOrigEl.textContent = `$${parseFloat(String(product.original_price)).toFixed(2)}`;
+                priceOrigEl.classList.remove('store-meta-hidden');
+            }
+            if (discountBadgeEl) {
+                const pct = Math.round(((product.original_price - product.price) / product.original_price) * 100);
+                discountBadgeEl.textContent = `-${pct}% OFF`;
+                discountBadgeEl.classList.remove('store-meta-hidden');
+            }
+        } else {
+            if (priceOrigEl) priceOrigEl.classList.add('store-meta-hidden');
+            if (discountBadgeEl) discountBadgeEl.classList.add('store-meta-hidden');
+        }
+
         const currentRate = this.currencyService.getRate();
         const priceBcvEl = document.getElementById('pdm-price-bcv');
         if (priceBcvEl) {
@@ -376,24 +365,27 @@ export class CatalogController {
             badgesEl.innerHTML = bHtml;
         }
 
-        // Variantes y atributos en modal
+        // Variantes y atributos en modal con valor en label
         const attrsContainer = document.getElementById('pdm-attributes-container');
         if (attrsContainer) {
             let html = '';
             if (product.attributes && product.attributes.length > 0) {
                 html = product.attributes.map(attr => {
+                    const firstVal = attr.values[0] || '';
                     const opts = attr.type === 'color_swatch'
                         ? `<div class="color-swatch-container" data-attribute="${attr.key}" data-label="${attr.label}" data-product="${product.id}">${attr.values.map((val: string, idx: number) => {
-                            const hex = this.colorMap[val.toLowerCase().trim()] || val;
-                            return `<button type="button" class="color-swatch-btn ${idx === 0 ? 'active' : ''}" style="background-color:${hex};" data-value="${val}" title="${val}"></button>`;
+                            const slug = val.toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+                            return `<button type="button" class="color-swatch-btn color-swatch-${slug} ${idx === 0 ? 'active' : ''}" data-value="${val}" title="${val}"></button>`;
                         }).join('')}</div>`
                         : `<div class="attribute-selector" data-attribute="${attr.key}" data-label="${attr.label}" data-product="${product.id}">${attr.values.map((val: string, idx: number) => {
                             return `<button type="button" class="attribute-btn ${idx === 0 ? 'active' : ''}" data-value="${val}">${val}</button>`;
                         }).join('')}</div>`;
-                    return `<div class="attribute-options-group"><label>${attr.label}:</label>${opts}</div>`;
+                    return `<div class="attribute-options-group"><label>${attr.label}: <strong class="attr-selected-value">${firstVal}</strong></label>${opts}</div>`;
                 }).join('');
             } else if (product.sizes) {
-                html = `<div class="attribute-options-group"><label>Opciones:</label><div class="attribute-selector" data-attribute="opcion" data-label="Opción" data-product="${product.id}">${product.sizes.split(',').map((size: string, idx: number) => `<button type="button" class="attribute-btn ${idx === 0 ? 'active' : ''}" data-value="${size.trim()}">${size.trim()}</button>`).join('')}</div></div>`;
+                const sizesList = product.sizes.split(',').map(s => s.trim()).filter(Boolean);
+                const firstSize = sizesList[0] || '';
+                html = `<div class="attribute-options-group"><label>Opciones: <strong class="attr-selected-value">${firstSize}</strong></label><div class="attribute-selector" data-attribute="opcion" data-label="Opción" data-product="${product.id}">${sizesList.map((size: string, idx: number) => `<button type="button" class="attribute-btn ${idx === 0 ? 'active' : ''}" data-value="${size}">${size}</button>`).join('')}</div></div>`;
             }
             attrsContainer.innerHTML = html;
         }
@@ -552,9 +544,17 @@ export class CatalogController {
             if (!parent) return;
             parent.querySelectorAll('.attribute-btn, .color-swatch-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
+
+            // Actualizar valor en label
+            const group = btn.closest('.attribute-options-group');
+            const valStrong = group?.querySelector('.attr-selected-value');
+            const val = btn.getAttribute('data-value');
+            if (valStrong && val) {
+                valStrong.textContent = val;
+            }
         });
 
-        // Botón agregar al carrito en modal
+        // Botón agregar al carrito en modal con micro-animación de éxito
         document.getElementById('pdm-btn-add-cart')?.addEventListener('click', () => {
             if (!this.currentModalProduct) return;
             const p = this.currentModalProduct;
@@ -578,7 +578,19 @@ export class CatalogController {
             this.toastService.show(
                 `¡Añadido ${qty}x ${p.name}${optList.length ? ` (${optList.join(', ')})` : ''}!`
             );
-            this.closeProductModal();
+
+            const btnAdd = document.getElementById('pdm-btn-add-cart') as HTMLButtonElement | null;
+            const btnText = document.getElementById('pdm-btn-add-text');
+            if (btnAdd) {
+                btnAdd.classList.add('btn-added-state');
+                if (btnText) btnText.textContent = '✓ ¡Añadido!';
+            }
+
+            setTimeout(() => {
+                if (btnAdd) btnAdd.classList.remove('btn-added-state');
+                if (btnText) btnText.textContent = 'Agregar al Pedido';
+                this.closeProductModal();
+            }, 350);
         });
 
         // Botón compartir en modal

@@ -3,6 +3,7 @@
 // Carga productos de la API y renderiza el catálogo + carrito dinámico.
 import type { StoreConfig } from '../../types/store.types';
 import defaultStoreConfig from '../../config/store.config';
+import '../../styles/catalog.css';
 
 export interface Props {
   config?: StoreConfig;
@@ -24,11 +25,8 @@ const { business, contact, features } = config;
                 {catalog.subtitle}
             </p>
         </div>
-        <div
-            class="search-container reveal"
-            style="margin: 0 auto 2rem; max-width: 500px; padding: 0 1rem;"
-        >
-            <div style="position: relative;">
+        <div class="search-container reveal catalog-search-wrap">
+            <div class="catalog-search-box">
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="20"
@@ -39,7 +37,7 @@ const { business, contact, features } = config;
                     stroke-width="2"
                     stroke-linecap="round"
                     stroke-linejoin="round"
-                    style="position: absolute; left: 1.2rem; top: 50%; transform: translateY(-50%); color: var(--text-light);"
+                    class="catalog-search-icon"
                 >
                     <circle cx="11" cy="11" r="8" />
                     <path d="m21 21-4.3-4.3" />
@@ -48,12 +46,12 @@ const { business, contact, features } = config;
                     type="text"
                     id="product-search"
                     placeholder={catalog.searchPlaceholder}
-                    style="width: 100%; padding: 0.9rem 3.2rem 0.9rem 3.2rem; border: 1px solid rgba(0,0,0,0.1); border-radius: 50px; font-size: 1rem; outline: none; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.03); font-family: 'Outfit', sans-serif;"
+                    class="catalog-search-input"
                 />
                 <button
                     id="clear-search"
                     aria-label="Limpiar búsqueda"
-                    style="position: absolute; right: 1.2rem; top: 50%; transform: translateY(-50%); display: none; background: none; border: none; cursor: pointer; color: var(--text-light); padding: 0; align-items: center; justify-content: center;"
+                    class="catalog-search-clear"
                 >
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -73,14 +71,10 @@ const { business, contact, features } = config;
             </div>
         </div>
 
-        <div
-            class="category-filters-container reveal"
-            style="margin-bottom: 2.5rem; display: flex; justify-content: center;"
-        >
+        <div class="category-filters-container reveal catalog-category-wrap">
             <div
-                class="category-filters"
+                class="category-filters catalog-category-list"
                 id="category-filters"
-                style="display: flex; gap: 0.8rem; flex-wrap: wrap; justify-content: center;"
             >
                 <!-- Se cargará dinámicamente con JavaScript -->
             </div>
@@ -88,13 +82,10 @@ const { business, contact, features } = config;
 
         <div class="product-grid" id="catalog-container">
             <!-- Loading state -->
-            <div
-                class="loading-catalog"
-                style="grid-column: 1/-1; text-align: center; padding: 3rem 0; color: var(--text-secondary);"
-            >
+            <div class="loading-catalog catalog-loading-box">
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    class="spin"
+                    class="spin catalog-loading-icon"
                     width="32"
                     height="32"
                     viewBox="0 0 24 24"
@@ -103,7 +94,6 @@ const { business, contact, features } = config;
                     stroke-width="2"
                     stroke-linecap="round"
                     stroke-linejoin="round"
-                    style="margin-bottom: 1rem;"
                 >
                     <path d="M21 12a9 9 0 1 1-6.219-8.56" />
                 </svg>
@@ -111,10 +101,7 @@ const { business, contact, features } = config;
             </div>
         </div>
 
-        <div
-            id="load-more-container"
-            style="text-align: center; margin-top: 3rem; display: none;"
-        >
+        <div id="load-more-container" class="catalog-load-more-wrap">
             <button id="load-more-btn" class="btn-outline-dark">
                 Ver Más Productos
             </button>
@@ -126,11 +113,11 @@ const { business, contact, features } = config;
 <div id="cart-overlay" class="cart-overlay"></div>
 <div id="cart-drawer" class="cart-drawer">
     <div class="cart-header">
-        <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <div class="cart-header-title-wrap">
             <button
                 id="cart-back-btn"
+                class="cart-back-btn"
                 aria-label="Volver"
-                style="display: none; background: rgba(255,255,255,0.15); border: none; cursor: pointer; color: var(--white); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: var(--transition);"
             >
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -146,7 +133,7 @@ const { business, contact, features } = config;
                     <path d="m15 18-6-6 6-6" />
                 </svg>
             </button>
-            <h3 id="cart-title" style="margin: 0;">
+            <h3 id="cart-title" class="cart-title-heading">
                 {config.labels?.cartTitle || "🛒 Tu Pedido"}
             </h3>
         </div>
@@ -194,13 +181,11 @@ const { business, contact, features } = config;
     </div>
     <div
         id="cart-step-1"
-        class="cart-step active"
-        style="display: flex; flex-direction: column; flex: 1; overflow: hidden;"
+        class="cart-step cart-step-content active"
     >
         <div
             id="cart-items"
-            class="cart-items"
-            style="flex: 1; overflow-y: auto;"
+            class="cart-items cart-items-scrollable"
         >
             <div class="empty-cart-msg">{config.labels?.emptyCartEmoji || "🛒"} Tu pedido está vacío</div>
         </div>
@@ -208,10 +193,9 @@ const { business, contact, features } = config;
 
     <div
         id="cart-step-2"
-        class="cart-step"
-        style="display: none; flex-direction: column; flex: 1; overflow-y: auto; padding: 1.2rem 1.5rem; background: rgba(0,0,0,0.015); scrollbar-width: thin; scrollbar-color: var(--rose-light) transparent;"
+        class="cart-step cart-step-scrollable"
     >
-        <h4 style="margin-bottom: 0.75rem; color: var(--text-dark); font-size: 0.95rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; font-family: 'Outfit', sans-serif;">
+        <h4 class="cart-contact-heading">
             <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="16"
@@ -228,11 +212,11 @@ const { business, contact, features } = config;
             </svg>
             Datos de Contacto
         </h4>
-        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-            <div style="flex: 1; min-width: 200px;">
+        <div class="cart-fields-row">
+            <div class="cart-field-col">
                 <label
                     for="client-name"
-                    style="display: block; font-size: 0.75rem; margin-bottom: 0.3rem; color: var(--text-light); font-weight: 600;"
+                    class="cart-field-label"
                 >
                     Nombre Completo
                 </label>
@@ -241,13 +225,13 @@ const { business, contact, features } = config;
                     id="client-name"
                     placeholder="Ej. María González"
                     maxlength="100"
-                    style="width: 100%; padding: 0.6rem 0.8rem; border: 1px solid rgba(0,0,0,0.15); border-radius: 8px; background: #fff; color: var(--text-dark); outline: none; font-size: 0.9rem; transition: border-color 0.2s;"
+                    class="cart-field-input"
                 />
             </div>
-            <div style="flex: 1; min-width: 200px;">
+            <div class="cart-field-col">
                 <label
                     for="client-phone"
-                    style="display: block; font-size: 0.75rem; margin-bottom: 0.3rem; color: var(--text-light); font-weight: 600;"
+                    class="cart-field-label"
                 >
                     Teléfono / WhatsApp
                 </label>
@@ -256,32 +240,32 @@ const { business, contact, features } = config;
                     id="client-phone"
                     placeholder="Ej. +58 412-4756191"
                     maxlength="30"
-                    style="width: 100%; padding: 0.6rem 0.8rem; border: 1px solid rgba(0,0,0,0.15); border-radius: 8px; background: #fff; color: var(--text-dark); outline: none; font-size: 0.9rem; transition: border-color 0.2s;"
+                    class="cart-field-input"
                 />
             </div>
         </div>
 
-        <div style="width: 100%; margin-top: 1.2rem;">
-            <label style="display: block; font-size: 0.75rem; margin-bottom: 0.5rem; color: var(--text-light); font-weight: 600;">
+        <div class="cart-delivery-group">
+            <label class="cart-field-label">
                 Opciones de Entrega
             </label>
-            <div style="display: flex; gap: 1.5rem;">
-                <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.9rem; cursor: pointer; color: var(--text-dark);">
+            <div class="cart-radio-options">
+                <label class="cart-radio-label">
                     <input
                         type="radio"
                         name="delivery-type"
                         value="retiro"
                         checked
-                        style="accent-color: var(--accent);"
+                        class="cart-radio-input"
                     />{" "}
                     🏪 {config.labels?.pickupOptionName || "Retiro en local"}
                 </label>
-                <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.9rem; cursor: pointer; color: var(--text-dark);">
+                <label class="cart-radio-label">
                     <input
                         type="radio"
                         name="delivery-type"
                         value="delivery"
-                        style="accent-color: var(--accent);"
+                        class="cart-radio-input"
                     />{" "}
                     🛵 {config.labels?.deliveryOptionName || "Delivery"} (+${config.labels?.deliveryOptionPrice ?? 5})
                 </label>
@@ -290,11 +274,11 @@ const { business, contact, features } = config;
 
         <div
             id="delivery-address-container"
-            style="width: 100%; margin-top: 1rem; display: none;"
+            class="cart-delivery-address-box"
         >
             <label
                 for="delivery-address"
-                style="display: block; font-size: 0.75rem; margin-bottom: 0.3rem; color: var(--text-light); font-weight: 600;"
+                class="cart-field-label"
             >
                 Dirección de Entrega
             </label>
@@ -303,26 +287,25 @@ const { business, contact, features } = config;
                 id="delivery-address"
                 placeholder="Ej. Calle 5, Res. Los Mangos, Apto 4"
                 maxlength="300"
-                style="width: 100%; padding: 0.6rem 0.8rem; border: 1px solid rgba(0,0,0,0.15); border-radius: 8px; background: #fff; color: var(--text-dark); outline: none; font-size: 0.9rem; transition: border-color 0.2s;"
+                class="cart-field-input"
             />
         </div>
     </div>
 
     <div
         id="cart-step-3"
-        class="cart-step"
-        style="display: none; flex-direction: column; flex: 1; overflow-y: auto; padding: 1.2rem 1.5rem; background: rgba(0,0,0,0.015); scrollbar-width: thin; scrollbar-color: var(--rose-light) transparent;"
+        class="cart-step cart-step-scrollable"
     >
-        <div style="width: 100%;">
+        <div class="cart-field-full">
             <label
                 for="payment-method"
-                style="display: block; font-size: 0.75rem; margin-bottom: 0.5rem; color: var(--text-light); font-weight: 600;"
+                class="cart-field-label"
             >
                 Método de Pago
             </label>
             <select
                 id="payment-method"
-                style="width: 100%; padding: 0.6rem 0.8rem; border: 1px solid rgba(0,0,0,0.15); border-radius: 8px; background: #fff; color: var(--text-dark); outline: none; font-size: 0.9rem; transition: border-color 0.2s; appearance: auto;"
+                class="cart-payment-select"
             >
                 <option value="" disabled selected>
                     Selecciona un método...
@@ -337,16 +320,16 @@ const { business, contact, features } = config;
         <!-- Payment info panels -->
         <div
             id="payment-info-pago-movil"
-            style="display: none; width: 100%; margin-top: 0.8rem; padding: 0.8rem; background: rgba(0,0,0,0.03); border-radius: 8px; font-size: 0.85rem; border: 1px solid rgba(0,0,0,0.05);"
+            class="cart-payment-info-box"
         >
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
-                <p style="margin:0; font-weight:600; color:var(--text-dark);">Datos para Pago Móvil:</p>
-                <button type="button" id="copy-pm-btn" style="background: var(--primary-light, rgba(0,0,0,0.05)); color: var(--primary); border: none; padding: 0.2rem 0.6rem; border-radius: 5px; font-size: 0.75rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.3rem; transition: background 0.2s;">
+            <div class="cart-payment-info-header">
+                <p class="cart-payment-info-title">Datos para Pago Móvil:</p>
+                <button type="button" id="copy-pm-btn" class="cart-copy-btn">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                     Copiar
                 </button>
             </div>
-            <ul style="margin:0; padding-left:1.2rem; color:var(--text-light);">
+            <ul class="cart-payment-data-list">
                 <li>
                     <strong>Banco:</strong> <span id="pm-data-banco">{config.payment?.pagoMovil?.banco || "Banesco (0134)"}</span>
                 </li>
@@ -357,12 +340,12 @@ const { business, contact, features } = config;
                     <strong>C.I / RIF:</strong> <span id="pm-data-cedula">{config.payment?.pagoMovil?.cedula || "V-12345678"}</span>
                 </li>
             </ul>
-            <div style="margin-top: 0.6rem; padding-top: 0.6rem; border-top: 1px dashed rgba(0,0,0,0.1); font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.2rem;">
+            <div class="cart-payment-total-box">
                 <div>
-                    <span style="color: var(--text-dark); font-weight: 600;">Monto Exacto a Transferir:</span>
-                    <strong id="pago-movil-bs-amount" style="color: var(--accent); margin-left: 0.3rem; font-size: 0.95rem;">Bs. 0,00</strong>
+                    <span class="cart-payment-label">Monto Exacto a Transferir:</span>
+                    <strong id="pago-movil-bs-amount" class="cart-payment-bs-amount">Bs. 0,00</strong>
                 </div>
-                <span style="font-size: 0.72rem; color: var(--text-light);">
+                <span class="cart-payment-bcv-sub">
                     Calculado con Tasa Oficial BCV: <strong class="bcv-rate-text">--</strong> Bs/$
                 </span>
             </div>
@@ -370,16 +353,16 @@ const { business, contact, features } = config;
 
         <div
             id="payment-info-zelle"
-            style="display: none; width: 100%; margin-top: 0.8rem; padding: 0.8rem; background: rgba(0,0,0,0.03); border-radius: 8px; font-size: 0.85rem; border: 1px solid rgba(0,0,0,0.05);"
+            class="cart-payment-info-box"
         >
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
-                <p style="margin:0; font-weight:600; color:var(--text-dark);">Datos para Zelle:</p>
-                <button type="button" id="copy-zelle-btn" style="background: var(--primary-light, rgba(0,0,0,0.05)); color: var(--primary); border: none; padding: 0.2rem 0.6rem; border-radius: 5px; font-size: 0.75rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.3rem; transition: background 0.2s;">
+            <div class="cart-payment-info-header">
+                <p class="cart-payment-info-title">Datos para Zelle:</p>
+                <button type="button" id="copy-zelle-btn" class="cart-copy-btn">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                     Copiar
                 </button>
             </div>
-            <ul style="margin:0; padding-left:1.2rem; color:var(--text-light);">
+            <ul class="cart-payment-data-list">
                 <li>
                     <strong>Correo:</strong> <span id="zelle-data-email">{config.payment?.zelle?.email || contact.email || "pagos@vendly.com"}</span>
                 </li>
@@ -391,11 +374,11 @@ const { business, contact, features } = config;
 
         <div
             id="payment-reference-container"
-            style="display: none; width: 100%; margin-top: 1rem;"
+            class="cart-payment-reference-box"
         >
             <label
                 for="payment-reference"
-                style="display: block; font-size: 0.75rem; margin-bottom: 0.3rem; color: var(--text-light); font-weight: 600;"
+                class="cart-field-label"
             >
                 Número de Referencia
             </label>
@@ -404,29 +387,29 @@ const { business, contact, features } = config;
                 id="payment-reference"
                 placeholder="Ej. 123456"
                 maxlength="100"
-                style="width: 100%; padding: 0.6rem 0.8rem; border: 1px solid rgba(0,0,0,0.15); border-radius: 8px; background: #fff; color: var(--text-dark); outline: none; font-size: 0.9rem; transition: border-color 0.2s;"
+                class="cart-field-input"
             />
         </div>
 
         <!-- Carga de Comprobante de Pago -->
         <div
             id="payment-receipt-container"
-            style="display: none; width: 100%; margin-top: 1rem;"
+            class="cart-receipt-container"
         >
             <label
-                style="display: block; font-size: 0.75rem; margin-bottom: 0.3rem; color: var(--text-light); font-weight: 600;"
+                class="cart-field-label"
             >
                 📸 Comprobante de Pago (Captura o Foto)
             </label>
             <div
                 id="receipt-dropzone"
-                style="border: 2px dashed var(--border-focus, var(--primary)); border-radius: 10px; padding: 0.8rem; text-align: center; cursor: pointer; background: var(--primary-light, rgba(0,0,0,0.04)); transition: all 0.2s ease;"
+                class="cart-receipt-dropzone"
             >
                 <input
                     type="file"
                     id="payment-receipt-file"
                     accept="image/jpeg,image/png,image/webp"
-                    style="display: none;"
+                    class="cart-receipt-file-input"
                 />
                 <div id="receipt-prompt">
                     <svg
@@ -439,38 +422,38 @@ const { business, contact, features } = config;
                         stroke-width="2"
                         stroke-linecap="round"
                         stroke-linejoin="round"
-                        style="color: var(--primary); margin: 0 auto 0.3rem;"
+                        class="cart-receipt-icon"
                     >
                         <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
                         <circle cx="9" cy="9" r="2"/>
                         <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
                     </svg>
-                    <p style="font-size: 0.8rem; font-weight: 600; margin: 0; color: var(--text-dark);">
+                    <p class="cart-receipt-text">
                         Subir captura del comprobante
                     </p>
-                    <span style="font-size: 0.7rem; color: var(--text-light);">
+                    <span class="cart-receipt-formats">
                         JPG, PNG, WebP (Optimizado automáticamente)
                     </span>
                 </div>
                 <div
                     id="receipt-preview-box"
-                    style="display: none; align-items: center; justify-content: space-between; gap: 0.6rem;"
+                    class="cart-receipt-preview-box"
                 >
-                    <div style="display: flex; align-items: center; gap: 0.6rem; overflow: hidden;">
+                    <div class="cart-receipt-preview-inner">
                         <img
                             id="receipt-preview-img"
                             src=""
                             alt="Comprobante"
-                            style="width: 44px; height: 44px; object-fit: cover; border-radius: 6px; border: 1px solid rgba(0,0,0,0.1);"
+                            class="cart-receipt-preview-img"
                         />
-                        <div style="text-align: left; overflow: hidden;">
+                        <div class="cart-receipt-preview-info">
                             <span
                                 id="receipt-preview-name"
-                                style="font-size: 0.78rem; font-weight: 600; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 140px;"
+                                class="cart-receipt-preview-name"
                             >
                                 comprobante.jpg
                             </span>
-                            <span style="font-size: 0.7rem; color: var(--success); font-weight: 500;">
+                            <span class="cart-receipt-preview-success">
                                 ✓ Adjunto con éxito
                             </span>
                         </div>
@@ -478,7 +461,7 @@ const { business, contact, features } = config;
                     <button
                         type="button"
                         id="btn-remove-receipt"
-                        style="background: rgba(239,68,68,0.12); color: #ef4444; border: none; border-radius: 6px; padding: 0.35rem 0.55rem; font-size: 0.75rem; cursor: pointer; font-weight: 600;"
+                        class="cart-receipt-remove-btn"
                     >
                         Quitar
                     </button>
@@ -486,34 +469,34 @@ const { business, contact, features } = config;
             </div>
 
             <!-- Cupón de Descuento Promocional -->
-            <div id="cart-coupon-section" style="width: 100%; margin-top: 1rem; padding: 0.8rem; background: rgba(0,0,0,0.03); border: 1px dashed rgba(0,0,0,0.12); border-radius: 8px;">
-                <label for="cart-coupon-input" style="display: block; font-size: 0.75rem; margin-bottom: 0.35rem; color: var(--text-light); font-weight: 600;">
+            <div id="cart-coupon-section" class="cart-coupon-section">
+                <label for="cart-coupon-input" class="cart-field-label">
                     ¿Tienes un cupón de descuento?
                 </label>
-                <div style="display: flex; gap: 0.5rem;">
+                <div class="cart-coupon-input-group">
                     <input
                         type="text"
                         id="cart-coupon-input"
                         placeholder="Ej. PROMO10"
-                        style="flex: 1; text-transform: uppercase; padding: 0.5rem 0.75rem; border: 1px solid rgba(0,0,0,0.15); border-radius: 6px; font-size: 0.85rem;"
+                        class="cart-coupon-input"
                     />
                     <button
                         type="button"
                         id="btn-apply-coupon"
-                        style="padding: 0.5rem 0.9rem; background: var(--primary); color: white; border: none; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer;"
+                        class="cart-coupon-btn"
                     >
                         Aplicar
                     </button>
                 </div>
-                <div id="cart-coupon-msg" style="display: none; font-size: 0.75rem; margin-top: 0.4rem;"></div>
+                <div id="cart-coupon-msg" class="cart-coupon-msg"></div>
             </div>
         </div>
     </div>
 
     <div id="cart-total-fixed">
-        <div style="display: flex; flex-direction: column;">
+        <div class="cart-total-label-col">
             <span>Total:</span>
-            <span id="cart-discount-label" style="display: none; font-size: 0.75rem; color: var(--success); font-weight: 600;"></span>
+            <span id="cart-discount-label" class="cart-discount-label"></span>
         </div>
         <div class="cart-total-values">
             <div id="cart-total-amount">
@@ -548,8 +531,7 @@ const { business, contact, features } = config;
         </button>
         <button
             id="whatsapp-order-btn"
-            class="cta-btn whatsapp-btn"
-            style="display: none;"
+            class="cta-btn whatsapp-btn whatsapp-order-btn-hidden"
         >
             <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -561,7 +543,7 @@ const { business, contact, features } = config;
                 stroke-width="2"
                 stroke-linecap="round"
                 stroke-linejoin="round"
-                style="display:inline; margin-right:6px;"
+                class="whatsapp-order-btn-icon"
             >
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
             </svg>
@@ -685,22 +667,28 @@ const { business, contact, features } = config;
             <!-- Ficha Técnica e Información de Compra -->
             <div class="pdm-info">
                 <div class="pdm-header">
-                    <span id="pdm-category" class="pdm-category-chip">Categoría</span>
+                    <div class="pdm-header-top">
+                        <span id="pdm-category" class="pdm-category-chip">Categoría</span>
+                        <span class="pdp-stock-status-pill">
+                            <span class="pdp-stock-dot"></span>
+                            <span>En Stock</span>
+                        </span>
+                    </div>
                     <h2 id="pdm-title" class="pdm-product-title">Nombre del Producto</h2>
                     <div id="pdm-brand-model" class="pdm-meta-row"></div>
                 </div>
 
-                <!-- Precios en USD y BCV -->
+                <!-- Precios en USD y BCV con Descuento -->
                 <div class="pdm-price-box">
-                    <div class="pdm-price-main" id="pdm-price-usd">$0.00</div>
-                    <div class="pdm-price-sub" id="pdm-price-bcv">~Bs. 0.00</div>
-                    <span class="pdm-bcv-rate-pill" id="pdm-bcv-pill">Tasa Oficial BCV</span>
-                </div>
-
-                <!-- Descripción Completa -->
-                <div class="pdm-desc-wrapper">
-                    <h3 class="pdm-section-heading">Descripción</h3>
-                    <p id="pdm-description" class="pdm-description-text"></p>
+                    <div class="pdm-price-row-main">
+                        <div id="pdm-price-original" class="pdm-price-original store-meta-hidden">$0.00</div>
+                        <div class="pdm-price-main" id="pdm-price-usd">$0.00</div>
+                        <span id="pdm-discount-badge" class="pdm-discount-pill store-meta-hidden">-0%</span>
+                    </div>
+                    <div class="pdm-price-row-sub">
+                        <div class="pdm-price-sub" id="pdm-price-bcv">~Bs. 0.00</div>
+                        <span class="pdm-bcv-rate-pill" id="pdm-bcv-pill">Tasa Oficial BCV</span>
+                    </div>
                 </div>
 
                 <!-- Variantes y Atributos (Tallas, Colores, etc.) -->
@@ -719,19 +707,19 @@ const { business, contact, features } = config;
 
                     <div class="pdm-buttons-stack">
                         <button type="button" id="pdm-btn-add-cart" class="pdm-btn-primary">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <svg id="pdm-btn-add-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <circle cx="8" cy="21" r="1"></circle>
                                 <circle cx="19" cy="21" r="1"></circle>
                                 <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path>
                             </svg>
-                            <span>Agregar al Pedido</span>
+                            <span id="pdm-btn-add-text">Agregar al Pedido</span>
                         </button>
 
-                        <a id="pdm-btn-whatsapp" href="#" target="_blank" rel="noopener" class="pdm-btn-whatsapp">
+                        <a id="pdm-btn-whatsapp" href="#" target="_blank" rel="noopener" class="pdm-btn-whatsapp-outline">
                             <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
                                 <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"></path>
                             </svg>
-                            <span>Consultar por WhatsApp</span>
+                            <span>Pedir o Consultar por WhatsApp</span>
                         </a>
 
                         <button type="button" id="pdm-btn-share" class="pdm-btn-share">
@@ -743,6 +731,12 @@ const { business, contact, features } = config;
                             <span>Copiar Enlace Directo</span>
                         </button>
                     </div>
+                </div>
+
+                <!-- Descripción Completa -->
+                <div class="pdm-desc-wrapper">
+                    <h3 class="pdm-section-heading">Descripción</h3>
+                    <p id="pdm-description" class="pdm-description-text"></p>
                 </div>
             </div>
         </div>
@@ -759,809 +753,3 @@ const { business, contact, features } = config;
     }
 </script>
 
-
-<style is:global>
-/* ===================== CATALOG ===================== */
-#productos {
-    background: var(--grad-section);
-}
-
-.product-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 2rem;
-}
-
-.product-card {
-    background: var(--white);
-    border-radius: var(--radius-lg);
-    overflow: hidden;
-    box-shadow: var(--shadow-card);
-    transition: transform 0.4s var(--ease-bounce), box-shadow 0.4s var(--ease-smooth);
-    border: 1px solid var(--border-subtle);
-    position: relative;
-    display: flex;
-    flex-direction: column;
-}
-
-.product-card::after {
-    content: '✦';
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    width: 30px;
-    height: 30px;
-    background: var(--white);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.7rem;
-    color: var(--gold);
-    opacity: 0;
-    transform: scale(0.5);
-    transition: all 0.3s var(--ease-bounce);
-    pointer-events: none;
-    box-shadow: var(--shadow-soft);
-    line-height: 30px;
-    text-align: center;
-}
-
-.product-card:hover {
-    transform: translateY(-10px);
-    box-shadow: var(--shadow-rose);
-}
-
-.product-card:hover::after {
-    opacity: 1;
-    transform: scale(1);
-}
-
-.product-img {
-    height: 300px;
-    overflow: hidden;
-    background: var(--blush);
-    position: relative;
-}
-
-.product-img::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(to top, rgba(58, 18, 40, 0.15), transparent 50%);
-    z-index: 1;
-    opacity: 0;
-    transition: opacity 0.4s;
-}
-
-.product-card:hover .product-img::before {
-    opacity: 1;
-}
-
-.product-img img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.6s var(--ease-smooth);
-}
-
-.product-card:hover .product-img img {
-    transform: scale(1.08);
-}
-
-.product-info {
-    padding: 1.8rem 1.5rem;
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1;
-}
-
-.product-header {
-    margin-bottom: 0.4rem;
-}
-
-.product-header h3 {
-    font-family: var(--font-heading);
-    font-size: 1.4rem;
-    font-weight: 500;
-    color: var(--text-heading);
-    display: flex;
-    align-items: flex-start;
-    flex-wrap: wrap;
-}
-
-.product-unit-badge {
-    font-size: 0.75rem;
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: 12px;
-    background: var(--bg-section);
-    color: var(--text-muted);
-    border: 1px solid var(--border-subtle);
-    margin-left: 8px;
-    white-space: nowrap;
-    align-self: center;
-}
-
-.product-price {
-    font-family: var(--font-heading, 'Outfit', sans-serif);
-    font-size: 1.3rem;
-    font-weight: 700;
-    color: var(--theme-accent, var(--gold));
-    margin: 0.5rem 0 0.8rem;
-    letter-spacing: 0.02em;
-}
-
-.product-price-bcv {
-    font-size: 0.85rem;
-    font-weight: normal;
-    color: var(--text-light);
-    margin-left: 4px;
-}
-
-.product-price::before {
-    content: '';
-    display: inline-block;
-    width: 18px;
-    height: 1px;
-    background: var(--rose-light);
-    vertical-align: middle;
-    margin-right: 6px;
-}
-
-.product-desc {
-    color: var(--text-muted);
-    font-size: 0.88rem;
-    margin-bottom: 1.2rem;
-    line-height: 1.6;
-    min-height: auto;
-}
-
-/* Attribute buttons */
-.attribute-options-group {
-    margin-top: 0.8rem;
-    margin-bottom: 0.8rem;
-}
-
-.attribute-options-group label {
-    display: block;
-    font-size: 0.72rem;
-    font-weight: 600;
-    color: var(--text-muted);
-    margin-bottom: 0.4rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-}
-
-.attribute-selector {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-}
-
-.attribute-btn {
-    background: var(--warm-white);
-    border: 1px solid var(--border-subtle);
-    color: var(--text-body);
-    padding: 0.35rem 0.85rem;
-    border-radius: var(--radius-sm);
-    font-size: 0.82rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: var(--transition);
-    font-family: 'Outfit', sans-serif;
-}
-
-.attribute-btn:hover {
-    border-color: var(--rose);
-    background: var(--rose-pale);
-    color: var(--rose-deep);
-}
-
-.attribute-btn.active {
-    background: var(--rose);
-    color: var(--white);
-    border-color: var(--rose);
-    box-shadow: 0 3px 10px rgba(165, 84, 112, 0.3);
-}
-
-/* Color Swatches */
-.color-swatch-container {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-    margin-top: 0.3rem;
-}
-
-.color-swatch-btn {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    border: 2px solid var(--white);
-    outline: 1px solid rgba(90, 40, 60, 0.15);
-    cursor: pointer;
-    transition: transform 0.25s var(--ease-bounce), outline 0.2s;
-    position: relative;
-}
-
-.color-swatch-btn:hover { transform: scale(1.18); }
-
-.color-swatch-btn.active {
-    outline: 2px solid var(--rose-deep);
-    transform: scale(1.1);
-}
-
-.color-swatch-btn.active::after {
-    content: '✓';
-    color: var(--white);
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
-}
-
-.color-swatch-btn.active.light-color::after {
-    color: var(--text-heading);
-    text-shadow: none;
-}
-
-/* Badges */
-.product-brand-badge {
-    background-color: var(--rose-pale);
-    color: var(--rose-deep);
-    padding: 0.15rem 0.5rem;
-    border-radius: 4px;
-    border: 1px solid var(--rose-light);
-}
-
-.product-model-badge {
-    background-color: rgba(0,0,0,0.05);
-    color: var(--text-secondary);
-    padding: 0.15rem 0.5rem;
-    border-radius: 4px;
-    border: 1px solid rgba(0,0,0,0.1);
-}
-
-/* Product Actions */
-.product-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.8rem;
-    margin-top: auto;
-    padding-top: 1.2rem;
-}
-
-.main-qty-selector {
-    display: flex;
-    align-items: center;
-    background: var(--blush);
-    border-radius: var(--radius-md);
-    padding: 2px;
-    border: 1px solid var(--border-subtle);
-    flex-shrink: 0;
-}
-
-.qty-btn-main {
-    width: 32px;
-    height: 32px;
-    border: none;
-    background: none;
-    cursor: pointer;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--rose-deep);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: var(--transition);
-    border-radius: 8px;
-}
-
-.qty-btn-main:hover {
-    background: var(--rose-light);
-    color: var(--rose-dark);
-}
-
-.qty-input {
-    width: 36px;
-    border: none;
-    background: none;
-    text-align: center;
-    font-family: 'Outfit', sans-serif;
-    font-weight: 700;
-    font-size: 0.95rem;
-    color: var(--text-heading);
-    -moz-appearance: textfield;
-}
-
-.qty-input::-webkit-outer-spin-button,
-.qty-input::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
-
-.product-cta {
-    flex: 1;
-    padding: 0.7rem 1rem;
-    font-size: 0.85rem;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-}
-
-/* Category Filters */
-.category-filter-btn {
-    background: var(--white);
-    color: var(--text-muted);
-    border: 1px solid var(--border-subtle);
-    padding: 0.55rem 1.3rem;
-    border-radius: var(--radius-pill);
-    font-family: 'Outfit', sans-serif;
-    font-weight: 500;
-    font-size: 0.85rem;
-    letter-spacing: 0.05em;
-    cursor: pointer;
-    transition: var(--transition);
-}
-
-.category-filter-btn:hover {
-    background: var(--rose-pale);
-    color: var(--rose-deep);
-    border-color: var(--rose);
-    transform: translateY(-1px);
-}
-
-.category-filter-btn.active {
-    background: var(--rose);
-    color: var(--white);
-    border-color: var(--rose);
-    box-shadow: 0 4px 14px rgba(165, 84, 112, 0.3);
-}
-
-/* ===================== PRODUCT DETAIL MODAL ===================== */
-.store-meta-hidden {
-    display: none;
-}
-
-.pdm-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 10000;
-    background: rgba(10, 8, 12, 0.75);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1.5rem;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.25s ease;
-}
-
-.pdm-overlay.active {
-    opacity: 1;
-    pointer-events: auto;
-}
-
-.pdm-dialog {
-    background: var(--bg-card, #ffffff);
-    color: var(--text-body, #1e293b);
-    border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.08));
-    border-radius: 24px;
-    width: 100%;
-    max-width: 900px;
-    max-height: 90vh;
-    overflow-y: auto;
-    position: relative;
-    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.4);
-    transform: scale(0.95) translateY(12px);
-    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    scrollbar-width: thin;
-}
-
-.pdm-overlay.active .pdm-dialog {
-    transform: scale(1) translateY(0);
-}
-
-.pdm-close-btn {
-    position: absolute;
-    top: 1.25rem;
-    right: 1.25rem;
-    z-index: 20;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: var(--bg-section, rgba(0, 0, 0, 0.06));
-    border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.08));
-    color: var(--text-heading, #0f172a);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.pdm-close-btn:hover {
-    background: var(--primary, #c9748a);
-    color: #ffffff;
-    transform: rotate(90deg);
-}
-
-.pdm-body {
-    display: grid;
-    grid-template-columns: 1fr 1.15fr;
-    gap: 2rem;
-    padding: 2.25rem;
-}
-
-.pdm-visual {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-.pdm-image-wrapper {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    border-radius: 18px;
-    overflow: hidden;
-    background: var(--bg-section, #f8fafc);
-    border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.08));
-}
-
-.pdm-image-wrapper img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.3s ease;
-}
-
-.pdm-image-wrapper:hover img {
-    transform: scale(1.03);
-}
-
-.pdm-badges-container {
-    position: absolute;
-    top: 0.85rem;
-    left: 0.85rem;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-    z-index: 5;
-}
-
-.pdm-info {
-    display: flex;
-    flex-direction: column;
-    gap: 1.1rem;
-}
-
-.pdm-header {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-}
-
-.pdm-category-chip {
-    align-self: flex-start;
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    padding: 0.3rem 0.75rem;
-    border-radius: 50px;
-    background: rgba(201, 116, 138, 0.12);
-    color: var(--primary, #c9748a);
-}
-
-.pdm-product-title {
-    font-family: var(--font-heading, 'Outfit', sans-serif);
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: var(--text-heading, #0f172a);
-    line-height: 1.25;
-    margin: 0;
-}
-
-.pdm-meta-row {
-    display: flex;
-    gap: 0.75rem;
-    font-size: 0.85rem;
-    color: var(--text-muted, #64748b);
-    font-weight: 500;
-}
-
-.pdm-price-box {
-    display: flex;
-    align-items: baseline;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-    padding: 0.85rem 1.15rem;
-    border-radius: 14px;
-    background: var(--bg-section, #f8fafc);
-    border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.06));
-}
-
-.pdm-price-main {
-    font-size: 1.75rem;
-    font-weight: 800;
-    color: var(--primary, #c9748a);
-    font-family: var(--font-heading, 'Outfit', sans-serif);
-}
-
-.pdm-price-sub {
-    font-size: 1rem;
-    color: var(--text-muted, #64748b);
-    font-weight: 600;
-}
-
-.pdm-bcv-rate-pill {
-    font-size: 0.72rem;
-    font-weight: 700;
-    color: #15803d;
-    background: rgba(34, 197, 94, 0.12);
-    padding: 0.25rem 0.6rem;
-    border-radius: 9999px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-.pdm-desc-wrapper {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-}
-
-.pdm-section-heading {
-    font-size: 0.82rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--text-muted, #64748b);
-    margin: 0;
-}
-
-.pdm-description-text {
-    font-size: 0.95rem;
-    line-height: 1.6;
-    color: var(--text-body, #334155);
-    margin: 0;
-}
-
-.pdm-attributes-box {
-    display: flex;
-    flex-direction: column;
-    gap: 0.85rem;
-}
-
-.pdm-purchase-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 1.1rem;
-    margin-top: 0.5rem;
-}
-
-.pdm-qty-group {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.pdm-qty-label {
-    font-size: 0.88rem;
-    font-weight: 600;
-    color: var(--text-heading, #0f172a);
-}
-
-.pdm-qty-selector {
-    display: inline-flex;
-    align-items: center;
-    border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.12));
-    border-radius: 12px;
-    overflow: hidden;
-    background: var(--bg-card, #ffffff);
-}
-
-.pdm-qty-btn {
-    width: 38px;
-    height: 38px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--bg-section, #f8fafc);
-    border: none;
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: var(--text-heading, #0f172a);
-    cursor: pointer;
-    transition: background 0.15s;
-}
-
-.pdm-qty-btn:hover {
-    background: rgba(0, 0, 0, 0.08);
-}
-
-.pdm-qty-input {
-    width: 50px;
-    height: 38px;
-    border: none;
-    text-align: center;
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--text-heading, #0f172a);
-    background: transparent;
-    outline: none;
-}
-
-.pdm-buttons-stack {
-    display: flex;
-    flex-direction: column;
-    gap: 0.65rem;
-}
-
-.pdm-btn-primary {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.6rem;
-    width: 100%;
-    padding: 0.95rem 1.5rem;
-    border-radius: 14px;
-    background: var(--primary, #c9748a);
-    color: #ffffff;
-    font-size: 1rem;
-    font-weight: 700;
-    border: none;
-    cursor: pointer;
-    box-shadow: 0 4px 16px rgba(201, 116, 138, 0.35);
-    transition: all 0.2s ease;
-}
-
-.pdm-btn-primary:hover {
-    filter: brightness(1.08);
-    transform: translateY(-1px);
-    box-shadow: 0 6px 20px rgba(201, 116, 138, 0.45);
-}
-
-.pdm-btn-whatsapp {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.6rem;
-    width: 100%;
-    padding: 0.85rem 1.5rem;
-    border-radius: 14px;
-    background: #25D366;
-    color: #ffffff;
-    font-size: 0.95rem;
-    font-weight: 600;
-    text-decoration: none;
-    transition: all 0.2s ease;
-}
-
-.pdm-btn-whatsapp:hover {
-    filter: brightness(1.06);
-    transform: translateY(-1px);
-}
-
-.pdm-btn-share {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    width: 100%;
-    padding: 0.75rem 1.25rem;
-    border-radius: 14px;
-    background: transparent;
-    border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.12));
-    color: var(--text-muted, #64748b);
-    font-size: 0.88rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.pdm-btn-share:hover {
-    background: var(--bg-section, #f8fafc);
-    color: var(--text-heading, #0f172a);
-    border-color: var(--border-focus, #c9748a);
-}
-
-/* Card Quick-view Clickable Header and Image */
-.product-card .product-img {
-    cursor: pointer;
-}
-
-.product-card .product-header {
-    cursor: pointer;
-}
-
-.product-card .product-header h3:hover {
-    color: var(--primary, #c9748a);
-}
-
-.product-quick-view-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.35rem;
-    padding: 0.45rem 0.75rem;
-    font-size: 0.8rem;
-    font-weight: 600;
-    border-radius: 10px;
-    border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.1));
-    background: var(--bg-section, #f8fafc);
-    color: var(--text-muted, #64748b);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    margin-top: 0.45rem;
-    width: 100%;
-}
-
-.product-quick-view-btn:hover {
-    background: var(--primary, #c9748a);
-    color: #ffffff;
-    border-color: var(--primary, #c9748a);
-}
-
-.product-unit-badge {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--text-muted, #64748b);
-    margin-left: 0.35rem;
-}
-
-.product-stock-badge-danger {
-    background: #ef4444;
-    color: #ffffff;
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 0.75rem;
-    font-weight: 700;
-}
-
-.product-stock-badge-warning {
-    background: #f59e0b;
-    color: #ffffff;
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 0.75rem;
-    font-weight: 600;
-}
-
-.product-badges {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    flex-wrap: wrap;
-}
-
-@media (max-width: 768px) {
-    .pdm-body {
-        grid-template-columns: 1fr;
-        padding: 1.5rem;
-        gap: 1.25rem;
-    }
-
-    .pdm-dialog {
-        max-height: 85vh;
-        border-radius: 20px;
-    }
-
-    .pdm-product-title {
-        font-size: 1.4rem;
-    }
-
-    .pdm-price-main {
-        font-size: 1.5rem;
-    }
-}
-</style>

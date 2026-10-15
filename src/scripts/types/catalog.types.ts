@@ -38,6 +38,7 @@ export interface CatalogProduct {
     name: string;
     description?: string;
     price: number;
+    original_price?: number;
     image_url?: string;
     type_id?: string;
     category?: string;

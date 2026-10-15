@@ -7,27 +7,6 @@ import { LocalStorageCartStorage } from './services/storage.service';
 import { CartService } from './services/cart.service';
 import { syncStoreWithSettings } from './services/store-sync.service';
 
-const colorMap: Record<string, string> = {
-    pequeno: '#FFD4C2',
-    mediano: '#FF6B35',
-    grande: '#C1121F',
-    familiar: '#7B2D00',
-    res: '#8B1A1A',
-    pollo: '#D4822A',
-    cerdo: '#C0504D',
-    mixto: '#FF6B35',
-    veggie: '#2A9D4E',
-    blanco: '#F8FAFC',
-    negro: '#0F172A',
-    nude: '#E8CBB5',
-    beige: '#F5F5DC',
-    camel: '#C19A6B',
-    rojo: '#EF4444',
-    azul: '#3B82F6',
-    verde: '#10B981',
-    amarillo: '#EAB308',
-};
-
 class ProductPageController {
     private toastService: ToastService;
     private currencyService: BcvCurrencyService;
@@ -240,10 +219,27 @@ class ProductPageController {
             brandModelEl.textContent = parts.join(' · ');
         }
 
-        // Precios
+        // Precios y Descuento
         const priceUsdEl = document.getElementById('pdp-price-usd');
         if (priceUsdEl) {
             priceUsdEl.textContent = product.price > 0 ? `$${parseFloat(String(product.price)).toFixed(2)}` : 'A consultar';
+        }
+
+        const priceOrigEl = document.getElementById('pdp-price-original');
+        const discountBadgeEl = document.getElementById('pdp-discount-badge');
+        if (product.original_price && product.original_price > product.price) {
+            if (priceOrigEl) {
+                priceOrigEl.textContent = `$${parseFloat(String(product.original_price)).toFixed(2)}`;
+                priceOrigEl.classList.remove('store-meta-hidden');
+            }
+            if (discountBadgeEl) {
+                const pct = Math.round(((product.original_price - product.price) / product.original_price) * 100);
+                discountBadgeEl.textContent = `-${pct}% OFF`;
+                discountBadgeEl.classList.remove('store-meta-hidden');
+            }
+        } else {
+            if (priceOrigEl) priceOrigEl.classList.add('store-meta-hidden');
+            if (discountBadgeEl) discountBadgeEl.classList.add('store-meta-hidden');
         }
 
         const updateBcvPrice = () => {
@@ -252,9 +248,21 @@ class ProductPageController {
             if (priceBcvEl && product.price > 0) {
                 priceBcvEl.textContent = `~Bs. ${(product.price * rate).toFixed(2)}`;
             }
+            const stickyBcvEl = document.getElementById('pdp-sticky-bcv');
+            if (stickyBcvEl && product.price > 0) {
+                stickyBcvEl.textContent = `~Bs. ${(product.price * rate).toFixed(2)}`;
+            }
         };
         updateBcvPrice();
         this.currencyService.onRateChange(updateBcvPrice);
+
+        // Sincronizar datos en Barra Flotante Sticky de Móvil
+        const stickyThumb = document.getElementById('pdp-sticky-thumb') as HTMLImageElement | null;
+        if (stickyThumb && imgEl) stickyThumb.src = imgEl.src;
+        const stickyTitle = document.getElementById('pdp-sticky-title');
+        if (stickyTitle) stickyTitle.textContent = product.name;
+        const stickyPrice = document.getElementById('pdp-sticky-price');
+        if (stickyPrice) stickyPrice.textContent = priceUsdEl?.textContent || '$0.00';
 
         // Descripción
         const descEl = document.getElementById('pdp-desc');
@@ -262,24 +270,27 @@ class ProductPageController {
             descEl.textContent = product.description || 'Este producto no cuenta con descripción detallada en este momento.';
         }
 
-        // Variantes y Atributos
+        // Variantes y Atributos con valor visible en label
         const attrsBox = document.getElementById('pdp-attributes-container');
         if (attrsBox) {
             let html = '';
             if (product.attributes && product.attributes.length > 0) {
                 html = product.attributes.map(attr => {
+                    const firstVal = attr.values[0] || '';
                     const opts = attr.type === 'color_swatch'
                         ? `<div class="color-swatch-container" data-attribute="${attr.key}" data-label="${attr.label}">${attr.values.map((val: string, idx: number) => {
-                            const hex = colorMap[val.toLowerCase().trim()] || val;
-                            return `<button type="button" class="color-swatch-btn ${idx === 0 ? 'active' : ''}" style="background-color:${hex};" data-value="${val}" title="${val}"></button>`;
+                            const slug = val.toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+                            return `<button type="button" class="color-swatch-btn color-swatch-${slug} ${idx === 0 ? 'active' : ''}" data-value="${val}" title="${val}"></button>`;
                         }).join('')}</div>`
                         : `<div class="attribute-selector" data-attribute="${attr.key}" data-label="${attr.label}">${attr.values.map((val: string, idx: number) => {
                             return `<button type="button" class="attribute-btn ${idx === 0 ? 'active' : ''}" data-value="${val}">${val}</button>`;
                         }).join('')}</div>`;
-                    return `<div class="attribute-options-group"><label>${attr.label}:</label>${opts}</div>`;
+                    return `<div class="attribute-options-group"><label>${attr.label}: <strong class="attr-selected-value">${firstVal}</strong></label>${opts}</div>`;
                 }).join('');
             } else if (product.sizes) {
-                html = `<div class="attribute-options-group"><label>Opciones:</label><div class="attribute-selector" data-attribute="opcion" data-label="Opción">${product.sizes.split(',').map((size: string, idx: number) => `<button type="button" class="attribute-btn ${idx === 0 ? 'active' : ''}" data-value="${size.trim()}">${size.trim()}</button>`).join('')}</div></div>`;
+                const sizesList = product.sizes.split(',').map(s => s.trim()).filter(Boolean);
+                const firstSize = sizesList[0] || '';
+                html = `<div class="attribute-options-group"><label>Opciones: <strong class="attr-selected-value">${firstSize}</strong></label><div class="attribute-selector" data-attribute="opcion" data-label="Opción">${sizesList.map((size: string, idx: number) => `<button type="button" class="attribute-btn ${idx === 0 ? 'active' : ''}" data-value="${size}">${size}</button>`).join('')}</div></div>`;
             }
             attrsBox.innerHTML = html;
 
@@ -290,6 +301,14 @@ class ProductPageController {
                 if (!parent) return;
                 parent.querySelectorAll('.attribute-btn, .color-swatch-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
+
+                // Actualizar valor en label
+                const group = btn.closest('.attribute-options-group');
+                const valStrong = group?.querySelector('.attr-selected-value');
+                const val = btn.getAttribute('data-value');
+                if (valStrong && val) {
+                    valStrong.textContent = val;
+                }
             });
         }
 
@@ -343,37 +362,101 @@ class ProductPageController {
             }
         });
 
-        // Botón Agregar al Carrito
+        // Botón Agregar al Carrito con feedback animado
         const btnAdd = document.getElementById('pdp-btn-add-cart') as HTMLButtonElement | null;
+        const btnAddText = document.getElementById('pdp-btn-add-text');
+        const stickyBtn = document.getElementById('pdp-sticky-btn') as HTMLButtonElement | null;
+
+        const handleAddToCartAction = () => {
+            const qty = qtyIn ? parseInt(qtyIn.value) || 1 : 1;
+            const options: Record<string, string> = {};
+            const optionLabels: Record<string, string> = {};
+
+            attrsBox?.querySelectorAll<HTMLElement>('[data-attribute]').forEach((sel) => {
+                const key = sel.getAttribute('data-attribute')!;
+                const label = sel.getAttribute('data-label') || key;
+                const activeBtn = sel.querySelector<HTMLElement>('.active');
+                const val = activeBtn?.getAttribute('data-value');
+                if (val) {
+                    options[key] = val;
+                    optionLabels[key] = label;
+                }
+            });
+
+            this.cartService.addItem(product.id, product.name, product.price, qty, product.icon || 'package', options, optionLabels);
+            const optList = Object.values(options).filter(Boolean);
+            this.toastService.show(
+                `¡Añadido ${qty}x ${product.name}${optList.length ? ` (${optList.join(', ')})` : ''} al pedido!`
+            );
+
+            // Feedback visual en botón principal
+            if (btnAdd) {
+                btnAdd.classList.add('btn-added-state');
+                if (btnAddText) btnAddText.textContent = '✓ ¡Añadido!';
+                setTimeout(() => {
+                    btnAdd.classList.remove('btn-added-state');
+                    if (btnAddText) btnAddText.textContent = 'Agregar al Carrito';
+                }, 1500);
+            }
+
+            // Feedback visual en botón sticky
+            if (stickyBtn) {
+                stickyBtn.classList.add('btn-added-state');
+                const stickyText = document.getElementById('pdp-sticky-btn-text');
+                if (stickyText) stickyText.textContent = '✓ ¡Listo!';
+                setTimeout(() => {
+                    stickyBtn.classList.remove('btn-added-state');
+                    if (stickyText) stickyText.textContent = 'Añadir';
+                }, 1500);
+            }
+        };
+
         if (btnAdd) {
             if (product.stock === 0) {
                 btnAdd.disabled = true;
-                btnAdd.textContent = 'Producto Agotado';
+                if (btnAddText) btnAddText.textContent = 'Producto Agotado';
+                if (stickyBtn) stickyBtn.disabled = true;
             } else {
                 btnAdd.disabled = false;
-                btnAdd.addEventListener('click', () => {
-                    const qty = qtyIn ? parseInt(qtyIn.value) || 1 : 1;
-                    const options: Record<string, string> = {};
-                    const optionLabels: Record<string, string> = {};
-
-                    attrsBox?.querySelectorAll<HTMLElement>('[data-attribute]').forEach((sel) => {
-                        const key = sel.getAttribute('data-attribute')!;
-                        const label = sel.getAttribute('data-label') || key;
-                        const activeBtn = sel.querySelector<HTMLElement>('.active');
-                        const val = activeBtn?.getAttribute('data-value');
-                        if (val) {
-                            options[key] = val;
-                            optionLabels[key] = label;
-                        }
-                    });
-
-                    this.cartService.addItem(product.id, product.name, product.price, qty, product.icon || 'package', options, optionLabels);
-                    const optList = Object.values(options).filter(Boolean);
-                    this.toastService.show(
-                        `¡Añadido ${qty}x ${product.name}${optList.length ? ` (${optList.join(', ')})` : ''} al pedido!`
-                    );
-                });
+                btnAdd.addEventListener('click', handleAddToCartAction);
             }
+        }
+
+        if (stickyBtn && product.stock !== 0) {
+            stickyBtn.addEventListener('click', handleAddToCartAction);
+        }
+
+        // Observador para activar la Sticky Bar en Mobile cuando se hace scroll pasando el botón
+        this.setupStickyBarObserver();
+    }
+
+    private setupStickyBarObserver(): void {
+        const stickyBar = document.getElementById('pdp-sticky-bar');
+        const buyButton = document.getElementById('pdp-btn-add-cart');
+        if (!stickyBar || !buyButton) return;
+
+        if (typeof IntersectionObserver !== 'undefined') {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach((entry) => {
+                    // Si el botón principal no está visible en el viewport y está por encima de la pantalla
+                    if (!entry.isIntersecting && entry.boundingClientRect.top < 0) {
+                        stickyBar.classList.add('is-visible');
+                    } else {
+                        stickyBar.classList.remove('is-visible');
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            observer.observe(buyButton);
+        } else {
+            window.addEventListener('scroll', () => {
+                const rect = buyButton.getBoundingClientRect();
+                if (rect.bottom < 0) {
+                    stickyBar.classList.add('is-visible');
+                } else {
+                    stickyBar.classList.remove('is-visible');
+                }
+            }, { passive: true });
         }
     }
 
@@ -416,7 +499,7 @@ class ProductPageController {
                                 <h3><a href="${pUrl}">${p.name}</a></h3>
                             </div>
                             <div class="product-price">${price} <span class="product-price-bcv">${bcvPrice}</span></div>
-                            <a href="${pUrl}" class="pdm-btn-primary" style="margin-top:0.75rem; text-decoration:none;">Ver Producto</a>
+                            <a href="${pUrl}" class="pdm-btn-primary pdp-related-btn">Ver Producto</a>
                         </div>
                     </div>
                 `;
