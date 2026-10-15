@@ -1,15 +1,34 @@
+// functions/api/sales.ts
 // Controlador de Registro de Ventas - Vendly SaaS
-import { verifySession, unauthorizedResponse } from "./_auth.js";
+import { verifySession, unauthorizedResponse } from "./_auth";
+import { getDB, jsonResponse } from "./_helpers";
+import type { Env, PagesHandler } from '../types';
+
+interface SaleChartRow {
+    date: string;
+    total: number;
+}
+
+interface SaleRow {
+    id: string;
+    order_id: string;
+    tenant_id: string;
+    monto: number;
+    fecha: string;
+    metodo_pago?: string;
+    client_name?: string;
+    client_phone?: string;
+}
 
 /**
- * GET /api/sales - Listar ventas registradas (con Paginación)
+ * GET /api/sales - Listar ventas registradas (con Paginación o Stats)
  */
-export async function onRequestGet(context) {
+export const onRequestGet: PagesHandler<Env> = async (context) => {
     const user = await verifySession(context);
     if (!user) return unauthorizedResponse();
 
     const { env, request } = context;
-    const db = env.DB || env.vendly;
+    const db = getDB(env);
 
     const url = new URL(request.url);
     const statsOnly = url.searchParams.get("stats") === "true";
@@ -17,7 +36,9 @@ export async function onRequestGet(context) {
     try {
         if (statsOnly) {
             // Obtener ingresos de hoy
-            const { total_ingresos } = await db.prepare("SELECT SUM(monto) as total_ingresos FROM sales WHERE tenant_id = ? AND DATE(fecha) = DATE('now')").bind(user.tenant_id).first();
+            const rowToday = await db.prepare(
+                "SELECT SUM(monto) as total_ingresos FROM sales WHERE tenant_id = ? AND DATE(fecha) = DATE('now')"
+            ).bind(user.tenant_id).first<{ total_ingresos: number | null }>();
             
             // Obtener datos para la gráfica (últimos 7 días)
             const { results: chartData } = await db.prepare(`
@@ -26,17 +47,12 @@ export async function onRequestGet(context) {
                 WHERE tenant_id = ? AND fecha >= date('now', '-7 days') 
                 GROUP BY DATE(fecha) 
                 ORDER BY date ASC
-            `).bind(user.tenant_id).all();
+            `).bind(user.tenant_id).all<SaleChartRow>();
 
-            return new Response(JSON.stringify({
-                revenueToday: total_ingresos || 0,
-                chartData: chartData
-            }), {
-                headers: { 
-                    "Content-Type": "application/json",
-                    "Cache-Control": "no-store, no-cache, must-revalidate"
-                }
-            });
+            return jsonResponse({
+                revenueToday: rowToday?.total_ingresos || 0,
+                chartData: chartData || []
+            }, 200, { "Cache-Control": "no-store, no-cache, must-revalidate" });
         }
 
         const page = Math.max(1, parseInt(url.searchParams.get("page") || "1"));
@@ -46,8 +62,8 @@ export async function onRequestGet(context) {
         const dateFrom = url.searchParams.get("date_from");
         const dateTo = url.searchParams.get("date_to");
 
-        let conditions = ["s.tenant_id = ?"];
-        let params = [user.tenant_id];
+        const conditions: string[] = ["s.tenant_id = ?"];
+        const params: (string | number)[] = [user.tenant_id];
 
         if (dateFrom) {
             conditions.push("DATE(s.fecha) >= ?");
@@ -58,10 +74,11 @@ export async function onRequestGet(context) {
             params.push(dateTo);
         }
 
-        const whereClause = conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
+        const whereClause = "WHERE " + conditions.join(" AND ");
 
         const countQuery = `SELECT COUNT(*) as total FROM sales s ${whereClause}`;
-        const { total } = await (params.length ? db.prepare(countQuery).bind(...params) : db.prepare(countQuery)).first();
+        const countRow = await db.prepare(countQuery).bind(...params).first<{ total: number }>();
+        const total = countRow?.total ?? 0;
 
         const dataQuery = `
             SELECT s.*, COALESCE(o.client_name, 'Cliente Vendly') as client_name, COALESCE(o.client_phone, '') as client_phone 
@@ -73,9 +90,9 @@ export async function onRequestGet(context) {
         `;
         
         const dataParams = [...params, limit, offset];
-        const { results } = await db.prepare(dataQuery).bind(...dataParams).all();
+        const { results } = await db.prepare(dataQuery).bind(...dataParams).all<SaleRow>();
 
-        return new Response(JSON.stringify({
+        return jsonResponse({
             data: results,
             meta: {
                 total,
@@ -83,17 +100,9 @@ export async function onRequestGet(context) {
                 limit,
                 totalPages: Math.ceil(total / limit)
             }
-        }), {
-            headers: { 
-                "Content-Type": "application/json",
-                "Cache-Control": "no-store, no-cache, must-revalidate"
-            }
-        });
+        }, 200, { "Cache-Control": "no-store, no-cache, must-revalidate" });
     } catch (err) {
         console.error("Error en GET /api/sales:", err);
-        return new Response(JSON.stringify({ error: "Error al consultar registro de ventas." }), {
-            status: 500,
-            headers: { "Content-Type": "application/json" }
-        });
+        return jsonResponse({ error: "Error al consultar registro de ventas." }, 500);
     }
-}
+};

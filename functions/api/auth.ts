@@ -1,16 +1,54 @@
-import { verifySession, unauthorizedResponse, generateSalt, hashPasswordPBKDF2, hashSHA256 } from "./_auth.js";
-import { resolveTenant } from "./_tenant.js";
+// functions/api/auth.ts
+// Endpoints de autenticación, sesión y cambio de contraseña
+import type { D1Database } from '@cloudflare/workers-types';
+import { z } from "zod";
+import { verifySession, unauthorizedResponse, generateSalt, hashPasswordPBKDF2, hashSHA256 } from "./_auth";
+import { resolveTenant } from "./_tenant";
+import { getDB, parseCookies, jsonResponse } from "./_helpers";
+import type { Env, PagesHandler } from '../types';
+
+export const loginSchema = z.object({
+    username: z.string().min(1, "Usuario requerido"),
+    password: z.string().min(1, "Contraseña requerida"),
+});
+
+export type LoginInput = z.infer<typeof loginSchema>;
+
+export const changePasswordSchema = z.object({
+    currentPassword: z.string().min(1, "Contraseña actual requerida"),
+    newPassword: z.string().min(1, "Nueva contraseña requerida"),
+});
+
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_TIME_MS = 5 * 60 * 1000; // 5 minutos de bloqueo
 
-async function checkRateLimit(db, ip) {
+interface RateLimitRow {
+    ip: string;
+    count: number;
+    first_attempt: number;
+    lockout_until: number;
+}
+
+interface UserDbRow {
+    id: string;
+    username: string;
+    password_hash: string;
+    password_salt: string | null;
+    role: string;
+    tenant_id: string;
+}
+
+async function checkRateLimit(db: D1Database, ip: string): Promise<{ allowed: boolean; remainingMinutes?: number }> {
     const now = Date.now();
     
-    let record;
+    let record: RateLimitRow | null = null;
     try {
-        record = await db.prepare("SELECT * FROM rate_limits WHERE ip = ?").bind(ip).first();
-    } catch(e) { return { allowed: true }; } // Fallback si la tabla no existe aún
+        record = await db.prepare("SELECT * FROM rate_limits WHERE ip = ?").bind(ip).first<RateLimitRow>();
+    } catch {
+        return { allowed: true };
+    }
     
     if (!record) return { allowed: true };
 
@@ -27,106 +65,97 @@ async function checkRateLimit(db, ip) {
     return { allowed: true };
 }
 
-async function recordFailedAttempt(db, ip) {
+async function recordFailedAttempt(db: D1Database, ip: string): Promise<void> {
     const now = Date.now();
     try {
-        let record = await db.prepare("SELECT * FROM rate_limits WHERE ip = ?").bind(ip).first();
+        const record = await db.prepare("SELECT * FROM rate_limits WHERE ip = ?").bind(ip).first<RateLimitRow>();
         
         if (!record) {
             await db.prepare("INSERT INTO rate_limits (ip, count, first_attempt, lockout_until) VALUES (?, 1, ?, 0)").bind(ip, now).run();
         } else {
-            let newCount = record.count + 1;
+            const newCount = record.count + 1;
             let newLockout = 0;
             if (newCount >= MAX_ATTEMPTS) {
                 newLockout = now + LOCKOUT_TIME_MS;
             }
             await db.prepare("UPDATE rate_limits SET count = ?, lockout_until = ? WHERE ip = ?").bind(newCount, newLockout, ip).run();
         }
-    } catch(e) {}
+    } catch {}
 }
 
-async function clearRateLimit(db, ip) {
+async function clearRateLimit(db: D1Database, ip: string): Promise<void> {
     try {
         await db.prepare("DELETE FROM rate_limits WHERE ip = ?").bind(ip).run();
-    } catch(e) {}
+    } catch {}
 }
 
 /**
  * GET /api/auth - Verifica el estado de la sesión actual
  */
-export async function onRequestGet(context) {
+export const onRequestGet: PagesHandler<Env> = async (context) => {
     const user = await verifySession(context);
     
     // Limpieza oportunista de sesiones expiradas
     try {
         const { env } = context;
-        const db = env.DB || env.vendly;
+        const db = getDB(env);
         const now = Math.floor(Date.now() / 1000);
         context.waitUntil?.(
             db.prepare("DELETE FROM sessions WHERE expires_at < ?").bind(now).run()
         );
-    } catch (_) {}
+    } catch {}
 
     if (user) {
-        return new Response(JSON.stringify({ authenticated: true, username: user.username, role: user.role }), {
-            headers: { 
-                "Content-Type": "application/json",
-                "Cache-Control": "no-store, no-cache, must-revalidate"
-            }
-        });
+        return jsonResponse(
+            { authenticated: true, username: user.username, role: user.role },
+            200,
+            { "Cache-Control": "no-store, no-cache, must-revalidate" }
+        );
     }
 
-    return new Response(JSON.stringify({ authenticated: false }), {
-        headers: { 
-            "Content-Type": "application/json",
-            "Cache-Control": "no-store, no-cache, must-revalidate"
-        }
-    });
-}
+    return jsonResponse(
+        { authenticated: false },
+        200,
+        { "Cache-Control": "no-store, no-cache, must-revalidate" }
+    );
+};
 
 /**
  * POST /api/auth - Inicia sesión (Login)
  */
-export async function onRequestPost(context) {
+export const onRequestPost: PagesHandler<Env> = async (context) => {
     const { request, env } = context;
-    const db = env.DB || env.vendly;
+    const db = getDB(env);
     const clientIp = request.headers.get("CF-Connecting-IP") || request.headers.get("x-real-ip") || "unknown";
     const { id: tenantId } = await resolveTenant(request, db);
 
     // 1. Verificar Rate Limit
     const rateCheck = await checkRateLimit(db, clientIp);
     if (!rateCheck.allowed) {
-        return new Response(JSON.stringify({ 
+        return jsonResponse({ 
             error: `Demasiados intentos fallidos. Por seguridad, espera ${rateCheck.remainingMinutes} minuto(s) antes de reintentar.` 
-        }), {
-            status: 429,
-            headers: { "Content-Type": "application/json" }
-        });
+        }, 429);
     }
 
     try {
-        const { username, password } = await request.json();
+        const bodyJson = await request.json();
+        const parseResult = loginSchema.safeParse(bodyJson);
 
-        if (!username || !password) {
-            return new Response(JSON.stringify({ error: "Usuario y contraseña requeridos." }), {
-                status: 400,
-                headers: { "Content-Type": "application/json" }
-            });
+        if (!parseResult.success) {
+            return jsonResponse({ error: "Usuario y contraseña requeridos.", details: parseResult.error.issues }, 400);
         }
         
+        const { username, password } = parseResult.data;
         const passwordHash = await hashSHA256(password);
 
         // Buscar usuario en base de datos (scoped al tenant)
         const user = await db.prepare("SELECT * FROM users WHERE username = ? AND tenant_id = ?")
             .bind(username.toLowerCase().trim(), tenantId)
-            .first();
+            .first<UserDbRow>();
 
         if (!user) {
             await recordFailedAttempt(db, clientIp);
-            return new Response(JSON.stringify({ error: "Credenciales inválidas." }), {
-                status: 401,
-                headers: { "Content-Type": "application/json" }
-            });
+            return jsonResponse({ error: "Credenciales inválidas." }, 401);
         }
 
         let isMatch = false;
@@ -152,10 +181,7 @@ export async function onRequestPost(context) {
 
         if (!isMatch) {
             await recordFailedAttempt(db, clientIp);
-            return new Response(JSON.stringify({ error: "Credenciales inválidas." }), {
-                status: 401,
-                headers: { "Content-Type": "application/json" }
-            });
+            return jsonResponse({ error: "Credenciales inválidas." }, 401);
         }
 
         // Login exitoso: limpiar intentos fallidos
@@ -171,50 +197,45 @@ export async function onRequestPost(context) {
             .bind(sessionToken, user.username, expiresAt, tenantId)
             .run();
 
-        // Cookie segura HTTP-only para Vendly SaaS
         const cookie = `vendly_session=${sessionToken}; Path=/; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Strict`;
         
-        return new Response(JSON.stringify({ success: true, username: user.username, role: user.role }), {
-            headers: {
-                "Content-Type": "application/json",
-                "Set-Cookie": cookie
-            }
-        });
+        return jsonResponse(
+            { success: true, username: user.username, role: user.role },
+            200,
+            { "Set-Cookie": cookie }
+        );
     } catch (err) {
         console.error("Error en POST /api/auth:", err);
-        return new Response(JSON.stringify({ error: "Error en el servidor al autenticar." }), {
-            status: 500,
-            headers: { "Content-Type": "application/json" }
-        });
+        return jsonResponse({ error: "Error en el servidor al autenticar." }, 500);
     }
-}
+};
 
 /**
- * PUT /api/auth - Cambiar contraseña del administrador (Requiere sesión activa)
+ * PUT /api/auth - Cambiar contraseña del administrador
  */
-export async function onRequestPut(context) {
+export const onRequestPut: PagesHandler<Env> = async (context) => {
     const sessionUser = await verifySession(context);
     if (!sessionUser) return unauthorizedResponse();
 
     const { request, env } = context;
-    const db = env.DB || env.vendly;
+    const db = getDB(env);
 
     try {
-        const { currentPassword, newPassword } = await request.json();
+        const bodyJson = await request.json();
+        const parseResult = changePasswordSchema.safeParse(bodyJson);
 
-        if (!currentPassword || !newPassword) {
-            return new Response(JSON.stringify({ error: "Debes enviar la contraseña actual y la nueva." }), {
-                status: 400,
-                headers: { "Content-Type": "application/json" }
-            });
+        if (!parseResult.success) {
+            return jsonResponse({ error: "Debes enviar la contraseña actual y la nueva.", details: parseResult.error.issues }, 400);
         }
+
+        const { currentPassword, newPassword } = parseResult.data;
         
         const currentPasswordHash = await hashSHA256(currentPassword);
         const newPasswordHash = await hashSHA256(newPassword);
 
         const user = await db.prepare("SELECT * FROM users WHERE username = ?")
             .bind(sessionUser.username.toLowerCase().trim())
-            .first();
+            .first<UserDbRow>();
 
         if (!user) {
             return unauthorizedResponse();
@@ -230,10 +251,7 @@ export async function onRequestPut(context) {
         }
 
         if (!currentMatch) {
-            return new Response(JSON.stringify({ error: "La contraseña actual es incorrecta." }), {
-                status: 400,
-                headers: { "Content-Type": "application/json" }
-            });
+            return jsonResponse({ error: "La contraseña actual es incorrecta." }, 400);
         }
 
         // Generar nuevo salt y hash PBKDF2 para la nueva contraseña
@@ -244,37 +262,22 @@ export async function onRequestPut(context) {
             .bind(newHash, newSalt, user.id)
             .run();
 
-        // Invalidar todas las sesiones antiguas excepto la actual si se desea, o cerrar todas por seguridad
-        return new Response(JSON.stringify({ success: true, message: "Contraseña actualizada exitosamente." }), {
-            headers: { "Content-Type": "application/json" }
-        });
+        return jsonResponse({ success: true, message: "Contraseña actualizada exitosamente." });
 
     } catch (err) {
         console.error("Error en PUT /api/auth:", err);
-        return new Response(JSON.stringify({ error: "Error al actualizar contraseña." }), {
-            status: 500,
-            headers: { "Content-Type": "application/json" }
-        });
+        return jsonResponse({ error: "Error al actualizar contraseña." }, 500);
     }
-}
+};
 
 /**
  * DELETE /api/auth - Cierra sesión (Logout)
  */
-export async function onRequestDelete(context) {
+export const onRequestDelete: PagesHandler<Env> = async (context) => {
     const { request, env } = context;
-    const db = env.DB || env.vendly;
+    const db = getDB(env);
 
-    const cookieHeader = request.headers.get("Cookie");
-    let token = null;
-    if (cookieHeader) {
-        const cookies = cookieHeader.split(";").reduce((acc, cookie) => {
-            const [key, value] = cookie.trim().split("=");
-            acc[key] = value;
-            return acc;
-        }, {});
-        token = cookies["vendly_session"];
-    }
+    const token = parseCookies(request.headers.get("Cookie"))["vendly_session"] || null;
 
     if (token) {
         try {
@@ -284,7 +287,6 @@ export async function onRequestDelete(context) {
         }
     }
 
-    // Limpiar cookie de sesión de Vendly
     const clearVendlyCookie = `vendly_session=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Strict`;
 
     const headers = new Headers({
@@ -292,7 +294,5 @@ export async function onRequestDelete(context) {
     });
     headers.append("Set-Cookie", clearVendlyCookie);
 
-    return new Response(JSON.stringify({ success: true }), {
-        headers
-    });
-}
+    return new Response(JSON.stringify({ success: true }), { headers });
+};

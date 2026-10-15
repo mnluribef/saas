@@ -1,7 +1,16 @@
-// functions/api/_plans.js
+// functions/api/_plans.ts
 // Configuración de límites y capacidades de cada plan del SaaS
+import type { D1Database } from '@cloudflare/workers-types';
+import type { TenantRow } from '../types';
 
-export const PLANS = {
+export interface PlanConfig {
+    name: string;
+    maxProducts: number;
+    maxOrdersPerMonth: number;
+    features: string[];
+}
+
+export const PLANS: Record<string, PlanConfig> = {
     'basic': {
         name: 'Básico',
         maxProducts: 30,
@@ -22,19 +31,27 @@ export const PLANS = {
     }
 };
 
+export interface LimitCheckResult {
+    allowed: boolean;
+    limit: number;
+    current: number;
+}
+
 /**
  * Verifica si un tenant ha excedido su límite de productos.
- * @param {object} db - Binding de D1
- * @param {object} tenant - Objeto tenant obtenido de `resolveTenant`
- * @returns {Promise<{ allowed: boolean, limit: number, current: number }>}
  */
-export async function checkProductLimit(db, tenant) {
+export async function checkProductLimit(
+    db: D1Database,
+    tenant: TenantRow | null
+): Promise<LimitCheckResult> {
     const planKey = tenant?.plan || 'basic';
     const planLimits = PLANS[planKey] || PLANS['basic'];
     
-    const { total } = await db.prepare(
+    const row = await db.prepare(
         'SELECT COUNT(*) as total FROM products WHERE tenant_id = ?'
-    ).bind(tenant?.id || 'demo').first();
+    ).bind(tenant?.id || 'demo').first<{ total: number }>();
+
+    const total = row?.total ?? 0;
 
     return {
         allowed: total < planLimits.maxProducts,
@@ -45,11 +62,11 @@ export async function checkProductLimit(db, tenant) {
 
 /**
  * Verifica si un tenant ha excedido su límite de pedidos en el mes actual.
- * @param {object} db - Binding de D1
- * @param {object} tenant - Objeto tenant obtenido de `resolveTenant`
- * @returns {Promise<{ allowed: boolean, limit: number, current: number }>}
  */
-export async function checkOrderLimit(db, tenant) {
+export async function checkOrderLimit(
+    db: D1Database,
+    tenant: TenantRow | null
+): Promise<LimitCheckResult> {
     const planKey = tenant?.plan || 'basic';
     const planLimits = PLANS[planKey] || PLANS['basic'];
     
@@ -57,9 +74,11 @@ export async function checkOrderLimit(db, tenant) {
     const date = new Date();
     const firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1).toISOString();
 
-    const { total } = await db.prepare(
+    const row = await db.prepare(
         'SELECT COUNT(*) as total FROM orders WHERE tenant_id = ? AND created_at >= ?'
-    ).bind(tenant?.id || 'demo', firstDayOfMonth).first();
+    ).bind(tenant?.id || 'demo', firstDayOfMonth).first<{ total: number }>();
+
+    const total = row?.total ?? 0;
 
     return {
         allowed: total < planLimits.maxOrdersPerMonth,

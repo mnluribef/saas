@@ -1,5 +1,8 @@
-// functions/[store].js
+// functions/[store].ts
 // Enrutador dinámico de tiendas por ruta: vendly-20w.pages.dev/[store]
+import type { D1Database } from '@cloudflare/workers-types';
+import { getDB } from './api/_helpers';
+import type { Env, PagesHandler, TenantRow } from './types';
 
 const SYSTEM_PATHS = new Set([
     '',
@@ -17,7 +20,7 @@ const SYSTEM_PATHS = new Set([
     '_astro'
 ]);
 
-export async function onRequest(context) {
+export const onRequest: PagesHandler<Env, 'store'> = async (context) => {
     const { request, env, params } = context;
     const storeParam = params.store;
     const store = (typeof storeParam === 'string' ? storeParam : '').toLowerCase().trim();
@@ -30,8 +33,10 @@ export async function onRequest(context) {
         return new Response('Recurso no encontrado', { status: 404 });
     }
 
-    const db = env.DB || env.vendly;
-    if (!db) {
+    let db: D1Database;
+    try {
+        db = getDB(env);
+    } catch {
         if (env.ASSETS) {
             return env.ASSETS.fetch(request);
         }
@@ -40,9 +45,9 @@ export async function onRequest(context) {
 
     try {
         // 2. Buscar si el tenant existe y está activo en la base de datos
-        const tenant = await db.prepare(
+        const tenant = (await db.prepare(
             'SELECT id, name, template, config_json, active FROM tenants WHERE id = ? AND active = 1'
-        ).bind(store).first();
+        ).bind(store).first()) as TenantRow | null;
 
         // Si no existe la tienda, devolver página 404 descriptiva
         if (!tenant) {
@@ -72,9 +77,9 @@ export async function onRequest(context) {
         const template = tenant.template || 'restaurant';
         const url = new URL(request.url);
         
-        let templateResponse = await env.ASSETS.fetch(new Request(new URL(`/demo/${template}/index.html`, url.origin)));
+        let templateResponse = await env.ASSETS!.fetch(new Request(new URL(`/demo/${template}/index.html`, url.origin)));
         if (!templateResponse.ok) {
-            templateResponse = await env.ASSETS.fetch(new Request(new URL(`/demo/${template}`, url.origin)));
+            templateResponse = await env.ASSETS!.fetch(new Request(new URL(`/demo/${template}`, url.origin)));
         }
 
         if (!templateResponse.ok) {
@@ -85,27 +90,33 @@ export async function onRequest(context) {
         const configJson = tenant.config_json || '{}';
         const businessName = tenant.name || 'Tienda';
 
+        interface RewriterElement {
+            setInnerContent(content: string): void;
+            setAttribute(name: string, value: string): void;
+            remove(): void;
+            append(content: string, options?: { html?: boolean }): void;
+        }
+
         const rewriter = new HTMLRewriter()
             .on('title', {
-                element(e) {
+                element(e: RewriterElement) {
                     e.setInnerContent(`${businessName} | Catálogo & Pedidos`);
                 }
             })
             .on('#catalog-store-meta', {
-                element(e) {
+                element(e: RewriterElement) {
                     e.setAttribute('data-tenant', tenant.id);
                     e.setAttribute('data-business-name', businessName);
                     e.setAttribute('data-template', template);
                 }
             })
             .on('.template-switcher', {
-                element(e) {
-                    // Remover selector de demostración en tiendas reales
+                element(e: RewriterElement) {
                     e.remove();
                 }
             })
             .on('head', {
-                element(e) {
+                element(e: RewriterElement) {
                     e.append(`<meta name="vendly-tenant" content="${tenant.id}" />`, { html: true });
                     e.append(`<meta name="vendly-business" content="${businessName}" />`, { html: true });
                     if (configJson && configJson !== '{}') {
@@ -125,4 +136,4 @@ export async function onRequest(context) {
         console.error('Error en router dinámico de tiendas /[store]:', err);
         return new Response('Error interno al cargar la tienda.', { status: 500 });
     }
-}
+};

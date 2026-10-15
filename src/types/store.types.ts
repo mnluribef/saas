@@ -13,40 +13,28 @@ export type SchemaOrgType =
   | 'LocalBusiness'
   | 'SoftwareApplication';
 
-export interface BenefitItem {
-  icon: string; // Nombre del icono o SVG inline
-  title: string;
-  description: string;
-}
+// Re-exportados desde functions/api/settings.ts (Single Source of Truth inferido de Zod)
+import type {
+  BenefitItem,
+  ProcessStep,
+  TestimonialItem,
+  FaqItem,
+  HeroSlide,
+  StoreSettings
+} from '../../functions/api/settings';
 
-export interface ProcessStep {
-  number: number | string;
-  title: string;
-  description: string;
-}
-
-export interface TestimonialItem {
-  name: string;
-  role: string;
-  review: string;
-  avatar: string;
-  rating?: number;
-}
-
-export interface FaqItem {
-  q: string;
-  a: string;
-}
+export type {
+  BenefitItem,
+  ProcessStep,
+  TestimonialItem,
+  FaqItem,
+  HeroSlide,
+  StoreSettings
+};
 
 export interface NavLink {
   label: string;
   href: string;
-}
-
-export interface HeroSlide {
-  image: string;
-  alt: string;
-  caption?: string;
 }
 
 export interface StoreBusinessConfig {

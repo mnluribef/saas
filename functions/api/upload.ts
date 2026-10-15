@@ -1,15 +1,13 @@
-import { verifySession, unauthorizedResponse, forbiddenResponse } from "./_auth.js";
+// functions/api/upload.ts
+// POST /api/upload - Subir una imagen a Cloudflare R2
+import { verifySession, unauthorizedResponse, forbiddenResponse } from "./_auth";
+import type { Env, PagesHandler } from '../types';
 
-/**
- * POST /api/upload - Subir una imagen a Cloudflare R2
- * Se espera recibir form-data con el archivo en el campo 'file'.
- */
-export async function onRequestPost(context) {
+export const onRequestPost: PagesHandler<Env> = async (context) => {
     const { request, env } = context;
 
-    // Verificar sesión. Para subir imágenes de productos se requiere admin.
-    // Para comprobantes de pago el endpoint debe ser público, por lo que usaremos
-    // un parámetro en la URL o verificaremos el origen para permitir subir recibos públicamente.
+    // Para subir imágenes de productos se requiere admin.
+    // Para comprobantes de pago el endpoint debe ser público.
     const url = new URL(request.url);
     const type = url.searchParams.get("type"); // 'product' o 'receipt'
 
@@ -19,20 +17,11 @@ export async function onRequestPost(context) {
         if (user.role !== 'admin') return forbiddenResponse();
     }
 
-    // Rate limit simple para recibos públicos (mitigar spam)
-    if (type === 'receipt') {
-        const clientIp = request.headers.get("CF-Connecting-IP") || "unknown";
-        // Aquí deberíamos implementar un rate limit robusto con CF Rate Limiting,
-        // pero por ahora limitaremos el tamaño del archivo a 5MB.
-    }
-
-
-
     try {
         const formData = await request.formData();
         const file = formData.get("file");
 
-        if (!file || !(file instanceof File)) {
+        if (!file || typeof file === 'string') {
             return new Response(JSON.stringify({ error: "No se proporcionó ningún archivo válido." }), {
                 status: 400,
                 headers: { "Content-Type": "application/json" }
@@ -51,7 +40,7 @@ export async function onRequestPost(context) {
         const buffer = await file.arrayBuffer();
         const arr = new Uint8Array(buffer).subarray(0, 4);
         let header = "";
-        for(let i = 0; i < arr.length; i++) {
+        for (let i = 0; i < arr.length; i++) {
             header += arr[i].toString(16);
         }
         
@@ -69,7 +58,7 @@ export async function onRequestPost(context) {
         }
 
         // Generar nombre de archivo único
-        const ext = file.name.split('.').pop();
+        const ext = file.name.split('.').pop() || 'jpg';
         const randomString = Math.random().toString(36).substring(2, 10);
         const fileName = `${type || 'upload'}_${Date.now()}_${randomString}.${ext}`;
 
@@ -84,13 +73,13 @@ export async function onRequestPost(context) {
             });
         }
 
-        // Respaldo para entornos sin bucket R2 conectado (ej. desarrollo o D1 demo):
+        // Respaldo para entornos sin bucket R2 conectado:
         // Convertimos el buffer validado a Data URL segura
         const uint8 = new Uint8Array(buffer);
         let binary = "";
         const chunkSize = 8192;
         for (let i = 0; i < uint8.length; i += chunkSize) {
-            binary += String.fromCharCode.apply(null, uint8.subarray(i, i + chunkSize));
+            binary += String.fromCharCode.apply(null, Array.from(uint8.subarray(i, i + chunkSize)));
         }
         const base64 = btoa(binary);
         const dataUrl = `data:${file.type || 'image/jpeg'};base64,${base64}`;
@@ -106,4 +95,4 @@ export async function onRequestPost(context) {
             headers: { "Content-Type": "application/json" }
         });
     }
-}
+};
