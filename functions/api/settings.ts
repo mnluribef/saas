@@ -121,6 +121,8 @@ export const landingSettingsSchema = z.object({
         searchPlaceholder: z.string().max(150).optional(),
         emptyMessage: z.string().max(250).optional(),
         addToCartText: z.string().max(60).optional(),
+        productDetailViewMode: z.enum(['modal', 'page']).optional().default('modal'),
+        productDetailShareBtn: z.enum(['enabled', 'disabled']).optional().default('enabled'),
     }).optional(),
     benefits: z.object({
         title: z.string().max(120).optional(),

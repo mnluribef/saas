@@ -321,6 +321,37 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Configuración de Vista de Detalle de Producto -->
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <div>
+                            <h3 class="settings-card-title">
+                                <i data-lucide="eye"></i> Vista y Detalle de Productos
+                            </h3>
+                            <p class="settings-card-subtitle">Personaliza cómo interactúan tus clientes al hacer clic en un producto o ingresar por su enlace directo.</p>
+                        </div>
+                    </div>
+
+                    <div class="settings-grid-2">
+                        <div class="settings-form-group">
+                            <label for="cfg-product-detail-view-mode">Modo de Apertura del Producto</label>
+                            <select id="cfg-product-detail-view-mode" class="form-control">
+                                <option value="modal">Modal / Vista Rápida (Emergente interactivo sin salir del catálogo)</option>
+                                <option value="page">Página Dedicada Independiente (/p/producto-id con ficha completa)</option>
+                            </select>
+                            <span class="hint">Define si el detalle se abre en un diálogo modal emergente o navega a una página completa con SEO.</span>
+                        </div>
+                        <div class="settings-form-group">
+                            <label for="cfg-product-detail-share-btn">Botón Compartir / Copiar Enlace Directo</label>
+                            <select id="cfg-product-detail-share-btn" class="form-control">
+                                <option value="enabled">Activado (Permite a los usuarios copiar y compartir el producto)</option>
+                                <option value="disabled">Desactivado</option>
+                            </select>
+                            <span class="hint">Habilita un botón para copiar el enlace directo del producto al portapapeles o WhatsApp.</span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- ========================================== -->

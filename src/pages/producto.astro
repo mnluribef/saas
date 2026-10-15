@@ -1,0 +1,375 @@
+---
+// src/pages/producto.astro
+// Vista Dedicada e Independiente de Ficha de Producto con SEO y Open Graph
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Header from '../components/layout/Header.astro';
+import Footer from '../components/layout/Footer.astro';
+import defaultStoreConfig from '../config/store.config';
+
+const config = defaultStoreConfig;
+const { business, contact } = config;
+---
+
+<BaseLayout 
+  config={config} 
+  title="Detalle de Producto | Vendly" 
+  description="Consulta especificaciones, disponibilidad y pide directamente este producto por WhatsApp."
+>
+  <Header config={config} />
+
+  <main class="product-page-main">
+    <!-- Breadcrumb de Navegación -->
+    <div class="container pdp-breadcrumb-wrapper">
+      <nav class="pdp-breadcrumb" aria-label="Migas de pan">
+        <a href="/" class="pdp-back-link" id="pdp-back-link">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m15 18-6-6 6-6"></path>
+          </svg>
+          <span id="pdp-back-text">Volver a la Tienda</span>
+        </a>
+        <span class="pdp-crumb-sep">/</span>
+        <span id="pdp-crumb-category" class="pdp-crumb-text">Catálogo</span>
+        <span class="pdp-crumb-sep">/</span>
+        <span id="pdp-crumb-title" class="pdp-crumb-current">Producto</span>
+      </nav>
+    </div>
+
+    <!-- Contenedor Principal de la Ficha de Producto -->
+    <section class="container pdp-section">
+      <!-- Loading State -->
+      <div id="pdp-loading" class="pdp-loading-state">
+        <div class="pdp-spinner"></div>
+        <p>Cargando detalles del producto...</p>
+      </div>
+
+      <!-- Error State -->
+      <div id="pdp-error" class="pdp-error-state store-meta-hidden">
+        <div class="pdp-error-icon">🔍</div>
+        <h2>Producto no encontrado</h2>
+        <p>El producto solicitado no está disponible en este momento o fue dado de baja del catálogo.</p>
+        <a href="/" class="pdp-btn-primary" id="pdp-error-back-btn">Explorar Catálogo Completo</a>
+      </div>
+
+      <!-- Layout de 2 Columnas -->
+      <div id="pdp-grid" class="pdp-grid store-meta-hidden">
+        <!-- Columna Izquierda: Galería e Imagen Principal -->
+        <div class="pdp-visual-col">
+          <div class="pdp-image-container">
+            <img id="pdp-img" src="/assets/favicon.svg" alt="Producto" />
+            <div id="pdp-badges" class="pdm-badges-container"></div>
+          </div>
+          <div class="pdp-trust-highlights">
+            <div class="pdp-trust-item">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              </svg>
+              <span>Calidad Garantizada</span>
+            </div>
+            <div class="pdp-trust-item">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="1" y="3" width="15" height="13"></rect>
+                <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                <circle cx="18.5" cy="18.5" r="2.5"></circle>
+              </svg>
+              <span>Envíos / Delivery & Retiro</span>
+            </div>
+            <div class="pdp-trust-item">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="1" x2="12" y2="23"></line>
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+              </svg>
+              <span>Pago Móvil, Zelle y Efectivo</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Columna Derecha: Información y Opciones de Compra -->
+        <div class="pdp-details-col">
+          <div class="pdp-header">
+            <span id="pdp-category-badge" class="pdm-category-chip">Categoría</span>
+            <h1 id="pdp-name" class="pdp-title">Nombre del Producto</h1>
+            <div id="pdp-brand-model" class="pdm-meta-row"></div>
+          </div>
+
+          <!-- Precios -->
+          <div class="pdm-price-box pdp-price-card">
+            <div class="pdm-price-main" id="pdp-price-usd">$0.00</div>
+            <div class="pdm-price-sub" id="pdp-price-bcv">~Bs. 0.00</div>
+            <span class="pdm-bcv-rate-pill" id="pdp-bcv-pill">Tasa Oficial BCV</span>
+          </div>
+
+          <!-- Descripción -->
+          <div class="pdp-desc-container">
+            <h2 class="pdm-section-heading">Descripción del Producto</h2>
+            <p id="pdp-desc" class="pdm-description-text"></p>
+          </div>
+
+          <!-- Variantes y Atributos -->
+          <div id="pdp-attributes-container" class="pdm-attributes-box"></div>
+
+          <!-- Cantidad y Acciones de Compra -->
+          <div class="pdm-purchase-actions">
+            <div class="pdm-qty-group">
+              <label for="pdp-qty-input" class="pdm-qty-label">Cantidad a Ordenar:</label>
+              <div class="pdm-qty-selector">
+                <button type="button" class="pdm-qty-btn" id="pdp-qty-minus" aria-label="Disminuir cantidad">-</button>
+                <input type="number" id="pdp-qty-input" class="pdm-qty-input" value="1" min="1" max="99" />
+                <button type="button" class="pdm-qty-btn" id="pdp-qty-plus" aria-label="Aumentar cantidad">+</button>
+              </div>
+            </div>
+
+            <div class="pdm-buttons-stack">
+              <button type="button" id="pdp-btn-add-cart" class="pdm-btn-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="8" cy="21" r="1"></circle>
+                  <circle cx="19" cy="21" r="1"></circle>
+                  <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path>
+                </svg>
+                <span>Agregar al Carrito</span>
+              </button>
+
+              <a id="pdp-btn-whatsapp" href="#" target="_blank" rel="noopener" class="pdm-btn-whatsapp">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"></path>
+                </svg>
+                <span>Pedir Directo por WhatsApp</span>
+              </a>
+
+              <button type="button" id="pdp-btn-share" class="pdm-btn-share">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+                  <polyline points="16 6 12 2 8 6"></polyline>
+                  <line x1="12" y1="2" x2="12" y2="15"></line>
+                </svg>
+                <span>Compartir Ficha del Producto</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sección de Productos Relacionados -->
+    <section id="pdp-related-section" class="pdp-related-section store-meta-hidden">
+      <div class="container">
+        <div class="section-header">
+          <h2>También te podría <span>interesar</span></h2>
+          <p>Explora otros artículos destacados de esta misma categoría.</p>
+        </div>
+        <div class="product-grid pdp-related-grid" id="pdp-related-grid"></div>
+      </div>
+    </section>
+  </main>
+
+  <Footer config={config} />
+
+  <!-- Botón Flotante de Carrito -->
+  <button id="cart-btn" class="float-cart" aria-label="Ver carrito">
+    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
+      <path d="M3 6h18"></path>
+      <path d="M16 10a4 4 0 0 1-8 0"></path>
+    </svg>
+    <span id="cart-count">0</span>
+  </button>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Metadata Oculta para Controlador de Página -->
+  <div
+    id="catalog-store-meta"
+    data-template={config.template}
+    data-whatsapp={contact.whatsapp}
+    data-currency={config.features.currencySymbol}
+    data-business-name={business.name}
+    data-store-prefix={config.storePrefix || 'VEN'}
+    class="store-meta-hidden"
+  ></div>
+
+  <script src="../scripts/product-page.ts"></script>
+</BaseLayout>
+
+<style is:global>
+/* ===================== PRODUCT DETAIL STANDALONE PAGE ===================== */
+.product-page-main {
+  padding-top: 5.5rem;
+  padding-bottom: 4rem;
+  min-height: 80vh;
+}
+
+.pdp-breadcrumb-wrapper {
+  margin-bottom: 1.5rem;
+}
+
+.pdp-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.88rem;
+  color: var(--text-muted, #64748b);
+  flex-wrap: wrap;
+}
+
+.pdp-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--primary, #c9748a);
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 0.2s;
+}
+
+.pdp-back-link:hover {
+  transform: translateX(-2px);
+  text-decoration: underline;
+}
+
+.pdp-crumb-sep {
+  opacity: 0.4;
+}
+
+.pdp-crumb-current {
+  color: var(--text-heading, #0f172a);
+  font-weight: 600;
+}
+
+.pdp-section {
+  position: relative;
+}
+
+.pdp-loading-state,
+.pdp-error-state {
+  text-align: center;
+  padding: 4rem 1.5rem;
+  background: var(--bg-card, #ffffff);
+  border-radius: 20px;
+  border: 1px solid var(--border-subtle, rgba(0,0,0,0.08));
+}
+
+.pdp-spinner {
+  width: 44px;
+  height: 44px;
+  border: 3px solid rgba(201, 116, 138, 0.2);
+  border-top-color: var(--primary, #c9748a);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+  margin: 0 auto 1.25rem;
+}
+
+.pdp-error-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.pdp-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 3rem;
+  background: var(--bg-card, #ffffff);
+  padding: 2.5rem;
+  border-radius: 24px;
+  border: 1px solid var(--border-subtle, rgba(0,0,0,0.08));
+  box-shadow: 0 10px 30px -10px rgba(0,0,0,0.06);
+}
+
+.pdp-visual-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.pdp-image-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 20px;
+  overflow: hidden;
+  background: var(--bg-section, #f8fafc);
+  border: 1px solid var(--border-subtle, rgba(0,0,0,0.08));
+}
+
+.pdp-image-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.pdp-image-container:hover img {
+  transform: scale(1.02);
+}
+
+.pdp-trust-highlights {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  border-radius: 14px;
+  background: var(--bg-section, #f8fafc);
+  border: 1px solid var(--border-subtle, rgba(0,0,0,0.06));
+}
+
+.pdp-trust-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--text-body, #334155);
+}
+
+.pdp-trust-item svg {
+  color: var(--primary, #c9748a);
+  flex-shrink: 0;
+}
+
+.pdp-details-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.pdp-title {
+  font-family: var(--font-heading, 'Outfit', sans-serif);
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--text-heading, #0f172a);
+  line-height: 1.2;
+  margin: 0.4rem 0 0;
+}
+
+.pdp-price-card {
+  padding: 1.25rem 1.5rem;
+  border-radius: 16px;
+}
+
+.pdp-desc-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pdp-related-section {
+  margin-top: 4rem;
+  padding-top: 2rem;
+}
+
+.pdp-related-grid {
+  margin-top: 2rem;
+}
+
+@media (max-width: 900px) {
+  .pdp-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    padding: 1.5rem;
+  }
+
+  .pdp-title {
+    font-size: 1.75rem;
+  }
+}
+</style>

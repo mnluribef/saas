@@ -147,6 +147,8 @@ export interface StoreLandingConfig {
     searchPlaceholder: string;
     emptyMessage?: string;
     addToCartText?: string;
+    productDetailViewMode?: 'modal' | 'page';
+    productDetailShareBtn?: 'enabled' | 'disabled';
   };
   process: {
     title: string;

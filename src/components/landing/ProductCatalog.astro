@@ -604,7 +604,9 @@ const { business, contact, features } = config;
     data-delivery-name={config.labels?.deliveryOptionName || 'Delivery'}
     data-delivery-price={String(config.labels?.deliveryOptionPrice ?? 5)}
     data-pickup-name={config.labels?.pickupOptionName || 'Retiro en local'}
-    style="display:none;"
+    data-product-detail-view-mode={catalog.productDetailViewMode || 'modal'}
+    data-product-detail-share-btn={catalog.productDetailShareBtn || 'enabled'}
+    class="store-meta-hidden"
 ></div>
 <script id="catalog-template-categories" type="application/json" is:inline set:html={JSON.stringify(config.categories || [])} />
 
@@ -657,6 +659,92 @@ const { business, contact, features } = config;
             <button id="modal-confirm" class="modal-btn danger">
                 Vaciar Pedido
             </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Detalle de Producto -->
+<div id="product-detail-modal" class="pdm-overlay" aria-hidden="true" role="dialog" aria-labelledby="pdm-title">
+    <div class="pdm-dialog">
+        <button type="button" class="pdm-close-btn" id="pdm-close-btn" aria-label="Cerrar ventana de detalles">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+
+        <div class="pdm-body">
+            <!-- Galería e Imagen del Producto -->
+            <div class="pdm-visual">
+                <div class="pdm-image-wrapper">
+                    <img id="pdm-image" src="/assets/favicon.svg" alt="Producto" loading="lazy" />
+                    <div id="pdm-badges" class="pdm-badges-container"></div>
+                </div>
+            </div>
+
+            <!-- Ficha Técnica e Información de Compra -->
+            <div class="pdm-info">
+                <div class="pdm-header">
+                    <span id="pdm-category" class="pdm-category-chip">Categoría</span>
+                    <h2 id="pdm-title" class="pdm-product-title">Nombre del Producto</h2>
+                    <div id="pdm-brand-model" class="pdm-meta-row"></div>
+                </div>
+
+                <!-- Precios en USD y BCV -->
+                <div class="pdm-price-box">
+                    <div class="pdm-price-main" id="pdm-price-usd">$0.00</div>
+                    <div class="pdm-price-sub" id="pdm-price-bcv">~Bs. 0.00</div>
+                    <span class="pdm-bcv-rate-pill" id="pdm-bcv-pill">Tasa Oficial BCV</span>
+                </div>
+
+                <!-- Descripción Completa -->
+                <div class="pdm-desc-wrapper">
+                    <h3 class="pdm-section-heading">Descripción</h3>
+                    <p id="pdm-description" class="pdm-description-text"></p>
+                </div>
+
+                <!-- Variantes y Atributos (Tallas, Colores, etc.) -->
+                <div id="pdm-attributes-container" class="pdm-attributes-box"></div>
+
+                <!-- Selector de Cantidad y Acciones de Compra -->
+                <div class="pdm-purchase-actions">
+                    <div class="pdm-qty-group">
+                        <label for="pdm-qty-input" class="pdm-qty-label">Cantidad:</label>
+                        <div class="pdm-qty-selector">
+                            <button type="button" class="pdm-qty-btn" id="pdm-qty-minus" aria-label="Disminuir cantidad">-</button>
+                            <input type="number" id="pdm-qty-input" class="pdm-qty-input" value="1" min="1" max="99" />
+                            <button type="button" class="pdm-qty-btn" id="pdm-qty-plus" aria-label="Aumentar cantidad">+</button>
+                        </div>
+                    </div>
+
+                    <div class="pdm-buttons-stack">
+                        <button type="button" id="pdm-btn-add-cart" class="pdm-btn-primary">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="8" cy="21" r="1"></circle>
+                                <circle cx="19" cy="21" r="1"></circle>
+                                <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path>
+                            </svg>
+                            <span>Agregar al Pedido</span>
+                        </button>
+
+                        <a id="pdm-btn-whatsapp" href="#" target="_blank" rel="noopener" class="pdm-btn-whatsapp">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"></path>
+                            </svg>
+                            <span>Consultar por WhatsApp</span>
+                        </a>
+
+                        <button type="button" id="pdm-btn-share" class="pdm-btn-share">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+                                <polyline points="16 6 12 2 8 6"></polyline>
+                                <line x1="12" y1="2" x2="12" y2="15"></line>
+                            </svg>
+                            <span>Copiar Enlace Directo</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -1031,5 +1119,449 @@ const { business, contact, features } = config;
     color: var(--white);
     border-color: var(--rose);
     box-shadow: 0 4px 14px rgba(165, 84, 112, 0.3);
+}
+
+/* ===================== PRODUCT DETAIL MODAL ===================== */
+.store-meta-hidden {
+    display: none;
+}
+
+.pdm-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: rgba(10, 8, 12, 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+}
+
+.pdm-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.pdm-dialog {
+    background: var(--bg-card, #ffffff);
+    color: var(--text-body, #1e293b);
+    border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.08));
+    border-radius: 24px;
+    width: 100%;
+    max-width: 900px;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.4);
+    transform: scale(0.95) translateY(12px);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    scrollbar-width: thin;
+}
+
+.pdm-overlay.active .pdm-dialog {
+    transform: scale(1) translateY(0);
+}
+
+.pdm-close-btn {
+    position: absolute;
+    top: 1.25rem;
+    right: 1.25rem;
+    z-index: 20;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--bg-section, rgba(0, 0, 0, 0.06));
+    border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.08));
+    color: var(--text-heading, #0f172a);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.pdm-close-btn:hover {
+    background: var(--primary, #c9748a);
+    color: #ffffff;
+    transform: rotate(90deg);
+}
+
+.pdm-body {
+    display: grid;
+    grid-template-columns: 1fr 1.15fr;
+    gap: 2rem;
+    padding: 2.25rem;
+}
+
+.pdm-visual {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.pdm-image-wrapper {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 18px;
+    overflow: hidden;
+    background: var(--bg-section, #f8fafc);
+    border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.08));
+}
+
+.pdm-image-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.pdm-image-wrapper:hover img {
+    transform: scale(1.03);
+}
+
+.pdm-badges-container {
+    position: absolute;
+    top: 0.85rem;
+    left: 0.85rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    z-index: 5;
+}
+
+.pdm-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+}
+
+.pdm-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.pdm-category-chip {
+    align-self: flex-start;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 0.3rem 0.75rem;
+    border-radius: 50px;
+    background: rgba(201, 116, 138, 0.12);
+    color: var(--primary, #c9748a);
+}
+
+.pdm-product-title {
+    font-family: var(--font-heading, 'Outfit', sans-serif);
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-heading, #0f172a);
+    line-height: 1.25;
+    margin: 0;
+}
+
+.pdm-meta-row {
+    display: flex;
+    gap: 0.75rem;
+    font-size: 0.85rem;
+    color: var(--text-muted, #64748b);
+    font-weight: 500;
+}
+
+.pdm-price-box {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    padding: 0.85rem 1.15rem;
+    border-radius: 14px;
+    background: var(--bg-section, #f8fafc);
+    border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.06));
+}
+
+.pdm-price-main {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--primary, #c9748a);
+    font-family: var(--font-heading, 'Outfit', sans-serif);
+}
+
+.pdm-price-sub {
+    font-size: 1rem;
+    color: var(--text-muted, #64748b);
+    font-weight: 600;
+}
+
+.pdm-bcv-rate-pill {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #15803d;
+    background: rgba(34, 197, 94, 0.12);
+    padding: 0.25rem 0.6rem;
+    border-radius: 9999px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.pdm-desc-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.pdm-section-heading {
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted, #64748b);
+    margin: 0;
+}
+
+.pdm-description-text {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--text-body, #334155);
+    margin: 0;
+}
+
+.pdm-attributes-box {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.pdm-purchase-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+    margin-top: 0.5rem;
+}
+
+.pdm-qty-group {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.pdm-qty-label {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-heading, #0f172a);
+}
+
+.pdm-qty-selector {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.12));
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--bg-card, #ffffff);
+}
+
+.pdm-qty-btn {
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-section, #f8fafc);
+    border: none;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-heading, #0f172a);
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.pdm-qty-btn:hover {
+    background: rgba(0, 0, 0, 0.08);
+}
+
+.pdm-qty-input {
+    width: 50px;
+    height: 38px;
+    border: none;
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-heading, #0f172a);
+    background: transparent;
+    outline: none;
+}
+
+.pdm-buttons-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.pdm-btn-primary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0.95rem 1.5rem;
+    border-radius: 14px;
+    background: var(--primary, #c9748a);
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(201, 116, 138, 0.35);
+    transition: all 0.2s ease;
+}
+
+.pdm-btn-primary:hover {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(201, 116, 138, 0.45);
+}
+
+.pdm-btn-whatsapp {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0.85rem 1.5rem;
+    border-radius: 14px;
+    background: #25D366;
+    color: #ffffff;
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.pdm-btn-whatsapp:hover {
+    filter: brightness(1.06);
+    transform: translateY(-1px);
+}
+
+.pdm-btn-share {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.75rem 1.25rem;
+    border-radius: 14px;
+    background: transparent;
+    border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.12));
+    color: var(--text-muted, #64748b);
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.pdm-btn-share:hover {
+    background: var(--bg-section, #f8fafc);
+    color: var(--text-heading, #0f172a);
+    border-color: var(--border-focus, #c9748a);
+}
+
+/* Card Quick-view Clickable Header and Image */
+.product-card .product-img {
+    cursor: pointer;
+}
+
+.product-card .product-header {
+    cursor: pointer;
+}
+
+.product-card .product-header h3:hover {
+    color: var(--primary, #c9748a);
+}
+
+.product-quick-view-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    padding: 0.45rem 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-radius: 10px;
+    border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.1));
+    background: var(--bg-section, #f8fafc);
+    color: var(--text-muted, #64748b);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 0.45rem;
+    width: 100%;
+}
+
+.product-quick-view-btn:hover {
+    background: var(--primary, #c9748a);
+    color: #ffffff;
+    border-color: var(--primary, #c9748a);
+}
+
+.product-unit-badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted, #64748b);
+    margin-left: 0.35rem;
+}
+
+.product-stock-badge-danger {
+    background: #ef4444;
+    color: #ffffff;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.product-stock-badge-warning {
+    background: #f59e0b;
+    color: #ffffff;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.product-badges {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+    .pdm-body {
+        grid-template-columns: 1fr;
+        padding: 1.5rem;
+        gap: 1.25rem;
+    }
+
+    .pdm-dialog {
+        max-height: 85vh;
+        border-radius: 20px;
+    }
+
+    .pdm-product-title {
+        font-size: 1.4rem;
+    }
+
+    .pdm-price-main {
+        font-size: 1.5rem;
+    }
 }
 </style>

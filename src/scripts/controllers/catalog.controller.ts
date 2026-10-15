@@ -17,6 +17,7 @@ export class CatalogController {
     private pageSize = 6;
     private visibleCount = 6;
     private categoryNames: Record<string, string> = {};
+    private currentModalProduct: CatalogProduct | null = null;
 
     private readonly colorMap: Record<string, string> = {
         pequeno: '#FFD4C2',
@@ -56,9 +57,17 @@ export class CatalogController {
     private init(): void {
         this.initCategories();
         this.bindEvents();
+        this.setupModalEvents();
         this.currencyService.onRateChange(() => {
             if (this.products.length > 0) {
                 this.renderProducts();
+                if (this.currentModalProduct) {
+                    const priceBcvEl = document.getElementById('pdm-price-bcv');
+                    if (priceBcvEl && this.currentModalProduct.price > 0) {
+                        const currentRate = this.currencyService.getRate();
+                        priceBcvEl.textContent = `~Bs. ${(this.currentModalProduct.price * currentRate).toFixed(2)}`;
+                    }
+                }
             }
         });
     }
@@ -99,18 +108,44 @@ export class CatalogController {
             this.products = products;
             this.renderCategoryFilters();
             this.renderProducts();
+            this.checkDirectProductAccess();
         } catch {
             const container = document.getElementById('catalog-container');
             if (container) {
                 container.innerHTML = `
-                    <div style="grid-column:1/-1;text-align:center;padding:4rem 2rem;background:var(--bg-section);border-radius:12px;border:1px solid var(--border-subtle);">
-                        ${renderIconSvg('x-circle', { size: 48, stroke: 'var(--primary)', style: 'margin-bottom:1rem;opacity:0.8;' })}
-                        <h3 style="color:var(--text-heading);margin-bottom:0.5rem;font-family:var(--font-heading);">No pudimos cargar el catálogo</h3>
-                        <p style="color:var(--text-muted);margin-bottom:1.5rem;">Hubo un error de conexión con el servidor. Por favor, intenta de nuevo.</p>
-                        <button onclick="window.location.reload()" style="background:var(--primary);color:var(--bg-card);border:none;padding:0.75rem 1.5rem;border-radius:50px;font-weight:600;cursor:pointer;transition:all 0.2s;">Recargar Página</button>
+                    <div class="catalog-error-box">
+                        ${renderIconSvg('x-circle', { size: 48, stroke: 'var(--primary)', class: 'catalog-error-icon' })}
+                        <h3 class="catalog-error-title">No pudimos cargar el catálogo</h3>
+                        <p class="catalog-error-msg">Hubo un error de conexión con el servidor. Por favor, intenta de nuevo.</p>
+                        <button id="btn-reload-catalog" class="catalog-error-btn">Recargar Página</button>
                     </div>`;
+                document.getElementById('btn-reload-catalog')?.addEventListener('click', () => {
+                    window.location.reload();
+                });
             }
         }
+    }
+
+    private checkDirectProductAccess(): void {
+        const urlParams = new URLSearchParams(window.location.search);
+        const directId = urlParams.get('p') || urlParams.get('producto');
+        if (!directId) return;
+
+        const product = this.products.find(p => p.id === directId);
+        if (product) {
+            if (this.config.productDetailViewMode === 'page') {
+                window.location.href = this.getProductUrl(product.id);
+            } else {
+                this.openProductModal(product);
+            }
+        }
+    }
+
+    public getProductUrl(productId: string): string {
+        if (this.config.tenantId) {
+            return `/${this.config.tenantId}/p/${encodeURIComponent(productId)}`;
+        }
+        return `/producto?id=${encodeURIComponent(productId)}&template=${encodeURIComponent(this.config.template)}`;
     }
 
     private renderCategoryFilters(): void {
@@ -153,7 +188,7 @@ export class CatalogController {
 
         if (filtered.length === 0) {
             container.innerHTML =
-                '<div style="grid-column:1/-1;text-align:center;padding:3rem 0;color:var(--text-secondary)"><p>No se encontraron productos que coincidan con tu búsqueda.</p></div>';
+                '<div class="catalog-empty-state"><p>No se encontraron productos que coincidan con tu búsqueda.</p></div>';
             if (loadMoreContainer) loadMoreContainer.style.display = 'none';
             return;
         }
@@ -187,13 +222,13 @@ export class CatalogController {
                                               ].includes(val.toLowerCase().trim())
                                                   ? 'light-color'
                                                   : '';
-                                              return `<button class="color-swatch-btn ${idx === 0 ? 'active' : ''} ${lightClass}" style="background-color:${hex};" data-value="${val}" title="${val}"></button>`;
+                                              return `<button type="button" class="color-swatch-btn ${idx === 0 ? 'active' : ''} ${lightClass}" style="background-color:${hex};" data-value="${val}" title="${val}"></button>`;
                                           })
                                           .join('')}</div>`
                                     : `<div class="attribute-selector" data-attribute="${attr.key}" data-label="${attr.label}" data-product="${p.id}">${attr.values
                                           .map(
                                               (val: string, idx: number) =>
-                                                  `<button class="attribute-btn ${idx === 0 ? 'active' : ''}" data-value="${val}">${val}</button>`
+                                                  `<button type="button" class="attribute-btn ${idx === 0 ? 'active' : ''}" data-value="${val}">${val}</button>`
                                           )
                                           .join('')}</div>`;
                             return `<div class="attribute-options-group"><label>${attr.label}:</label>${optionsHtml}</div>`;
@@ -207,7 +242,7 @@ export class CatalogController {
                               .split(',')
                               .map(
                                   (size: string, idx: number) =>
-                                      `<button class="attribute-btn ${idx === 0 ? 'active' : ''}" data-value="${size.trim()}">${size.trim()}</button>`
+                                      `<button type="button" class="attribute-btn ${idx === 0 ? 'active' : ''}" data-value="${size.trim()}">${size.trim()}</button>`
                               )
                               .join('')}</div></div>`
                         : '';
@@ -234,36 +269,47 @@ export class CatalogController {
                 let isOutOfStock = p.stock !== undefined && p.stock !== null && p.stock === 0;
                 let stockBadge = '';
                 if (isOutOfStock) {
-                    stockBadge = `<span class="product-stock-badge" style="background:#ef4444; color:white; padding:2px 8px; border-radius:4px; font-size:0.75rem; font-weight:700;">Agotado</span>`;
+                    stockBadge = `<span class="product-stock-badge-danger">Agotado</span>`;
                 } else if (p.stock !== undefined && p.stock !== null && p.stock > 0 && p.stock <= 5) {
-                    stockBadge = `<span class="product-stock-badge" style="background:#f59e0b; color:white; padding:2px 8px; border-radius:4px; font-size:0.75rem; font-weight:600;">¡Últimas ${p.stock} disp.!</span>`;
+                    stockBadge = `<span class="product-stock-badge-warning">¡Últimas ${p.stock} disp.!</span>`;
                 }
 
                 let brandBadge = p.brand ? `<span class="product-brand-badge">${p.brand}</span>` : '';
                 let modelBadge = p.model ? `<span class="product-model-badge">${p.model}</span>` : '';
-                let badgesHtml = (brandBadge || modelBadge || stockBadge) ? `<div class="product-badges" style="display:flex; gap:0.5rem; margin-bottom:0.5rem; font-size:0.75rem; font-weight:600; text-transform:uppercase; flex-wrap:wrap;">${brandBadge}${modelBadge}${stockBadge}</div>` : '';
+                let badgesHtml = (brandBadge || modelBadge || stockBadge) ? `<div class="product-badges">${brandBadge}${modelBadge}${stockBadge}</div>` : '';
 
                 return `
-          <div class="product-card reveal">
-            <div class="product-img"><img src="${productImg}" alt="${p.name}" loading="lazy" onerror="this.onerror=null; this.src='/assets/favicon.svg';"></div>
+          <div class="product-card reveal" data-product-id="${p.id}">
+            <div class="product-img" data-action="open-detail" data-id="${p.id}">
+              <img src="${productImg}" alt="${p.name}" loading="lazy" onerror="this.onerror=null; this.src='/assets/favicon.svg';">
+            </div>
             <div class="product-info">
-              <div class="product-header"><h3><span>${displayName}</span>${unitBadge}</h3></div>
+              <div class="product-header" data-action="open-detail" data-id="${p.id}">
+                <h3><span>${displayName}</span>${unitBadge}</h3>
+              </div>
               ${badgesHtml}
               <div class="product-price">${priceDisplay}</div>
               <p class="product-desc">${p.description || ''}</p>
               ${attributesHtml}${legacySizesHtml}
               <div class="product-actions">
                 ${isOutOfStock ? `
-                  <button class="cta-btn product-cta add-to-cart" disabled style="opacity:0.55; cursor:not-allowed; background:#6b7280; width:100%;">Agotado</button>
+                  <button type="button" class="cta-btn product-cta add-to-cart btn-out-of-stock" disabled>Agotado</button>
                 ` : `
                   <div class="main-qty-selector">
-                    <button class="qty-btn-main minus" data-id="${p.id}">-</button>
+                    <button type="button" class="qty-btn-main minus" data-id="${p.id}">-</button>
                     <input type="number" value="1" min="1" max="${(p.stock !== undefined && p.stock > 0) ? p.stock : 99}" id="qty-${p.id}" class="qty-input">
-                    <button class="qty-btn-main plus" data-id="${p.id}">+</button>
+                    <button type="button" class="qty-btn-main plus" data-id="${p.id}">+</button>
                   </div>
-                  <button class="cta-btn product-cta add-to-cart" data-id="${p.id}" data-name="${p.name}" data-price="${p.price}" data-input="qty-${p.id}" data-icon="${p.icon || 'package'}">Agregar</button>
+                  <button type="button" class="cta-btn product-cta add-to-cart" data-id="${p.id}" data-name="${p.name}" data-price="${p.price}" data-input="qty-${p.id}" data-icon="${p.icon || 'package'}">Agregar</button>
                 `}
               </div>
+              <button type="button" class="product-quick-view-btn" data-action="open-detail" data-id="${p.id}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <span>Ver Detalles</span>
+              </button>
             </div>
           </div>`;
             })
@@ -272,10 +318,296 @@ export class CatalogController {
         initScrollReveal();
     }
 
+    public openProductModal(product: CatalogProduct): void {
+        this.currentModalProduct = product;
+        const modal = document.getElementById('product-detail-modal');
+        if (!modal) return;
+
+        const imgEl = document.getElementById('pdm-image') as HTMLImageElement | null;
+        if (imgEl) {
+            imgEl.src = product.image_url
+                ? (product.image_url.startsWith('http') || product.image_url.startsWith('/') ? product.image_url : `/${product.image_url}`)
+                : '/assets/favicon.svg';
+            imgEl.alt = product.name;
+        }
+
+        const titleEl = document.getElementById('pdm-title');
+        if (titleEl) titleEl.textContent = product.name;
+
+        const catEl = document.getElementById('pdm-category');
+        if (catEl) {
+            const catKey = product.category || product.type_id || 'general';
+            catEl.textContent = this.categoryNames[catKey] || catKey;
+        }
+
+        const brandModelEl = document.getElementById('pdm-brand-model');
+        if (brandModelEl) {
+            const parts: string[] = [];
+            if (product.brand) parts.push(`Marca: ${product.brand}`);
+            if (product.model) parts.push(`Modelo: ${product.model}`);
+            brandModelEl.textContent = parts.join(' · ');
+        }
+
+        const priceUsdEl = document.getElementById('pdm-price-usd');
+        if (priceUsdEl) {
+            priceUsdEl.textContent = product.price > 0 ? `$${parseFloat(String(product.price)).toFixed(2)}` : 'A consultar';
+        }
+
+        const currentRate = this.currencyService.getRate();
+        const priceBcvEl = document.getElementById('pdm-price-bcv');
+        if (priceBcvEl) {
+            priceBcvEl.textContent = product.price > 0 ? `~Bs. ${(product.price * currentRate).toFixed(2)}` : '';
+        }
+
+        const descEl = document.getElementById('pdm-description');
+        if (descEl) {
+            descEl.textContent = product.description || 'Sin descripción detallada para este producto.';
+        }
+
+        // Badges en modal
+        const badgesEl = document.getElementById('pdm-badges');
+        if (badgesEl) {
+            let bHtml = '';
+            if (product.stock === 0) {
+                bHtml += '<span class="product-stock-badge-danger">Agotado</span>';
+            } else if (product.stock !== undefined && product.stock > 0 && product.stock <= 5) {
+                bHtml += `<span class="product-stock-badge-warning">¡Últimas ${product.stock} disp.!</span>`;
+            }
+            badgesEl.innerHTML = bHtml;
+        }
+
+        // Variantes y atributos en modal
+        const attrsContainer = document.getElementById('pdm-attributes-container');
+        if (attrsContainer) {
+            let html = '';
+            if (product.attributes && product.attributes.length > 0) {
+                html = product.attributes.map(attr => {
+                    const opts = attr.type === 'color_swatch'
+                        ? `<div class="color-swatch-container" data-attribute="${attr.key}" data-label="${attr.label}" data-product="${product.id}">${attr.values.map((val: string, idx: number) => {
+                            const hex = this.colorMap[val.toLowerCase().trim()] || val;
+                            return `<button type="button" class="color-swatch-btn ${idx === 0 ? 'active' : ''}" style="background-color:${hex};" data-value="${val}" title="${val}"></button>`;
+                        }).join('')}</div>`
+                        : `<div class="attribute-selector" data-attribute="${attr.key}" data-label="${attr.label}" data-product="${product.id}">${attr.values.map((val: string, idx: number) => {
+                            return `<button type="button" class="attribute-btn ${idx === 0 ? 'active' : ''}" data-value="${val}">${val}</button>`;
+                        }).join('')}</div>`;
+                    return `<div class="attribute-options-group"><label>${attr.label}:</label>${opts}</div>`;
+                }).join('');
+            } else if (product.sizes) {
+                html = `<div class="attribute-options-group"><label>Opciones:</label><div class="attribute-selector" data-attribute="opcion" data-label="Opción" data-product="${product.id}">${product.sizes.split(',').map((size: string, idx: number) => `<button type="button" class="attribute-btn ${idx === 0 ? 'active' : ''}" data-value="${size.trim()}">${size.trim()}</button>`).join('')}</div></div>`;
+            }
+            attrsContainer.innerHTML = html;
+        }
+
+        // Reset cantidad
+        const qtyIn = document.getElementById('pdm-qty-input') as HTMLInputElement | null;
+        if (qtyIn) {
+            qtyIn.value = '1';
+            qtyIn.max = String((product.stock !== undefined && product.stock > 0) ? product.stock : 99);
+        }
+
+        // WhatsApp directo
+        const btnWa = document.getElementById('pdm-btn-whatsapp') as HTMLAnchorElement | null;
+        if (btnWa) {
+            const cleanPhone = String(this.config.whatsappNumber).replace(/[^\d]/g, '');
+            const msg = `¡Hola! Me interesa el producto *${product.name}* ($${parseFloat(String(product.price)).toFixed(2)}). ¿Tienen disponibilidad inmediata?`;
+            btnWa.href = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`;
+        }
+
+        // Botón Compartir
+        const btnShare = document.getElementById('pdm-btn-share');
+        if (btnShare) {
+            btnShare.style.display = this.config.productDetailShareBtn === 'disabled' ? 'none' : 'flex';
+        }
+
+        // Botón Agregar al carrito estado de stock
+        const btnAdd = document.getElementById('pdm-btn-add-cart') as HTMLButtonElement | null;
+        if (btnAdd) {
+            if (product.stock === 0) {
+                btnAdd.disabled = true;
+                btnAdd.textContent = 'Agotado';
+            } else {
+                btnAdd.disabled = false;
+                btnAdd.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="8" cy="21" r="1"></circle>
+                        <circle cx="19" cy="21" r="1"></circle>
+                        <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path>
+                    </svg>
+                    <span>Agregar al Pedido</span>
+                `;
+            }
+        }
+
+        modal.classList.add('active');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+
+        // URL history update
+        const url = new URL(window.location.href);
+        url.searchParams.set('p', product.id);
+        window.history.pushState({ modalOpen: true, productId: product.id }, '', url.toString());
+    }
+
+    public closeProductModal(): void {
+        const modal = document.getElementById('product-detail-modal');
+        if (!modal) return;
+        modal.classList.remove('active');
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+        this.currentModalProduct = null;
+
+        const url = new URL(window.location.href);
+        if (url.searchParams.has('p') || url.searchParams.has('producto')) {
+            url.searchParams.delete('p');
+            url.searchParams.delete('producto');
+            window.history.pushState({}, '', url.pathname + (url.search ? url.search : ''));
+        }
+    }
+
+    public async shareProduct(product: CatalogProduct): Promise<void> {
+        const shareUrl = this.config.productDetailViewMode === 'page'
+            ? `${window.location.origin}${this.getProductUrl(product.id)}`
+            : `${window.location.origin}${window.location.pathname}?p=${encodeURIComponent(product.id)}`;
+
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: `${product.name} | ${this.config.businessName}`,
+                    text: `Mira ${product.name} en ${this.config.businessName}`,
+                    url: shareUrl,
+                });
+                return;
+            } catch {
+                // Fallback al portapapeles si el usuario cancela o no es compatible
+            }
+        }
+
+        try {
+            await navigator.clipboard.writeText(shareUrl);
+            this.toastService.show('¡Enlace del producto copiado al portapapeles!');
+        } catch {
+            prompt('Copia este enlace directo del producto:', shareUrl);
+        }
+    }
+
+    private setupModalEvents(): void {
+        const modal = document.getElementById('product-detail-modal');
+        if (!modal) return;
+
+        // Botón cerrar
+        document.getElementById('pdm-close-btn')?.addEventListener('click', () => {
+            this.closeProductModal();
+        });
+
+        // Clic en backdrop
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                this.closeProductModal();
+            }
+        });
+
+        // Tecla Escape
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modal.classList.contains('active')) {
+                this.closeProductModal();
+            }
+        });
+
+        // Navegación historial
+        window.addEventListener('popstate', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const pId = urlParams.get('p') || urlParams.get('producto');
+            if (!pId && modal.classList.contains('active')) {
+                modal.classList.remove('active');
+                modal.setAttribute('aria-hidden', 'true');
+                document.body.style.overflow = '';
+                this.currentModalProduct = null;
+            } else if (pId) {
+                const product = this.products.find(p => p.id === pId);
+                if (product) this.openProductModal(product);
+            }
+        });
+
+        // Cantidad +/- en modal
+        const qtyInput = document.getElementById('pdm-qty-input') as HTMLInputElement | null;
+        document.getElementById('pdm-qty-minus')?.addEventListener('click', () => {
+            if (!qtyInput) return;
+            let v = parseInt(qtyInput.value) || 1;
+            if (v > 1) qtyInput.value = String(v - 1);
+        });
+
+        document.getElementById('pdm-qty-plus')?.addEventListener('click', () => {
+            if (!qtyInput) return;
+            let v = parseInt(qtyInput.value) || 1;
+            const max = parseInt(qtyInput.max) || 99;
+            if (v < max) qtyInput.value = String(v + 1);
+        });
+
+        // Selección de opciones/atributos en modal
+        const attrsBox = document.getElementById('pdm-attributes-container');
+        attrsBox?.addEventListener('click', (e) => {
+            const btn = (e.target as HTMLElement).closest('.attribute-btn, .color-swatch-btn') as HTMLElement | null;
+            if (!btn) return;
+            const parent = btn.parentElement;
+            if (!parent) return;
+            parent.querySelectorAll('.attribute-btn, .color-swatch-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        });
+
+        // Botón agregar al carrito en modal
+        document.getElementById('pdm-btn-add-cart')?.addEventListener('click', () => {
+            if (!this.currentModalProduct) return;
+            const p = this.currentModalProduct;
+            const qty = qtyInput ? parseInt(qtyInput.value) || 1 : 1;
+
+            const options: Record<string, string> = {};
+            const optionLabels: Record<string, string> = {};
+            attrsBox?.querySelectorAll<HTMLElement>('[data-attribute]').forEach((sel) => {
+                const key = sel.getAttribute('data-attribute')!;
+                const label = sel.getAttribute('data-label') || key;
+                const activeBtn = sel.querySelector<HTMLElement>('.active');
+                const val = activeBtn?.getAttribute('data-value');
+                if (val) {
+                    options[key] = val;
+                    optionLabels[key] = label;
+                }
+            });
+
+            this.cartService.addItem(p.id, p.name, p.price, qty, p.icon || 'package', options, optionLabels);
+            const optList = Object.values(options).filter(Boolean);
+            this.toastService.show(
+                `¡Añadido ${qty}x ${p.name}${optList.length ? ` (${optList.join(', ')})` : ''}!`
+            );
+            this.closeProductModal();
+        });
+
+        // Botón compartir en modal
+        document.getElementById('pdm-btn-share')?.addEventListener('click', () => {
+            if (this.currentModalProduct) {
+                this.shareProduct(this.currentModalProduct);
+            }
+        });
+    }
+
     private bindEvents(): void {
-        // Event delegation para productos (atributos, selector de cantidad, agregar al carrito)
+        // Event delegation para productos (atributos, selector de cantidad, agregar al carrito, abrir detalle)
         document.getElementById('catalog-container')?.addEventListener('click', (e) => {
             const target = e.target as HTMLElement;
+
+            // Abrir detalle de producto (clic en imagen, encabezado o botón "Ver Detalles")
+            const detailTrigger = target.closest('[data-action="open-detail"]') as HTMLElement | null;
+            if (detailTrigger) {
+                const id = detailTrigger.getAttribute('data-id');
+                if (id) {
+                    if (this.config.productDetailViewMode === 'page') {
+                        window.location.href = this.getProductUrl(id);
+                    } else {
+                        const product = this.products.find(p => p.id === id);
+                        if (product) this.openProductModal(product);
+                    }
+                }
+                return;
+            }
 
             // Selección de variantes/atributos
             const optionBtn = target.closest('.attribute-btn, .color-swatch-btn') as HTMLElement | null;

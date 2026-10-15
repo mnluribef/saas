@@ -108,6 +108,16 @@ export const onRequest: PagesHandler<Env, 'store'> = async (context) => {
                     e.setAttribute('data-tenant', tenant.id);
                     e.setAttribute('data-business-name', businessName);
                     e.setAttribute('data-template', template);
+                    try {
+                        const parsed = JSON.parse(configJson);
+                        const cat = parsed?.landing?.catalog || {};
+                        if (cat.productDetailViewMode) {
+                            e.setAttribute('data-product-detail-view-mode', cat.productDetailViewMode);
+                        }
+                        if (cat.productDetailShareBtn) {
+                            e.setAttribute('data-product-detail-share-btn', cat.productDetailShareBtn);
+                        }
+                    } catch {}
                 }
             })
             .on('.template-switcher', {

@@ -2764,6 +2764,8 @@ async function loadStoreSettings() {
         setVal('cfg-catalog-search-placeholder', cat.searchPlaceholder || '');
         setVal('cfg-catalog-add-cart-text', cat.addToCartText || '');
         setVal('cfg-catalog-empty-msg', cat.emptyMessage || '');
+        setVal('cfg-product-detail-view-mode', cat.productDetailViewMode || 'modal');
+        setVal('cfg-product-detail-share-btn', cat.productDetailShareBtn || 'enabled');
 
         setVal('cfg-item-noun-singular', l.itemNounSingular || '');
         setVal('cfg-item-noun-plural', l.itemNounPlural || '');
@@ -3028,6 +3030,8 @@ if (storeSettingsForm) {
                     searchPlaceholder: $val('cfg-catalog-search-placeholder') || undefined,
                     addToCartText: $val('cfg-catalog-add-cart-text') || undefined,
                     emptyMessage: $val('cfg-catalog-empty-msg') || undefined,
+                    productDetailViewMode: ($val('cfg-product-detail-view-mode') as 'modal' | 'page') || 'modal',
+                    productDetailShareBtn: ($val('cfg-product-detail-share-btn') as 'enabled' | 'disabled') || 'enabled',
                 },
                 benefits: {
                     title: $val('cfg-benefits-title') || undefined,

@@ -160,6 +160,14 @@ export function syncStoreWithSettings(cfg: any): void {
         if (searchInput) searchInput.placeholder = cat.searchPlaceholder;
     }
 
+    if (cat.productDetailViewMode || cat.productDetailShareBtn) {
+        const storeMetaEl = document.getElementById('catalog-store-meta');
+        if (storeMetaEl) {
+            if (cat.productDetailViewMode) storeMetaEl.dataset.productDetailViewMode = cat.productDetailViewMode;
+            if (cat.productDetailShareBtn) storeMetaEl.dataset.productDetailShareBtn = cat.productDetailShareBtn;
+        }
+    }
+
     // 4. BENEFICIOS
     if (ben.title !== undefined || ben.titleHighlight !== undefined) {
         const benH2 = document.querySelector('#nosotros .section-header h2');

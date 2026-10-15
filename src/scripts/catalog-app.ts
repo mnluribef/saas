@@ -52,6 +52,8 @@ export function createStoreConfig(): StoreMetaConfig {
         pickupName: storeMetaEl?.dataset.pickupName || 'Retiro en local',
         storePrefix: storeMetaEl?.dataset.storePrefix || 'VEN',
         tenantId,
+        productDetailViewMode: (storeMetaEl?.dataset.productDetailViewMode as 'modal' | 'page') || 'modal',
+        productDetailShareBtn: (storeMetaEl?.dataset.productDetailShareBtn as 'enabled' | 'disabled') || 'enabled',
     };
 }
 

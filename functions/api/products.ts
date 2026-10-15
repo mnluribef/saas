@@ -85,6 +85,57 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
     const { id: tenantId } = await resolveTenant(request, db);
 
     const url = new URL(request.url);
+    const singleId = url.searchParams.get("id");
+    if (singleId) {
+        try {
+            const singleProduct = await db.prepare(
+                "SELECT * FROM products WHERE tenant_id = ? AND id = ?"
+            ).bind(tenantId, singleId).first<ProductItem>();
+
+            if (!singleProduct) {
+                return jsonResponse({ error: "Producto no encontrado" }, 404);
+            }
+
+            const { results: attributes } = await db.prepare(
+                "SELECT * FROM product_attributes WHERE product_id = ?"
+            ).bind(singleId).all<RawAttributeRow>();
+
+            const parsedAttrs: ProductAttribute[] = (attributes || []).map(attr => {
+                let parsedValues: string[] = [];
+                try {
+                    parsedValues = JSON.parse(attr.attr_values);
+                } catch {
+                    parsedValues = attr.attr_values?.split(",") || [];
+                }
+
+                let parsedPriceMatrix: Record<string, number> = {};
+                try {
+                    parsedPriceMatrix = JSON.parse(attr.price_matrix || '{}');
+                } catch {
+                    parsedPriceMatrix = {};
+                }
+
+                return {
+                    id: attr.id,
+                    key: attr.attr_key,
+                    label: attr.attr_label,
+                    values: parsedValues,
+                    type: attr.attr_type || 'select',
+                    price_matrix: parsedPriceMatrix,
+                    required: attr.required === 1
+                };
+            });
+
+            singleProduct.attributes = parsedAttrs;
+            singleProduct.image_url = normalizeImageUrl(singleProduct.image_url);
+
+            return jsonResponse(singleProduct);
+        } catch (err) {
+            console.error("Error al obtener producto individual:", err);
+            return jsonResponse({ error: "Error al procesar la solicitud" }, 500);
+        }
+    }
+
     const isAdminMode = url.searchParams.get("admin") === "true";
     const templateFilter = url.searchParams.get("template");
 
