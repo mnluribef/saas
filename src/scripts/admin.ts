@@ -22,8 +22,11 @@ let lastBcvUpdated = '';
 let lastBcvSource = '';
 let ordersSearchQuery = '';
 let ordersStatusFilter = '';
+let ordersDateFilter = 'all';
 let salesSearchQuery = '';
 let productsSearchQuery = '';
+let activeStockFilter = 'all';
+let selectedProductIds = new Set<string>();
 let lastKnownOrderCount: number | null = null;
 let soundEnabled = localStorage.getItem('admin_sound_enabled') !== 'false';
 
@@ -533,6 +536,16 @@ async function loadOrders(page = 1) {
                 playOrderChime();
                 flashPageTitle();
                 showToast('🔔 ¡Has recibido un nuevo pedido!', 'info');
+
+                const pendingOrders = ordersList.filter(o => o.status === 'pendiente');
+                const latestOrder = pendingOrders[0];
+                const clientName = latestOrder?.client_name || 'Nuevo cliente';
+                const total = latestOrder?.total_price ? `$${parseFloat(latestOrder.total_price).toFixed(2)}` : '';
+                sendWebPushNotification(
+                    '🔔 ¡Nuevo Pedido Recibido!',
+                    `Pedido #${latestOrder?.id || ''} de ${clientName} (${total}). Haz clic para gestionarlo.`,
+                    latestOrder?.id
+                );
             }
         }
         if (page === 1) lastKnownOrderCount = ordersList.length;
@@ -564,6 +577,9 @@ async function loadProducts(page = 1) {
             productsTotalCount = productsList.length;
         }
         
+        selectedProductIds.clear();
+        updateBulkToolbar();
+        updateCategoryDatalist();
         renderProductsTable();
         renderMetrics();
         updatePaginationUI('products', productsPage, productsTotalPages);
@@ -961,7 +977,7 @@ function renderOrders() {
         summarySpan.textContent = `(Monto Total: $${totalOrdersSum.toFixed(2)} | Activos: $${activeOrdersSum.toFixed(2)})`;
     }
 
-    // Filtrar pedidos según búsqueda y estado
+    // Filtrar pedidos según búsqueda, estado y fecha
     let filteredOrders = ordersList;
     if (ordersStatusFilter) {
         filteredOrders = filteredOrders.filter(o => o.status === ordersStatusFilter);
@@ -974,11 +990,36 @@ function renderOrders() {
             (o.client_phone && o.client_phone.toLowerCase().includes(q))
         );
     }
+    if (ordersDateFilter && ordersDateFilter !== 'all') {
+        const now = new Date();
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        const startOfYesterday = startOfToday - (24 * 60 * 60 * 1000);
+        const startOf7Days = startOfToday - (7 * 24 * 60 * 60 * 1000);
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+
+        filteredOrders = filteredOrders.filter(o => {
+            if (!o.created_at) return false;
+            const orderTime = new Date(o.created_at).getTime();
+            if (isNaN(orderTime)) return true;
+
+            if (ordersDateFilter === 'today') {
+                return orderTime >= startOfToday;
+            } else if (ordersDateFilter === 'yesterday') {
+                return orderTime >= startOfYesterday && orderTime < startOfToday;
+            } else if (ordersDateFilter === 'last7') {
+                return orderTime >= startOf7Days;
+            } else if (ordersDateFilter === 'this_month') {
+                return orderTime >= startOfMonth;
+            }
+            return true;
+        });
+    }
 
     // 1. Render en tabla general
     if (tableAll) {
+        const hasFilters = ordersSearchQuery || ordersStatusFilter || (ordersDateFilter && ordersDateFilter !== 'all');
         if (filteredOrders.length === 0) {
-            tableAll.innerHTML = `<tr><td colspan="7" class="table-empty-message">${(ordersSearchQuery || ordersStatusFilter) ? 'No hay pedidos que coincidan con los filtros aplicados.' : 'No hay pedidos en la base de datos.'}</td></tr>`;
+            tableAll.innerHTML = `<tr><td colspan="7" class="table-empty-message">${hasFilters ? 'No hay pedidos que coincidan con los filtros aplicados.' : 'No hay pedidos en la base de datos.'}</td></tr>`;
         } else {
             tableAll.innerHTML = filteredOrders.map(o => createOrderRowMarkup(o)).join('');
         }
@@ -1243,7 +1284,7 @@ async function viewOrderDetails(orderId: string) {
             }
         }
 
-        // Configurar botón de chatear
+        // Configurar botón de chatear inteligente según el estado del pedido
         const btnChat = document.getElementById('btn-modal-chat') as HTMLAnchorElement | null;
         if (btnChat) {
             let cleanPhone = String(order.client_phone || '').replace(/[^\d]/g, '');
@@ -1253,7 +1294,22 @@ async function viewOrderDetails(orderId: string) {
                 cleanPhone = '58' + cleanPhone;
             }
             const businessName = $val('cfg-business-name') || 'nuestra tienda';
-            const message = `¡Hola ${order.client_name}! Te contactamos de *${businessName}* con respecto a tu pedido *#${order.id}*...`;
+            
+            let message = `¡Hola ${order.client_name}! Te contactamos de *${businessName}* con respecto a tu pedido *#${order.id}*...`;
+            if (order.status === 'pendiente') {
+                message = `¡Hola ${order.client_name}! Te saludamos de *${businessName}*. Recibimos tu pedido *#${order.id}* por un monto total de *${totalText}*. ¿Deseas acordar el método de pago o requieres nuestros datos bancarios?`;
+            } else if (order.status === 'en_produccion') {
+                message = `¡Hola ${order.client_name}! Te notificamos de *${businessName}* que tu pedido *#${order.id}* ya está en preparación 👨‍🍳. Te avisaremos apenas esté listo.`;
+            } else if (order.status === 'listo_entrega') {
+                message = order.delivery_type === 'delivery'
+                    ? `¡Hola ${order.client_name}! 🛵 Tu pedido *#${order.id}* de *${businessName}* ya está listo y va en camino a tu dirección (${order.delivery_address || 'acordada'}). ¡Pronto estará contigo!`
+                    : `¡Hola ${order.client_name}! 🛍️ Tu pedido *#${order.id}* de *${businessName}* ya está listo para ser retirado en nuestro local. ¡Te esperamos!`;
+            } else if (order.status === 'completado') {
+                message = `¡Hola ${order.client_name}! 🎉 Muchas gracias por tu compra en *${businessName}*. Tu pedido *#${order.id}* ha sido completado con éxito. ¡Esperamos que disfrutes tu pedido y que vuelvas pronto!`;
+            } else if (order.status === 'cancelado') {
+                message = `Hola ${order.client_name}, te escribimos de *${businessName}* respecto a tu pedido *#${order.id}*, el cual figura como cancelado. Si tienes alguna consulta o deseas reprogramarlo, estamos a tu total disposición.`;
+            }
+
             btnChat.href = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
         }
 
@@ -1289,7 +1345,6 @@ function openPaymentModal(orderId: string, newStatus: string) {
     const amountInput = document.getElementById('payment-amount');
     if (amountInput && targetOrder) {
         (amountInput as HTMLInputElement).value = parseFloat(targetOrder.total_price || 0).toFixed(2);
-        
     }
 
     if (paymentMethodSelect && targetOrder?.payment_method) {
@@ -1297,6 +1352,31 @@ function openPaymentModal(orderId: string, newStatus: string) {
     }
     if (paymentReferenceInput) {
         paymentReferenceInput.value = targetOrder?.payment_reference || '';
+    }
+
+    // Comprobante de pago integrado en el modal de cobro
+    const receiptBox = document.getElementById('payment-receipt-preview-box');
+    const receiptThumb = document.getElementById('payment-receipt-preview-thumb') as HTMLImageElement | null;
+    const btnViewReceipt = document.getElementById('btn-view-payment-receipt');
+
+    if (targetOrder?.payment_receipt) {
+        if (receiptBox) receiptBox.classList.remove('d-none');
+        if (receiptThumb) receiptThumb.src = targetOrder.payment_receipt;
+        
+        const openReceiptViewer = (e: Event) => {
+            e.preventDefault();
+            const receiptModal = document.getElementById('receipt-modal');
+            const receiptModalImg = document.getElementById('receipt-modal-img') as HTMLImageElement | null;
+            const receiptDownloadBtn = document.getElementById('receipt-download-btn') as HTMLAnchorElement | null;
+            if (receiptModalImg) receiptModalImg.src = targetOrder.payment_receipt;
+            if (receiptDownloadBtn) receiptDownloadBtn.href = targetOrder.payment_receipt;
+            if (receiptModal) receiptModal.classList.add('active');
+        };
+
+        if (btnViewReceipt) btnViewReceipt.onclick = openReceiptViewer;
+        if (receiptThumb) receiptThumb.onclick = openReceiptViewer;
+    } else {
+        if (receiptBox) receiptBox.classList.add('d-none');
     }
     
     if (paymentModal) {
@@ -1309,6 +1389,9 @@ function closePaymentModal() {
     if (paymentModal) {
         paymentModal.classList.remove('active');
     }
+    const receiptBox = document.getElementById('payment-receipt-preview-box');
+    if (receiptBox) receiptBox.classList.add('d-none');
+
     pendingPaymentOrderId = null;
     pendingPaymentStatus = null;
     refreshAllData();
@@ -1356,13 +1439,24 @@ if (paymentForm) {
 
             if (!response.ok) throw new Error('Error al actualizar estado');
             
+            const resData = await response.json().catch(() => null);
             showToast(`Pedido #${orderId} completado y venta registrada.`, 'success');
             
             if (paymentModal) {
                 paymentModal.classList.remove('active');
             }
+            const receiptBox = document.getElementById('payment-receipt-preview-box');
+            if (receiptBox) receiptBox.classList.add('d-none');
+
             pendingPaymentOrderId = null;
             pendingPaymentStatus = null;
+
+            if (resData && (resData as any).whatsappNotificationUrl) {
+                const shouldNotify = confirm(`¿Deseas abrir WhatsApp para enviar la confirmación de pago al cliente?`);
+                if (shouldNotify) {
+                    window.open((resData as any).whatsappNotificationUrl, '_blank');
+                }
+            }
             
             await refreshAllData();
         } catch (err) {
@@ -1402,7 +1496,7 @@ function renderProductsTable() {
     const tableProducts = document.getElementById('table-products');
     if (!tableProducts) return;
 
-    // Actualizar contadores de las pestañas
+    // Actualizar contadores de las pestañas de plantilla
     const countAll = document.getElementById('count-all');
     const countRest = document.getElementById('count-restaurant');
     const countHard = document.getElementById('count-hardware');
@@ -1417,28 +1511,82 @@ function renderProductsTable() {
     if (countTech) countTech.textContent = String(productsList.filter(p => p.template === 'tech').length);
     if (countAuto) countAuto.textContent = String(productsList.filter(p => p.template === 'autoparts').length);
 
-    // Filtrar lista según pestaña activa
+    // Actualizar contadores de stock
+    const stockCountAll = document.getElementById('stock-count-all');
+    const stockCountCritical = document.getElementById('stock-count-critical');
+    const stockCountOut = document.getElementById('stock-count-out');
+    const stockCountAvailable = document.getElementById('stock-count-available');
+
+    if (stockCountAll) stockCountAll.textContent = String(productsList.length);
+    if (stockCountCritical) stockCountCritical.textContent = String(productsList.filter(p => p.stock !== undefined && p.stock !== null && p.stock > 0 && p.stock <= 3).length);
+    if (stockCountOut) stockCountOut.textContent = String(productsList.filter(p => (p.stock !== undefined && p.stock !== null && p.stock === 0) || p.active === 0).length);
+    if (stockCountAvailable) stockCountAvailable.textContent = String(productsList.filter(p => (p.stock === -1 || p.stock === undefined || p.stock === null || p.stock > 3) && p.active !== 0).length);
+
+    // Filtrar lista según plantilla activa
     let filteredProducts = activeProductTemplateFilter === 'all'
         ? productsList
         : productsList.filter(p => (p.template || 'restaurant') === activeProductTemplateFilter);
+
+    // Filtrar lista según nivel de stock activo
+    if (activeStockFilter === 'critical') {
+        filteredProducts = filteredProducts.filter(p => p.stock !== undefined && p.stock !== null && p.stock > 0 && p.stock <= 3);
+    } else if (activeStockFilter === 'out_of_stock') {
+        filteredProducts = filteredProducts.filter(p => (p.stock !== undefined && p.stock !== null && p.stock === 0) || p.active === 0);
+    } else if (activeStockFilter === 'available') {
+        filteredProducts = filteredProducts.filter(p => (p.stock === -1 || p.stock === undefined || p.stock === null || p.stock > 3) && p.active !== 0);
+    }
 
     if (productsSearchQuery) {
         const q = productsSearchQuery.toLowerCase();
         filteredProducts = filteredProducts.filter(p =>
             (p.name && p.name.toLowerCase().includes(q)) ||
             (p.id && p.id.toLowerCase().includes(q)) ||
+            (p.sku && p.sku.toLowerCase().includes(q)) ||
             (p.category && p.category.toLowerCase().includes(q))
         );
     }
 
+    // Actualizar estado del checkbox maestro
+    const checkAll = document.getElementById('check-all-products') as HTMLInputElement | null;
+    if (checkAll) {
+        const allChecked = filteredProducts.length > 0 && filteredProducts.every(p => selectedProductIds.has(p.id));
+        const someChecked = filteredProducts.some(p => selectedProductIds.has(p.id));
+        checkAll.checked = allChecked;
+        checkAll.indeterminate = !allChecked && someChecked;
+    }
+
     if (filteredProducts.length === 0) {
-        tableProducts.innerHTML = `<tr><td colspan="10" class="table-empty-message">${productsSearchQuery ? 'No se encontraron productos que coincidan con la búsqueda.' : 'No hay productos registrados en esta plantilla. Agrega uno nuevo arriba.'}</td></tr>`;
+        const emptyMsg = productsSearchQuery
+            ? 'No se encontraron productos que coincidan con la búsqueda.'
+            : (activeStockFilter !== 'all' ? 'No hay productos en esta categoría de stock.' : 'No hay productos registrados en esta plantilla. Agrega uno nuevo arriba.');
+        tableProducts.innerHTML = `<tr><td colspan="11" class="table-empty-message">${emptyMsg}</td></tr>`;
         return;
     }
 
+    const promoBadgeLabels: Record<string, string> = {
+        destacado: '⭐ Destacado',
+        oferta: '🔥 Oferta',
+        nuevo: '✨ Nuevo',
+        liquidacion: '🏷️ Liquidación'
+    };
+
     tableProducts.innerHTML = filteredProducts.map(p => {
         const sizesText = p.sizes || 'N/A';
-        const priceText = p.price > 0 ? `$${parseFloat(p.price).toFixed(2)}` : '$0.00';
+        const priceNum = parseFloat(p.price) || 0;
+        const comparePriceNum = parseFloat(p.compare_at_price) || 0;
+        
+        let priceHtml = `<span>$${priceNum.toFixed(2)}</span>`;
+        if (comparePriceNum > priceNum && priceNum > 0) {
+            const discountPct = Math.round(((comparePriceNum - priceNum) / comparePriceNum) * 100);
+            priceHtml = `
+                <div>
+                    <strong>$${priceNum.toFixed(2)}</strong>
+                    <span class="table-price-old">$${comparePriceNum.toFixed(2)}</span>
+                    <span class="table-discount-badge">-${discountPct}%</span>
+                </div>
+            `;
+        }
+
         const statusText = p.active === 1 ? 'Disponible' : 'Agotado';
         const statusClass = p.active === 1 ? 'completado' : 'cancelado';
         const categoryLabel = p.category || p.type_id || 'general';
@@ -1448,31 +1596,54 @@ function renderProductsTable() {
         const stockVal = p.stock !== undefined && p.stock !== null ? p.stock : -1;
         let stockHtml = '';
         if (stockVal === -1) {
-            stockHtml = '<span class="status-badge table-badge-stock-unlimited">♾️ Ilimitado</span>';
-        } else if (stockVal <= 0) {
-            stockHtml = '<span class="status-badge cancelado">0 (Agotado)</span>';
-        } else if (stockVal <= 5) {
-            stockHtml = `<span class="status-badge pendiente">${stockVal} (Bajo)</span>`;
+            stockHtml = '<span class="stock-badge ilimitado">♾️ Ilimitado</span>';
+        } else if (stockVal <= 0 || p.active === 0) {
+            stockHtml = '<span class="stock-badge agotado">0 (Agotado)</span>';
+        } else if (stockVal <= 3) {
+            stockHtml = `<span class="stock-badge critico">⚠️ ${stockVal} (Crítico)</span>`;
         } else {
-            stockHtml = `<span class="status-badge completado">${stockVal} disp.</span>`;
+            stockHtml = `<span class="stock-badge normal">${stockVal} disp.</span>`;
         }
+
+        const isChecked = selectedProductIds.has(p.id);
+        const promoBadgeHtml = p.badge && promoBadgeLabels[p.badge]
+            ? `<span class="promo-badge ${escapeHtml(p.badge)}">${promoBadgeLabels[p.badge]}</span>`
+            : '';
 
         return `
             <tr>
+                <td class="table-check-col">
+                    <input type="checkbox" class="table-checkbox product-row-check" data-id="${escapeHtml(p.id)}" ${isChecked ? 'checked' : ''} />
+                </td>
                 <td>
                     <img src="${escapeHtml((p.image_url && (p.image_url.startsWith('http') || p.image_url.startsWith('/'))) ? p.image_url : `/${p.image_url || 'assets/favicon.svg'}`)}" alt="${escapeHtml(p.name)}" onerror="this.onerror=null; this.src='/assets/favicon.svg';" class="table-product-thumb">
                 </td>
-                <td><code>${escapeHtml(p.id)}</code></td>
-                <td><strong>${escapeHtml(p.name)}</strong></td>
+                <td>
+                    <code>${escapeHtml(p.id)}</code>
+                    ${p.sku ? `<span class="table-sku">SKU: ${escapeHtml(p.sku)}</span>` : ''}
+                </td>
+                <td>
+                    <strong>${escapeHtml(p.name)}</strong>
+                    ${promoBadgeHtml}
+                </td>
                 <td>${badge}</td>
                 <td><span class="table-badge-category">${escapeHtml(categoryLabel)}</span></td>
-                <td>${priceText}</td>
+                <td>${priceHtml}</td>
                 <td>${stockHtml}</td>
                 <td class="table-text-secondary">${escapeHtml(sizesText)}</td>
                 <td><span class="status-badge ${statusClass}">${statusText}</span></td>
                 <td>
                     <div class="table-actions-group">
-                        <button class="action-icon-btn edit" data-action="edit-product" data-id="${escapeHtml(p.id)}" title="Editar Producto">
+                        <button class="action-icon-btn quick-edit" data-action="quick-edit-product" data-id="${escapeHtml(p.id)}" title="Edición Rápida (Precio y Stock)">
+                            <i data-lucide="zap" class="table-action-icon"></i>
+                        </button>
+                        <button class="action-icon-btn duplicate" data-action="duplicate-product" data-id="${escapeHtml(p.id)}" title="Duplicar / Clonar Producto">
+                            <i data-lucide="copy" class="table-action-icon"></i>
+                        </button>
+                        <button class="action-icon-btn copy" data-action="copy-product-link" data-id="${escapeHtml(p.id)}" data-name="${escapeHtml(p.name)}" title="Copiar enlace directo para WhatsApp o redes">
+                            <i data-lucide="share-2" class="table-action-icon"></i>
+                        </button>
+                        <button class="action-icon-btn edit" data-action="edit-product" data-id="${escapeHtml(p.id)}" title="Editar Producto Completo">
                             <i data-lucide="edit-3" class="table-action-icon"></i>
                         </button>
                         <button class="action-icon-btn delete" data-action="delete-product" data-id="${escapeHtml(p.id)}" title="Eliminar Producto">
@@ -1509,6 +1680,28 @@ function setupTemplateFilterTabs() {
 }
 setupTemplateFilterTabs();
 
+// Configurar pestañas de filtro rápido por nivel de stock
+function setupStockFilterTabs() {
+    const stockContainer = document.getElementById('stock-filter-tabs');
+    if (!stockContainer) return;
+
+    stockContainer.addEventListener('click', (e) => {
+        const target = e.target as HTMLElement | null;
+        const btn = target?.closest('.stock-filter-btn');
+        if (!btn) return;
+
+        const filter = btn.getAttribute('data-stock-filter');
+        if (!filter) return;
+
+        activeStockFilter = filter;
+        stockContainer.querySelectorAll('.stock-filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        renderProductsTable();
+    });
+}
+setupStockFilterTabs();
+
 // Cambio dinámico de categoría por defecto al cambiar plantilla en el formulario
 const prodTemplateSelect = document.getElementById('prod-template');
 if (prodTemplateSelect) {
@@ -1532,6 +1725,10 @@ if (productForm) {
         const name = $val('prod-name');
         const category = $val('prod-category');
         const price = parseFloat($val('prod-price')) || 0.0;
+        const comparePriceVal = $val('prod-compare-price');
+        const compare_at_price = comparePriceVal !== '' ? (parseFloat(comparePriceVal) || 0.0) : 0.0;
+        const badge = $val('prod-badge') || '';
+        const sku = $val('prod-sku') || '';
         const icon = $val('prod-icon');
         let image_url = $val('prod-image');
         const sizes = $val('prod-sizes');
@@ -1571,7 +1768,10 @@ if (productForm) {
                 body: JSON.stringify({
                     id, name, template, category, price, icon, image_url, sizes: sizes || null, active, description,
                     brand: brand || null, model: model || null,
-                    stock: isNaN(stock) ? -1 : stock
+                    stock: isNaN(stock) ? -1 : stock,
+                    compare_at_price,
+                    badge,
+                    sku
                 })
             });
 
@@ -1611,6 +1811,9 @@ function startEditProduct(productId: string) {
     setVal('prod-name', product.name);
     setVal('prod-category', product.category || product.type_id || 'principales');
     setVal('prod-price', product.price);
+    setVal('prod-compare-price', product.compare_at_price ?? '');
+    setVal('prod-badge', product.badge || '');
+    setVal('prod-sku', product.sku || '');
     setVal('prod-icon', product.icon || '');
     
     setVal('prod-image', product.image_url || '');
@@ -1655,6 +1858,9 @@ function resetProductForm() {
     const idInReset = $input('prod-id'); if (idInReset) idInReset.disabled = false; setVal('prod-id', '');
     setVal('prod-template', 'restaurant');
     setVal('prod-stock', '-1');
+    setVal('prod-compare-price', '');
+    setVal('prod-badge', '');
+    setVal('prod-sku', '');
     if (imagePreviewEl) imagePreviewEl.classList.add('d-none');
     const ife = $input('prod-image-file'); if (ife) ife.value = '';
     
@@ -1690,6 +1896,332 @@ async function deleteProduct(productId: string) {
         console.error(err);
         showToast('Error al intentar eliminar el producto.', 'error');
     }
+}
+
+// Duplicar / Clonar Producto
+function duplicateProduct(productId: string) {
+    const product = productsList.find(p => p.id === productId);
+    if (!product) return;
+
+    resetProductForm();
+
+    setVal('prod-method', 'POST');
+    const newId = `${product.id}-copia`;
+    setVal('prod-id', newId);
+    const idIn = $input('prod-id'); if (idIn) idIn.disabled = false;
+    setVal('prod-name', `${product.name} (Copia)`);
+    setVal('prod-template', product.template || 'restaurant');
+    setVal('prod-category', product.category || product.type_id || 'principales');
+    setVal('prod-price', product.price);
+    setVal('prod-compare-price', product.compare_at_price ?? '');
+    setVal('prod-badge', product.badge || '');
+    setVal('prod-sku', product.sku ? `${product.sku}-COP` : '');
+    setVal('prod-icon', product.icon || '');
+    setVal('prod-image', product.image_url || '');
+    setVal('prod-sizes', product.sizes || '');
+    setVal('prod-stock', (product.stock !== undefined && product.stock !== null) ? product.stock : -1);
+    setVal('prod-brand', product.brand || '');
+    setVal('prod-model', product.model || '');
+    setVal('prod-active', 1);
+    setVal('prod-description', product.description || '');
+
+    const imagePreviewEl = document.getElementById('prod-image-preview');
+    if (imagePreviewEl && product.image_url) {
+        const url = (product.image_url.startsWith('http') || product.image_url.startsWith('/')) ? product.image_url : `/${product.image_url}`;
+        imagePreviewEl.style.backgroundImage = `url('${url}')`;
+        imagePreviewEl.classList.remove('d-none');
+    }
+
+    if (formProductTitle) formProductTitle.textContent = `Duplicando: ${product.name}`;
+    if (btnSubmitProduct) btnSubmitProduct.innerHTML = '<i data-lucide="copy"></i> Guardar Copia de Producto';
+    if (btnCancelEdit) btnCancelEdit.classList.remove('d-none');
+    if (window.lucide) lucide.createIcons();
+
+    const collapseEl = document.getElementById('product-form-collapse');
+    if (collapseEl && !collapseEl.classList.contains('expanded')) {
+        collapseEl.classList.add('expanded');
+    }
+
+    if (formProductTitle) {
+        formProductTitle.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    showToast(`Copia de "${product.name}" cargada en el formulario. Edita y guarda cuando estés listo.`, 'info');
+}
+
+// --- EDICIÓN RÁPIDA (QUICK EDIT) ---
+function openQuickEditModal(productId: string) {
+    const product = productsList.find(p => p.id === productId);
+    if (!product) return;
+
+    setVal('quick-edit-id', product.id);
+    const titleEl = document.getElementById('quick-edit-title');
+    if (titleEl) titleEl.textContent = `${product.name} (${product.id})`;
+    setVal('quick-edit-price', product.price ?? 0);
+    setVal('quick-edit-compare-price', product.compare_at_price ?? '');
+    setVal('quick-edit-stock', product.stock !== undefined && product.stock !== null ? product.stock : -1);
+    setVal('quick-edit-active', product.active !== undefined ? product.active : 1);
+
+    const modal = document.getElementById('quick-edit-modal');
+    if (modal) modal.classList.add('active');
+}
+
+function closeQuickEditModal() {
+    const modal = document.getElementById('quick-edit-modal');
+    if (modal) modal.classList.remove('active');
+}
+
+async function handleQuickEditSubmit() {
+    const id = $val('quick-edit-id');
+    const price = parseFloat($val('quick-edit-price')) || 0;
+    const comparePriceVal = $val('quick-edit-compare-price');
+    const compare_at_price = comparePriceVal !== '' ? (parseFloat(comparePriceVal) || 0) : 0;
+    const stockVal = $val('quick-edit-stock');
+    const stock = stockVal !== '' ? parseInt(stockVal, 10) : -1;
+    const active = parseInt($val('quick-edit-active'), 10);
+
+    const product = productsList.find(p => p.id === id);
+    if (!product) return;
+
+    const btnSave = document.getElementById('btn-save-quick-edit') as HTMLButtonElement | null;
+    if (btnSave) {
+        btnSave.disabled = true;
+        btnSave.textContent = 'Guardando...';
+    }
+
+    try {
+        const response = await fetch('/api/products', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                ...product,
+                price,
+                compare_at_price,
+                stock: isNaN(stock) ? -1 : stock,
+                active
+            })
+        });
+        const resData = (await response.json()) as any;
+        if (response.ok && resData.success) {
+            showToast('Producto actualizado rápidamente.', 'success');
+            closeQuickEditModal();
+            refreshAllData();
+        } else {
+            showToast(resData.error || 'Error al actualizar producto.', 'error');
+        }
+    } catch (err) {
+        console.error(err);
+        showToast('Error de conexión al actualizar.', 'error');
+    } finally {
+        if (btnSave) {
+            btnSave.disabled = false;
+            btnSave.textContent = 'Guardar Cambios';
+        }
+    }
+}
+
+// Quick edit form submit listener & modal click outside
+const quickEditForm = document.getElementById('quick-edit-form') as HTMLFormElement | null;
+if (quickEditForm) {
+    quickEditForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await handleQuickEditSubmit();
+    });
+}
+
+const quickEditModal = document.getElementById('quick-edit-modal');
+if (quickEditModal) {
+    quickEditModal.addEventListener('click', (e) => {
+        if (e.target === quickEditModal) {
+            closeQuickEditModal();
+        }
+    });
+}
+
+// --- ACCIONES EN MASA (BULK ACTIONS) ---
+function updateBulkToolbar() {
+    const toolbar = document.getElementById('products-bulk-toolbar');
+    const countBadge = document.getElementById('bulk-selected-count');
+    if (!toolbar) return;
+
+    const count = selectedProductIds.size;
+    if (count > 0) {
+        toolbar.classList.remove('d-none');
+        if (countBadge) countBadge.textContent = `${count} ${count === 1 ? 'seleccionado' : 'seleccionados'}`;
+    } else {
+        toolbar.classList.add('d-none');
+    }
+}
+
+function clearBulkSelection() {
+    selectedProductIds.clear();
+    const checkAll = document.getElementById('check-all-products') as HTMLInputElement | null;
+    if (checkAll) {
+        checkAll.checked = false;
+        checkAll.indeterminate = false;
+    }
+    document.querySelectorAll<HTMLInputElement>('.product-row-check').forEach(cb => {
+        cb.checked = false;
+    });
+    updateBulkToolbar();
+}
+
+async function handleBulkActivate(active: number) {
+    if (selectedProductIds.size === 0) return;
+    const actionLabel = active === 1 ? 'activar' : 'pausar / marcar como agotados';
+    if (!confirm(`¿Deseas ${actionLabel} los ${selectedProductIds.size} productos seleccionados?`)) return;
+
+    showToast(`Actualizando ${selectedProductIds.size} productos...`, 'info');
+    let successCount = 0;
+    for (const id of Array.from(selectedProductIds)) {
+        const prod = productsList.find(p => p.id === id);
+        if (!prod) continue;
+        try {
+            const res = await fetch('/api/products', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...prod, active })
+            });
+            if (res.ok) successCount++;
+        } catch (e) {
+            console.error(e);
+        }
+    }
+    showToast(`${successCount} productos actualizados.`, 'success');
+    clearBulkSelection();
+    refreshAllData();
+}
+
+async function handleBulkPriceAdjust() {
+    if (selectedProductIds.size === 0) return;
+    const input = prompt(`Ajustar precios de los ${selectedProductIds.size} productos seleccionados:\nIngresa el porcentaje de cambio (ej: 10 para aumentar 10%, -15 para descontar 15%):`);
+    if (input === null) return;
+    const pct = parseFloat(input);
+    if (isNaN(pct) || pct < -99 || pct > 500) {
+        showToast('Porcentaje no válido. Debe ser entre -99% y +500%.', 'error');
+        return;
+    }
+
+    if (!confirm(`¿Confirmas aplicar ${pct > 0 ? '+' : ''}${pct}% a los precios de los ${selectedProductIds.size} productos seleccionados?`)) return;
+
+    showToast('Aplicando ajuste masivo de precios...', 'info');
+    let successCount = 0;
+    for (const id of Array.from(selectedProductIds)) {
+        const prod = productsList.find(p => p.id === id);
+        if (!prod) continue;
+        const currentPrice = parseFloat(prod.price) || 0;
+        const newPrice = Math.max(0.01, Math.round(currentPrice * (1 + pct / 100) * 100) / 100);
+        try {
+            const res = await fetch('/api/products', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...prod,
+                    price: newPrice,
+                    compare_at_price: currentPrice
+                })
+            });
+            if (res.ok) successCount++;
+        } catch (e) {
+            console.error(e);
+        }
+    }
+    showToast(`${successCount} precios actualizados correctamente.`, 'success');
+    clearBulkSelection();
+    refreshAllData();
+}
+
+async function handleBulkDelete() {
+    if (selectedProductIds.size === 0) return;
+    const count = selectedProductIds.size;
+    if (!confirm(`⚠️ ATENCIÓN: ¿Estás seguro de eliminar permanentemente estos ${count} productos del catálogo? Esta acción no se puede deshacer.`)) return;
+
+    showToast(`Eliminando ${count} productos...`, 'info');
+    try {
+        const idsArray = Array.from(selectedProductIds);
+        const res = await fetch(`/api/products?ids=${encodeURIComponent(idsArray.join(','))}`, {
+            method: 'DELETE'
+        });
+        const data = await res.json() as any;
+        if (res.ok && data.success) {
+            showToast(`${count} productos eliminados del catálogo.`, 'success');
+        } else {
+            showToast(data.error || 'Error al eliminar productos en lote.', 'error');
+        }
+    } catch (e) {
+        console.error(e);
+        showToast('Error de red al eliminar en lote.', 'error');
+    } finally {
+        clearBulkSelection();
+        refreshAllData();
+    }
+}
+
+// Listener global de selección múltiple (checkboxes)
+document.addEventListener('change', (e) => {
+    const target = e.target as HTMLInputElement | null;
+    if (!target) return;
+
+    if (target.id === 'check-all-products') {
+        const rowChecks = document.querySelectorAll<HTMLInputElement>('.product-row-check');
+        if (target.checked) {
+            rowChecks.forEach(cb => {
+                cb.checked = true;
+                const id = cb.getAttribute('data-id');
+                if (id) selectedProductIds.add(id);
+            });
+        } else {
+            rowChecks.forEach(cb => {
+                cb.checked = false;
+                const id = cb.getAttribute('data-id');
+                if (id) selectedProductIds.delete(id);
+            });
+        }
+        updateBulkToolbar();
+    } else if (target.classList.contains('product-row-check')) {
+        const id = target.getAttribute('data-id');
+        if (id) {
+            if (target.checked) {
+                selectedProductIds.add(id);
+            } else {
+                selectedProductIds.delete(id);
+            }
+        }
+        const checkAll = document.getElementById('check-all-products') as HTMLInputElement | null;
+        if (checkAll) {
+            const rowChecks = Array.from(document.querySelectorAll<HTMLInputElement>('.product-row-check'));
+            const allChecked = rowChecks.length > 0 && rowChecks.every(cb => cb.checked);
+            const someChecked = rowChecks.some(cb => cb.checked);
+            checkAll.checked = allChecked;
+            checkAll.indeterminate = !allChecked && someChecked;
+        }
+        updateBulkToolbar();
+    }
+});
+
+// Poblar datalist de categorías de forma dinámica
+function updateCategoryDatalist() {
+    const datalist = document.getElementById('category-datalist');
+    if (!datalist) return;
+
+    const categories = new Set<string>();
+    const defaults = [
+        'entradas', 'principales', 'bebidas', 'postres', 'promociones',
+        'herramientas-manuales', 'herramientas-electricas', 'seguridad', 'electricidad', 'construccion-pinturas',
+        'vestidos', 'blusas-tops', 'pantalones-jeans', 'conjuntos', 'accesorios-calzado',
+        'laptops-pc', 'componentes', 'perifericos', 'smartphones-tablets', 'accesorios-redes',
+        'frenos', 'motor-partes', 'suspension-direccion', 'baterias-electricidad', 'accesorios-repuestos'
+    ];
+    defaults.forEach(c => categories.add(c));
+
+    productsList.forEach(p => {
+        if (p.category && typeof p.category === 'string' && p.category.trim()) {
+            categories.add(p.category.trim());
+        }
+    });
+
+    datalist.innerHTML = Array.from(categories)
+        .map(cat => `<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`)
+        .join('');
 }
 
 // Botón Nuevo Producto (Toggle formulario)
@@ -1793,6 +2325,9 @@ window.deleteOrder = deleteOrder;
 window.viewOrderDetails = viewOrderDetails;
 window.startEditProduct = startEditProduct;
 window.deleteProduct = deleteProduct;
+window.duplicateProduct = duplicateProduct;
+window.openQuickEditModal = openQuickEditModal;
+window.closeQuickEditModal = closeQuickEditModal;
 window.checkSession = checkSession;
 
 // --- GESTIÓN DE TASA BCV ---
@@ -2013,6 +2548,94 @@ if (btnToggleSound) {
     });
 }
 
+// --- SISTEMA DE NOTIFICACIONES WEB PUSH ---
+function setupWebPushNotifications() {
+    const btnHeaderPush = document.getElementById('btn-toggle-push');
+    const btnOrdersPush = document.getElementById('btn-toggle-orders-push');
+    const headerPushDot = document.getElementById('push-status-dot');
+    const ordersPushDot = document.getElementById('orders-push-dot');
+
+    if (!('Notification' in window)) {
+        if (btnHeaderPush) btnHeaderPush.classList.add('d-none');
+        if (btnOrdersPush) btnOrdersPush.classList.add('d-none');
+        return;
+    }
+
+    const updatePushUI = () => {
+        const isGranted = Notification.permission === 'granted';
+        if (isGranted) {
+            btnHeaderPush?.classList.add('active');
+            btnOrdersPush?.classList.add('active');
+            headerPushDot?.classList.remove('d-none');
+            ordersPushDot?.classList.remove('d-none');
+            if (btnHeaderPush) btnHeaderPush.title = 'Notificaciones Web Push activas (clic para enviar prueba)';
+            if (btnOrdersPush) btnOrdersPush.title = 'Notificaciones Web Push activas (clic para enviar prueba)';
+        } else {
+            btnHeaderPush?.classList.remove('active');
+            btnOrdersPush?.classList.remove('active');
+            headerPushDot?.classList.add('d-none');
+            ordersPushDot?.classList.add('d-none');
+            if (btnHeaderPush) btnHeaderPush.title = 'Activar notificaciones de escritorio / Web Push';
+            if (btnOrdersPush) btnOrdersPush.title = 'Activar notificaciones de escritorio / Web Push';
+        }
+    };
+
+    updatePushUI();
+
+    const handlePushToggle = async () => {
+        if (Notification.permission === 'granted') {
+            showToast('Las notificaciones Web Push ya están activadas.', 'info');
+            sendWebPushNotification('🔔 Vendly Notificaciones', 'Sistema de alertas de pedidos activo y funcionando.');
+            return;
+        }
+
+        if (Notification.permission === 'denied') {
+            showToast('Las notificaciones están bloqueadas en tu navegador. Por favor habilítalas en el candado de la barra de direcciones.', 'warning');
+            return;
+        }
+
+        try {
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
+                updatePushUI();
+                showToast('¡Notificaciones Web Push activadas con éxito! Recibirás alertas inmediatas al llegar nuevos pedidos.', 'success');
+                sendWebPushNotification('🎉 ¡Notificaciones activadas!', 'A partir de ahora recibirás alertas instantáneas cuando entre un nuevo pedido.');
+            } else {
+                showToast('No se otorgaron permisos para notificaciones.', 'info');
+            }
+        } catch (e) {
+            console.error('Error solicitando permisos de notificación:', e);
+        }
+    };
+
+    if (btnHeaderPush) btnHeaderPush.addEventListener('click', handlePushToggle);
+    if (btnOrdersPush) btnOrdersPush.addEventListener('click', handlePushToggle);
+}
+
+function sendWebPushNotification(title: string, body: string, orderId?: string) {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    try {
+        const notif = new Notification(title, {
+            body,
+            icon: '/assets/favicon.svg',
+            badge: '/assets/favicon.svg',
+            tag: orderId ? `order-${orderId}` : `vendly-${Date.now()}`
+        });
+
+        notif.onclick = () => {
+            window.focus();
+            if (orderId) {
+                const navOrders = document.querySelector('.sidebar-link[data-target="orders"]') as HTMLElement | null;
+                if (navOrders) navOrders.click();
+                viewOrderDetails(orderId);
+            }
+        };
+    } catch (e) {
+        console.warn('Error al enviar notificación:', e);
+    }
+}
+setupWebPushNotifications();
+
 // --- BÚSQUEDA Y FILTRADO REACTIVO EN TABLAS ---
 function debounce(func: (...args: any[]) => any, wait: number) {
     let timeout: any;
@@ -2040,6 +2663,15 @@ const ordersStatusFilterEl = document.getElementById('orders-status-filter');
 if (ordersStatusFilterEl) {
     ordersStatusFilterEl.addEventListener('change', (e) => {
         ordersStatusFilter = (e.target as HTMLSelectElement).value;
+        renderOrders();
+    });
+}
+
+// Filtro de Fecha de Pedidos
+const ordersDateFilterEl = document.getElementById('orders-date-filter');
+if (ordersDateFilterEl) {
+    ordersDateFilterEl.addEventListener('change', (e) => {
+        ordersDateFilter = (e.target as HTMLSelectElement).value;
         renderOrders();
     });
 }
@@ -2124,11 +2756,73 @@ document.addEventListener('click', (e) => {
         return;
     }
 
+    // Copy Product Link
+    const btnCopyProduct = t.closest('[data-action="copy-product-link"]') as HTMLElement | null;
+    if (btnCopyProduct) {
+        const prodId = btnCopyProduct.getAttribute('data-id') || '';
+        const prodName = btnCopyProduct.getAttribute('data-name') || prodId;
+        const productUrl = `${window.location.origin}/producto?id=${encodeURIComponent(prodId)}`;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(productUrl).then(() => {
+                showToast(`¡Enlace de "${prodName}" copiado! Listo para compartir en WhatsApp.`, 'success');
+            }).catch(() => {
+                prompt('Copia este enlace para compartir:', productUrl);
+            });
+        } else {
+            prompt('Copia este enlace para compartir:', productUrl);
+        }
+        return;
+    }
+
     // Edit Product
     const btnEditProduct = t.closest('[data-action="edit-product"]') as HTMLElement | null;
     if (btnEditProduct) {
         const prodId = btnEditProduct.getAttribute('data-id');
         if (prodId) startEditProduct(prodId);
+        return;
+    }
+
+    // Duplicate Product
+    const btnDuplicateProduct = t.closest('[data-action="duplicate-product"]') as HTMLElement | null;
+    if (btnDuplicateProduct) {
+        const prodId = btnDuplicateProduct.getAttribute('data-id');
+        if (prodId) duplicateProduct(prodId);
+        return;
+    }
+
+    // Quick Edit Product
+    const btnQuickEditProduct = t.closest('[data-action="quick-edit-product"]') as HTMLElement | null;
+    if (btnQuickEditProduct) {
+        const prodId = btnQuickEditProduct.getAttribute('data-id');
+        if (prodId) openQuickEditModal(prodId);
+        return;
+    }
+
+    // Close Quick Edit Modal
+    if (t.closest('#btn-close-quick-edit-modal') || t.closest('#btn-cancel-quick-edit')) {
+        closeQuickEditModal();
+        return;
+    }
+
+    // Bulk Actions Toolbar Buttons
+    if (t.closest('#btn-bulk-active-on')) {
+        handleBulkActivate(1);
+        return;
+    }
+    if (t.closest('#btn-bulk-active-off')) {
+        handleBulkActivate(0);
+        return;
+    }
+    if (t.closest('#btn-bulk-price')) {
+        handleBulkPriceAdjust();
+        return;
+    }
+    if (t.closest('#btn-bulk-delete')) {
+        handleBulkDelete();
+        return;
+    }
+    if (t.closest('#btn-bulk-clear')) {
+        clearBulkSelection();
         return;
     }
 
@@ -2307,6 +3001,188 @@ const btnExportSales = document.getElementById('btn-export-sales');
 if (btnExportSales) {
     btnExportSales.addEventListener('click', exportSalesToCSV);
 }
+
+function exportProductsToCSV() {
+    if (!productsList || productsList.length === 0) {
+        showToast('No hay productos en el catálogo para exportar.', 'warning');
+        return;
+    }
+    const headers = ['ID', 'Nombre', 'Plantilla', 'Categoria', 'Precio USD', 'Stock', 'Opciones', 'Descripcion', 'Disponible', 'Imagen'];
+    const rows = productsList.map(p => [
+        `"${(p.id || '').replace(/"/g, '""')}"`,
+        `"${(p.name || '').replace(/"/g, '""')}"`,
+        `"${(p.template || 'restaurant').replace(/"/g, '""')}"`,
+        `"${(p.category || p.type_id || 'principales').replace(/"/g, '""')}"`,
+        (parseFloat(p.price) || 0).toFixed(2),
+        p.stock !== undefined && p.stock !== null ? p.stock : -1,
+        `"${(p.sizes || '').replace(/"/g, '""')}"`,
+        `"${(p.description || '').replace(/"/g, '""')}"`,
+        p.active === 0 ? 0 : 1,
+        `"${(p.image_url || '').replace(/"/g, '""')}"`
+    ]);
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
+    const dateStr = new Date().toISOString().split('T')[0];
+    downloadCSV(`productos_catalogo_${dateStr}.csv`, csv);
+    showToast(`Catálogo exportado exitosamente (${productsList.length} productos).`, 'success');
+}
+
+const btnExportProducts = document.getElementById('btn-export-products');
+if (btnExportProducts) {
+    btnExportProducts.addEventListener('click', exportProductsToCSV);
+}
+
+function setupProductsCSVImport() {
+    const btnImport = document.getElementById('btn-import-products');
+    const fileInput = document.getElementById('products-csv-file') as HTMLInputElement | null;
+    if (!btnImport || !fileInput) return;
+
+    btnImport.addEventListener('click', () => {
+        fileInput.value = '';
+        fileInput.click();
+    });
+
+    fileInput.addEventListener('change', async () => {
+        const file = fileInput.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const text = e.target?.result as string;
+                if (!text) {
+                    showToast('El archivo CSV está vacío.', 'error');
+                    return;
+                }
+
+                const lines = text.split(/\r?\n/).filter(line => line.trim().length > 0);
+                if (lines.length <= 1) {
+                    showToast('El archivo CSV no contiene filas de datos.', 'warning');
+                    return;
+                }
+
+                const firstLine = lines[0];
+                const delimiter = firstLine.includes(';') ? ';' : ',';
+
+                const parseCsvLine = (line: string): string[] => {
+                    const result: string[] = [];
+                    let cur = '';
+                    let inQuotes = false;
+                    for (let i = 0; i < line.length; i++) {
+                        const char = line[i];
+                        if (char === '"') {
+                            if (inQuotes && line[i + 1] === '"') {
+                                cur += '"';
+                                i++;
+                            } else {
+                                inQuotes = !inQuotes;
+                            }
+                        } else if (char === delimiter && !inQuotes) {
+                            result.push(cur.trim());
+                            cur = '';
+                        } else {
+                            cur += char;
+                        }
+                    }
+                    result.push(cur.trim());
+                    return result;
+                };
+
+                const rawHeaders = parseCsvLine(lines[0]).map(h => 
+                    h.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, '')
+                );
+                
+                const idIdx = rawHeaders.findIndex(h => h === 'id' || h === 'slug' || h === 'codigo');
+                const nameIdx = rawHeaders.findIndex(h => h === 'nombre' || h === 'name' || h === 'producto');
+                const priceIdx = rawHeaders.findIndex(h => h === 'precio' || h === 'preciousd' || h === 'price');
+                const templateIdx = rawHeaders.findIndex(h => h === 'plantilla' || h === 'template');
+                const categoryIdx = rawHeaders.findIndex(h => h === 'categoria' || h === 'category' || h === 'rubro');
+                const stockIdx = rawHeaders.findIndex(h => h === 'stock' || h === 'inventario' || h === 'cantidad');
+                const sizesIdx = rawHeaders.findIndex(h => h === 'opciones' || h === 'sizes' || h === 'tallas' || h === 'variantes');
+                const descIdx = rawHeaders.findIndex(h => h === 'descripcion' || h === 'description' || h === 'detalle');
+                const activeIdx = rawHeaders.findIndex(h => h === 'disponible' || h === 'activo' || h === 'active');
+                const imageIdx = rawHeaders.findIndex(h => h === 'imagen' || h === 'image' || h === 'imageurl');
+
+                if (nameIdx === -1 || priceIdx === -1) {
+                    showToast('El CSV debe incluir al menos las columnas "Nombre" y "Precio".', 'error');
+                    return;
+                }
+
+                const dataRows = lines.slice(1);
+                const confirmed = confirm(`Se encontraron ${dataRows.length} productos en el archivo CSV. ¿Deseas importarlos/actualizarlos en tu catálogo?`);
+                if (!confirmed) return;
+
+                showToast(`Iniciando importación masiva de ${dataRows.length} productos...`, 'info');
+
+                let processedCount = 0;
+                let errorCount = 0;
+
+                for (const rowStr of dataRows) {
+                    const cols = parseCsvLine(rowStr);
+                    if (!cols || cols.length === 0 || cols.every(c => c === '')) continue;
+
+                    const rawName = cols[nameIdx] || '';
+                    if (!rawName) continue;
+
+                    let rawPrice = cols[priceIdx] ? parseFloat(cols[priceIdx].replace(',', '.')) : 0;
+                    if (isNaN(rawPrice)) rawPrice = 0;
+
+                    let rawId = idIdx !== -1 && cols[idIdx] ? cols[idIdx] : '';
+                    if (!rawId) {
+                        rawId = rawName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9_-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+                    }
+
+                    const rawTemplate = templateIdx !== -1 && cols[templateIdx] ? cols[templateIdx].toLowerCase() : 'restaurant';
+                    const rawCategory = categoryIdx !== -1 && cols[categoryIdx] ? cols[categoryIdx] : 'principales';
+                    const rawStock = stockIdx !== -1 && cols[stockIdx] ? parseInt(cols[stockIdx], 10) : -1;
+                    const rawSizes = sizesIdx !== -1 && cols[sizesIdx] ? cols[sizesIdx] : null;
+                    const rawDesc = descIdx !== -1 && cols[descIdx] ? cols[descIdx] : '';
+                    const rawActive = activeIdx !== -1 && cols[activeIdx] ? (cols[activeIdx] === '0' || cols[activeIdx].toLowerCase() === 'no' || cols[activeIdx].toLowerCase() === 'falso' ? 0 : 1) : 1;
+                    const rawImage = imageIdx !== -1 && cols[imageIdx] ? cols[imageIdx] : '/assets/favicon.svg';
+
+                    const exists = productsList.some(p => p.id === rawId);
+                    const method = exists ? 'PUT' : 'POST';
+
+                    const payload = {
+                        id: rawId,
+                        name: rawName,
+                        price: rawPrice,
+                        template: rawTemplate,
+                        category: rawCategory,
+                        stock: isNaN(rawStock) ? -1 : rawStock,
+                        sizes: rawSizes,
+                        description: rawDesc,
+                        active: rawActive,
+                        image_url: rawImage,
+                        icon: 'package'
+                    };
+
+                    try {
+                        const res = await fetch('/api/products', {
+                            method,
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        if (res.ok) {
+                            processedCount++;
+                        } else {
+                            errorCount++;
+                        }
+                    } catch {
+                        errorCount++;
+                    }
+                }
+
+                showToast(`Importación completada: ${processedCount} procesados, ${errorCount} errores.`, processedCount > 0 ? 'success' : 'error');
+                loadProducts();
+            } catch (err) {
+                console.error('Error importando CSV:', err);
+                showToast('Error procesando el archivo CSV.', 'error');
+            }
+        };
+        reader.readAsText(file, 'UTF-8');
+    });
+}
+setupProductsCSVImport();
 
 // --- POLLING AUTOMÁTICO EN TIEMPO REAL (CADA 15s) ---
 setInterval(() => {

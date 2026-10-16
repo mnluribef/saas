@@ -21,12 +21,15 @@ export const productSchema = z.object({
     name: z.string().min(2).max(150),
     description: z.string().max(500).optional().default(""),
     price: z.number().min(0).or(z.string().transform(v => parseFloat(v))),
+    compare_at_price: z.number().min(0).optional().nullable().or(z.string().transform(v => parseFloat(v) || 0)).default(0),
     category: z.string().default("principales"),
     icon: z.string().max(50).optional().default("package"),
+    badge: z.string().max(50).optional().nullable().default(""),
     image_url: z.string().optional().default("/assets/favicon.svg"),
     brand: z.string().max(100).optional().nullable(),
     model: z.string().max(100).optional().nullable(),
-    sizes: z.string().max(200).optional().nullable(),
+    sku: z.string().max(100).optional().nullable().default(""),
+    sizes: z.string().max(500).optional().nullable(),
     template: z.string().default("restaurant"),
     stock: z.number().int().min(-1).optional().default(-1),
     active: z.number().int().min(0).max(1).optional().default(1)
@@ -51,7 +54,9 @@ export interface ProductItem {
     category: string;
     description: string;
     price: number;
+    compare_at_price?: number;
     icon: string;
+    badge?: string | null;
     image_url: string;
     sizes: string | null;
     template: string;
@@ -60,6 +65,7 @@ export interface ProductItem {
     tenant_id: string;
     brand: string | null;
     model: string | null;
+    sku?: string | null;
     created_at?: string;
     attributes?: ProductAttribute[];
 }
@@ -209,6 +215,9 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
                 product.attributes = attrsMap[product.id] || [];
                 product.image_url = normalizeImageUrl(product.image_url);
                 product.stock = product.stock !== undefined && product.stock !== null ? product.stock : -1;
+                product.compare_at_price = product.compare_at_price ? parseFloat(String(product.compare_at_price)) : 0;
+                product.sku = product.sku || '';
+                product.badge = product.badge || '';
             }
         }
 
@@ -256,7 +265,7 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
             return jsonResponse({ error: "Datos inválidos", details: result.error.issues }, 400);
         }
 
-        const { id, name, description, price, category, icon, image_url, sizes, template, active, brand, model, stock } = result.data;
+        const { id, name, description, price, compare_at_price, category, icon, badge, image_url, sizes, template, active, brand, model, sku, stock } = result.data;
         const productId = id.toLowerCase().trim();
 
         const existing = await db.prepare(
@@ -267,9 +276,19 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
             return jsonResponse({ error: `El identificador "${productId}" ya está registrado.` }, 400);
         }
 
-        await db.prepare(
-            "INSERT INTO products (id, name, type_id, category, description, price, icon, image_url, sizes, template, active, tenant_id, brand, model, stock) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-        ).bind(productId, name, category, category, description, price, icon, image_url, sizes, template, active, tenantId, brand, model, stock ?? -1).run();
+        try {
+            await db.prepare(
+                "INSERT INTO products (id, name, type_id, category, description, price, compare_at_price, icon, badge, image_url, sizes, template, active, tenant_id, brand, model, sku, stock) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            ).bind(productId, name, category, category, description, price, compare_at_price ?? 0, icon, badge ?? '', image_url, sizes, template, active, tenantId, brand, model, sku ?? '', stock ?? -1).run();
+        } catch (dbErr: any) {
+            if (String(dbErr).includes('no such column')) {
+                await db.prepare(
+                    "INSERT INTO products (id, name, type_id, category, description, price, icon, image_url, sizes, template, active, tenant_id, brand, model, stock) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                ).bind(productId, name, category, category, description, price, icon, image_url, sizes, template, active, tenantId, brand, model, stock ?? -1).run();
+            } else {
+                throw dbErr;
+            }
+        }
 
         return jsonResponse({ success: true, message: "Producto creado exitosamente." }, 201);
     } catch (err) {
@@ -297,7 +316,7 @@ export const onRequestPut: PagesHandler<Env> = async (context) => {
             return jsonResponse({ error: "Datos inválidos", details: result.error.issues }, 400);
         }
 
-        const { id, name, description, price, category, icon, image_url, sizes, template, active, brand, model, stock } = result.data;
+        const { id, name, description, price, compare_at_price, category, icon, badge, image_url, sizes, template, active, brand, model, sku, stock } = result.data;
 
         const existing = await db.prepare(
             "SELECT id FROM products WHERE id = ? AND tenant_id = ?"
@@ -307,9 +326,19 @@ export const onRequestPut: PagesHandler<Env> = async (context) => {
             return jsonResponse({ error: "Producto no encontrado." }, 404);
         }
 
-        await db.prepare(
-            "UPDATE products SET name = ?, type_id = ?, category = ?, description = ?, price = ?, icon = ?, image_url = ?, sizes = ?, template = ?, active = ?, brand = ?, model = ?, stock = ? WHERE id = ? AND tenant_id = ?"
-        ).bind(name, category, category, description, price, icon, image_url, sizes, template, active, brand, model, stock ?? -1, id, tenantId).run();
+        try {
+            await db.prepare(
+                "UPDATE products SET name = ?, type_id = ?, category = ?, description = ?, price = ?, compare_at_price = ?, icon = ?, badge = ?, image_url = ?, sizes = ?, template = ?, active = ?, brand = ?, model = ?, sku = ?, stock = ? WHERE id = ? AND tenant_id = ?"
+            ).bind(name, category, category, description, price, compare_at_price ?? 0, icon, badge ?? '', image_url, sizes, template, active, brand, model, sku ?? '', stock ?? -1, id, tenantId).run();
+        } catch (dbErr: any) {
+            if (String(dbErr).includes('no such column')) {
+                await db.prepare(
+                    "UPDATE products SET name = ?, type_id = ?, category = ?, description = ?, price = ?, icon = ?, image_url = ?, sizes = ?, template = ?, active = ?, brand = ?, model = ?, stock = ? WHERE id = ? AND tenant_id = ?"
+                ).bind(name, category, category, description, price, icon, image_url, sizes, template, active, brand, model, stock ?? -1, id, tenantId).run();
+            } else {
+                throw dbErr;
+            }
+        }
 
         return jsonResponse({ success: true, message: "Producto actualizado exitosamente." });
     } catch (err) {
@@ -333,6 +362,19 @@ export const onRequestDelete: PagesHandler<Env> = async (context) => {
     try {
         const url = new URL(request.url);
         const id = url.searchParams.get("id");
+        const idsParam = url.searchParams.get("ids");
+
+        // Soporte para eliminación en masa
+        if (idsParam) {
+            const ids = idsParam.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+            if (ids.length === 0) {
+                return jsonResponse({ error: "IDs requeridos para eliminación masiva." }, 400);
+            }
+            const placeholders = ids.map(() => '?').join(',');
+            await db.prepare(`DELETE FROM product_attributes WHERE product_id IN (${placeholders})`).bind(...ids).run();
+            await db.prepare(`DELETE FROM products WHERE id IN (${placeholders}) AND tenant_id = ?`).bind(...ids, tenantId).run();
+            return jsonResponse({ success: true, message: `${ids.length} productos eliminados con éxito.` });
+        }
 
         if (!id) {
             return jsonResponse({ error: "ID de producto requerido." }, 400);

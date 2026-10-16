@@ -612,6 +612,21 @@ select option {
     background: rgba(0, 194, 255, 0.1);
 }
 
+.action-icon-btn.copy:hover {
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.12);
+}
+
+.action-icon-btn.duplicate:hover {
+    color: #38bdf8;
+    background: rgba(56, 189, 248, 0.12);
+}
+
+.action-icon-btn.quick-edit:hover {
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.12);
+}
+
 /* Modales */
 .modal {
     position: fixed;
@@ -1580,6 +1595,238 @@ select option {
     font-size: 0.75rem;
     color: var(--text-secondary);
     line-height: 1.4;
+}
+
+/* --- BADGES DE STOCK --- */
+.stock-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.65rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+}
+
+.stock-badge.ilimitado {
+    background: rgba(147, 51, 234, 0.15);
+    color: #c084fc;
+    border: 1px solid rgba(147, 51, 234, 0.3);
+}
+
+.stock-badge.normal {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.stock-badge.critico {
+    background: rgba(245, 158, 11, 0.18);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    animation: pulse-soft 2s infinite ease-in-out;
+}
+
+.stock-badge.agotado {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+@keyframes pulse-soft {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.75; }
+}
+
+/* --- FILTROS RÁPIDOS DE STOCK --- */
+.stock-filter-tabs {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+    padding: 0.6rem 0.8rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+}
+
+.stock-filter-btn {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 0.35rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.stock-filter-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--white);
+}
+
+.stock-filter-btn.active {
+    background: var(--primary-color);
+    color: var(--white);
+    border-color: var(--primary-color);
+}
+
+.stock-filter-btn.btn-stock-alert.active {
+    background: rgba(245, 158, 11, 0.25);
+    border-color: #f59e0b;
+    color: #fbbf24;
+}
+
+.stock-filter-btn.btn-stock-out.active {
+    background: rgba(239, 68, 68, 0.25);
+    border-color: #ef4444;
+    color: #f87171;
+}
+
+/* --- BOTÓN Y ESTADO DE NOTIFICACIONES PUSH --- */
+.btn-push-toggle {
+    position: relative;
+}
+
+.btn-push-toggle.active {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    background: rgba(99, 102, 241, 0.15);
+}
+
+.push-dot {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 8px #10b981;
+}
+
+/* --- BARRA DE ACCIONES EN MASA (BULK ACTIONS) --- */
+.products-bulk-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98));
+    border: 1px solid rgba(99, 102, 241, 0.4);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 15px rgba(99, 102, 241, 0.2);
+    border-radius: 12px;
+    padding: 0.75rem 1.25rem;
+    margin-bottom: 1rem;
+    animation: slide-down 0.25s ease-out;
+}
+
+@keyframes slide-down {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.bulk-toolbar-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.bulk-selected-badge {
+    background: var(--primary-color);
+    color: #fff;
+    padding: 0.25rem 0.65rem;
+    border-radius: 9999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.bulk-toolbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+/* --- BADGES PROMOCIONALES Y PRECIO COMPARATIVO --- */
+.table-price-old {
+    text-decoration: line-through;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    margin-left: 0.35rem;
+    display: inline-block;
+    opacity: 0.75;
+}
+
+.table-discount-badge {
+    display: inline-block;
+    padding: 0.15rem 0.4rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.15);
+    border-radius: 4px;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    margin-left: 0.35rem;
+}
+
+.promo-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-left: 0.4rem;
+    vertical-align: middle;
+}
+
+.promo-badge.destacado {
+    background: rgba(234, 179, 8, 0.15);
+    color: #fbbf24;
+    border: 1px solid rgba(234, 179, 8, 0.35);
+}
+
+.promo-badge.oferta {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.promo-badge.nuevo {
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.35);
+}
+
+.promo-badge.liquidacion {
+    background: rgba(168, 85, 247, 0.15);
+    color: #c084fc;
+    border: 1px solid rgba(168, 85, 247, 0.35);
+}
+
+.table-sku {
+    font-family: monospace;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    display: block;
+    margin-top: 0.2rem;
+}
+
+/* Checkbox personalizado en tabla */
+.table-checkbox {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--primary-color);
 }
 
 /* --- MODO IMPRESIÓN (PRINT) --- */

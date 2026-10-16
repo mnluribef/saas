@@ -20,6 +20,14 @@
                     <i data-lucide="volume-2" id="sound-icon"></i>
                 </button>
                 <button
+                    class="btn-action secondary btn-compact btn-push-toggle"
+                    id="btn-toggle-orders-push"
+                    title="Alternar notificaciones de escritorio / Web Push"
+                >
+                    <i data-lucide="bell" id="orders-push-icon"></i>
+                    <span class="push-dot d-none" id="orders-push-dot"></span>
+                </button>
+                <button
                     class="btn-action secondary"
                     id="btn-export-orders"
                     title="Exportar pedidos a archivo CSV / Excel"
@@ -44,6 +52,18 @@
                     class="form-control table-search-input-padded"
                     placeholder="🔍 Buscar por cliente, teléfono o #pedido..."
                 />
+            </div>
+            <div class="table-filter-group">
+                <label for="orders-date-filter" class="table-filter-label">
+                    Filtrar por fecha:
+                </label>
+                <select id="orders-date-filter" class="form-control table-filter-select">
+                    <option value="all">📅 Todas las fechas</option>
+                    <option value="today">☀️ Hoy</option>
+                    <option value="yesterday">⏪ Ayer</option>
+                    <option value="last7">🗓️ Últimos 7 días</option>
+                    <option value="this_month">📆 Este mes</option>
+                </select>
             </div>
             <div class="table-filter-group">
                 <label for="orders-status-filter" class="table-filter-label">

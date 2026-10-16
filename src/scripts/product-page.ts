@@ -196,6 +196,16 @@ class ProductPageController {
         const badgesEl = document.getElementById('pdp-badges');
         if (badgesEl) {
             let bHtml = '';
+            if (product.badge) {
+                const promoLabels: Record<string, string> = {
+                    destacado: '⭐ Más Vendido',
+                    oferta: '🔥 Oferta Especial',
+                    nuevo: '✨ Nuevo Ingreso',
+                    liquidacion: '🏷️ Liquidación'
+                };
+                const label = promoLabels[product.badge] || product.badge;
+                bHtml += `<span class="promo-badge ${product.badge}">${label}</span> `;
+            }
             if (product.stock === 0) {
                 bHtml += '<span class="product-stock-badge-danger">Agotado</span>';
             } else if (product.stock !== undefined && product.stock > 0 && product.stock <= 5) {
@@ -214,6 +224,7 @@ class ProductPageController {
         const brandModelEl = document.getElementById('pdp-brand-model');
         if (brandModelEl) {
             const parts: string[] = [];
+            if (product.sku) parts.push(`SKU: ${product.sku}`);
             if (product.brand) parts.push(`Marca: ${product.brand}`);
             if (product.model) parts.push(`Modelo: ${product.model}`);
             brandModelEl.textContent = parts.join(' · ');
@@ -227,13 +238,15 @@ class ProductPageController {
 
         const priceOrigEl = document.getElementById('pdp-price-original');
         const discountBadgeEl = document.getElementById('pdp-discount-badge');
-        if (product.original_price && product.original_price > product.price) {
+        const comparePrice = parseFloat(String(product.compare_at_price || product.original_price || 0));
+        const currentPrice = parseFloat(String(product.price || 0));
+        if (comparePrice > currentPrice && currentPrice > 0) {
             if (priceOrigEl) {
-                priceOrigEl.textContent = `$${parseFloat(String(product.original_price)).toFixed(2)}`;
+                priceOrigEl.textContent = `$${comparePrice.toFixed(2)}`;
                 priceOrigEl.classList.remove('store-meta-hidden');
             }
             if (discountBadgeEl) {
-                const pct = Math.round(((product.original_price - product.price) / product.original_price) * 100);
+                const pct = Math.round(((comparePrice - currentPrice) / comparePrice) * 100);
                 discountBadgeEl.textContent = `-${pct}% OFF`;
                 discountBadgeEl.classList.remove('store-meta-hidden');
             }

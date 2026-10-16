@@ -11,6 +11,29 @@
                 </p>
             </div>
             <div class="card-actions">
+                <input
+                    type="file"
+                    id="products-csv-file"
+                    accept=".csv"
+                    class="d-none"
+                    aria-label="Subir archivo CSV de productos"
+                />
+                <button
+                    type="button"
+                    class="btn-action secondary"
+                    id="btn-import-products"
+                    title="Importar productos masivamente desde archivo CSV"
+                >
+                    <i data-lucide="upload"></i> Importar CSV
+                </button>
+                <button
+                    type="button"
+                    class="btn-action secondary"
+                    id="btn-export-products"
+                    title="Descargar catálogo completo en formato CSV"
+                >
+                    <i data-lucide="download"></i> Exportar CSV
+                </button>
                 <button
                     class="btn-action"
                     id="btn-toggle-product-form"
@@ -91,61 +114,63 @@
                             <label for="prod-category">
                                 Categoría
                             </label>
-                            <select
+                            <input
+                                type="text"
                                 id="prod-category"
                                 class="form-control"
-                            >
-                                <optgroup label="🍽️ Restaurante">
-                                    <option value="entradas">🥗 Entradas</option>
-                                    <option value="principales">🍔 Principales & Hamburguesas</option>
-                                    <option value="bebidas">🥤 Bebidas & Cócteles</option>
-                                    <option value="postres">🍰 Postres & Dulces</option>
-                                    <option value="promociones">🔥 Promociones</option>
-                                </optgroup>
-                                <optgroup label="🔨 Ferretería">
-                                    <option value="herramientas-manuales">🛠️ Herramientas Manuales</option>
-                                    <option value="herramientas-electricas">⚡ Herramientas Eléctricas</option>
-                                    <option value="seguridad">🦺 Seguridad Industrial</option>
-                                    <option value="electricidad">💡 Electricidad</option>
-                                    <option value="construccion-pinturas">🎨 Construcción & Pinturas</option>
-                                </optgroup>
-                                <optgroup label="👗 Moda">
-                                    <option value="vestidos">👗 Vestidos & Enterizos</option>
-                                    <option value="blusas-tops">👚 Blusas & Tops</option>
-                                    <option value="pantalones-jeans">👖 Pantalones & Jeans</option>
-                                    <option value="conjuntos">🧥 Conjuntos & Sets</option>
-                                    <option value="accesorios-calzado">👜 Calzado & Accesorios</option>
-                                </optgroup>
-                                <optgroup label="⚡ Tecnología">
-                                    <option value="laptops-pc">💻 Laptops & PC</option>
-                                    <option value="componentes">💾 Componentes & Almacenamiento</option>
-                                    <option value="perifericos">🎧 Periféricos & Audio</option>
-                                    <option value="smartphones-tablets">📱 Smartphones & Tablets</option>
-                                    <option value="accesorios-redes">📡 Redes & Conectividad</option>
-                                </optgroup>
-                                <optgroup label="🚗 Repuestos">
-                                    <option value="frenos">🛑 Frenos & Discos</option>
-                                    <option value="motor-partes">⚙️ Motor & Partes</option>
-                                    <option value="suspension-direccion">🛞 Suspensión & Dirección</option>
-                                    <option value="baterias-electricidad">🔋 Baterías & Encendido</option>
-                                    <option value="accesorios-repuestos">🧰 Filtros & Accesorios</option>
-                                </optgroup>
-                            </select>
+                                list="category-datalist"
+                                placeholder="Escribe o selecciona categoría..."
+                                required
+                            />
+                            <datalist id="category-datalist">
+                                <option value="entradas">🥗 Entradas</option>
+                                <option value="principales">🍔 Principales & Hamburguesas</option>
+                                <option value="bebidas">🥤 Bebidas & Cócteles</option>
+                                <option value="postres">🍰 Postres & Dulces</option>
+                                <option value="promociones">🔥 Promociones</option>
+                                <option value="herramientas-manuales">🛠️ Herramientas Manuales</option>
+                                <option value="herramientas-electricas">⚡ Herramientas Eléctricas</option>
+                                <option value="seguridad">🦺 Seguridad Industrial</option>
+                                <option value="electricidad">💡 Electricidad</option>
+                                <option value="construccion-pinturas">🎨 Construcción & Pinturas</option>
+                                <option value="vestidos">👗 Vestidos & Enterizos</option>
+                                <option value="blusas-tops">👚 Blusas & Tops</option>
+                                <option value="pantalones-jeans">👖 Pantalones & Jeans</option>
+                                <option value="conjuntos">🧥 Conjuntos & Sets</option>
+                                <option value="accesorios-calzado">👜 Calzado & Accesorios</option>
+                                <option value="laptops-pc">💻 Laptops & PC</option>
+                                <option value="componentes">💾 Componentes & Almacenamiento</option>
+                                <option value="perifericos">🎧 Periféricos & Audio</option>
+                                <option value="smartphones-tablets">📱 Smartphones & Tablets</option>
+                                <option value="accesorios-redes">📡 Redes & Conectividad</option>
+                                <option value="frenos">🛑 Frenos & Discos</option>
+                                <option value="motor-partes">⚙️ Motor & Partes</option>
+                                <option value="suspension-direccion">🛞 Suspensión & Dirección</option>
+                                <option value="baterias-electricidad">🔋 Baterías & Encendido</option>
+                                <option value="accesorios-repuestos">🧰 Filtros & Accesorios</option>
+                            </datalist>
+                            <span class="field-hint">
+                                Elige una sugerencia o escribe cualquier categoría personalizada.
+                            </span>
                         </div>
                     </div>
 
-                    <div class="form-grid-220">
+                    <div class="form-grid-auto">
                         <div class="form-group">
                             <label for="prod-brand">Marca (Opcional)</label>
-                            <input type="text" id="prod-brand" class="form-control" placeholder="ej: Bosch, Makita..." />
+                            <input type="text" id="prod-brand" class="form-control" placeholder="ej: Bosch, Samsung, Zara..." />
                         </div>
                         <div class="form-group">
                             <label for="prod-model">Modelo (Opcional)</label>
                             <input type="text" id="prod-model" class="form-control" placeholder="ej: GSB 12V-30" />
                         </div>
+                        <div class="form-group">
+                            <label for="prod-sku">SKU / Código de Barras (Opcional)</label>
+                            <input type="text" id="prod-sku" class="form-control" placeholder="ej: FER-00129 o código físico" />
+                        </div>
                     </div>
 
-                    <div class="form-grid-220">
+                    <div class="form-grid-auto">
                         <div class="form-group">
                             <label for="prod-price">
                                 Precio en USD ($)
@@ -159,6 +184,32 @@
                                 placeholder="0.00"
                                 required
                             />
+                        </div>
+                        <div class="form-group">
+                            <label for="prod-compare-price">
+                                Precio Anterior / Oferta ($)
+                            </label>
+                            <input
+                                type="number"
+                                id="prod-compare-price"
+                                class="form-control"
+                                step="0.01"
+                                min="0"
+                                placeholder="0.00 (Opcional)"
+                            />
+                            <span class="field-hint">Tachado con % de descuento</span>
+                        </div>
+                        <div class="form-group">
+                            <label for="prod-badge">
+                                Insignia Promocional
+                            </label>
+                            <select id="prod-badge" class="form-control">
+                                <option value="">Ninguna</option>
+                                <option value="destacado">⭐ Más Vendido / Destacado</option>
+                                <option value="oferta">🔥 Oferta Especial</option>
+                                <option value="nuevo">✨ Nuevo Ingreso</option>
+                                <option value="liquidacion">🏷️ Liquidación</option>
+                            </select>
                         </div>
                         <div class="form-group">
                             <label for="prod-icon">
@@ -298,6 +349,25 @@
             </button>
         </div>
 
+        <!-- Barra de Filtros Rápidos de Stock -->
+        <div class="stock-filter-tabs" id="stock-filter-tabs">
+            <span class="filter-badge-label">
+                <i data-lucide="boxes" class="icon-14"></i> Nivel de Stock:
+            </span>
+            <button type="button" class="stock-filter-btn active" data-stock-filter="all">
+                📦 Todos (<span id="stock-count-all">0</span>)
+            </button>
+            <button type="button" class="stock-filter-btn btn-stock-alert" data-stock-filter="critical" title="Productos con stock entre 1 y 3 unidades">
+                ⚠️ Crítico (1-3) (<span id="stock-count-critical">0</span>)
+            </button>
+            <button type="button" class="stock-filter-btn btn-stock-out" data-stock-filter="out_of_stock" title="Productos con stock 0 o pausados">
+                ❌ Agotado (0) (<span id="stock-count-out">0</span>)
+            </button>
+            <button type="button" class="stock-filter-btn" data-stock-filter="available" title="Productos con stock normal o ilimitado">
+                ✅ Disponible (>3 / ♾️) (<span id="stock-count-available">0</span>)
+            </button>
+        </div>
+
         <!-- Barra de Búsqueda de Productos -->
         <div class="table-toolbar">
             <div class="table-search-box">
@@ -310,12 +380,40 @@
             </div>
         </div>
 
+        <!-- Barra Flotante de Acciones en Masa (Bulk Actions) -->
+        <div id="products-bulk-toolbar" class="products-bulk-toolbar d-none">
+            <div class="bulk-toolbar-info">
+                <span class="bulk-selected-badge" id="bulk-selected-count">0 seleccionados</span>
+                <span>Acciones en lote:</span>
+            </div>
+            <div class="bulk-toolbar-actions">
+                <button type="button" class="btn-action secondary btn-compact" id="btn-bulk-active-on" title="Marcar como disponibles">
+                    <i data-lucide="check" class="icon-14"></i> Activar
+                </button>
+                <button type="button" class="btn-action secondary btn-compact" id="btn-bulk-active-off" title="Marcar como agotados / pausados">
+                    <i data-lucide="eye-off" class="icon-14"></i> Pausar
+                </button>
+                <button type="button" class="btn-action secondary btn-compact" id="btn-bulk-price" title="Ajustar precio porcentualmente">
+                    <i data-lucide="percent" class="icon-14"></i> Ajustar Precios
+                </button>
+                <button type="button" class="btn-action secondary btn-compact" id="btn-bulk-delete" title="Eliminar productos seleccionados">
+                    <i data-lucide="trash-2" class="icon-14"></i> Eliminar
+                </button>
+                <button type="button" class="btn-action secondary btn-compact" id="btn-bulk-clear">
+                    Cancelar
+                </button>
+            </div>
+        </div>
+
         <div class="table-responsive">
             <table>
                 <thead>
                     <tr>
+                        <th class="table-check-col">
+                            <input type="checkbox" id="check-all-products" class="table-checkbox" title="Seleccionar todos los productos" />
+                        </th>
                         <th>Imagen</th>
-                        <th>Slug</th>
+                        <th>Slug / SKU</th>
                         <th>Nombre</th>
                         <th>Plantilla</th>
                         <th>Categoría</th>
@@ -328,7 +426,7 @@
                 </thead>
                 <tbody id="table-products">
                     <tr>
-                        <td colspan="10" class="table-empty-row">
+                        <td colspan="11" class="table-empty-row">
                             Cargando productos...
                         </td>
                     </tr>
