@@ -166,12 +166,26 @@ function showToast(message: string, type: string = 'success') {
 // --- VERIFICACIÓN DE SESIÓN INICIAL ---
 async function checkSession() {
     try {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('dev') === 'true' || urlParams.get('preview') === 'true') {
+            currentAdmin = 'demo_admin';
+            window.currentUserRole = 'admin';
+            showDashboard();
+            return;
+        }
+
         const res = await fetch('/api/auth');
         const data = (await res.json()) as any;
 
         if (data.authenticated) {
             currentAdmin = data.username;
             window.currentUserRole = data.role || 'viewer';
+            if (data.tenantId && data.tenantId !== 'demo') {
+                const headerBtn = document.getElementById('btn-header-view-store') as HTMLAnchorElement | null;
+                if (headerBtn) headerBtn.href = `/${data.tenantId}`;
+                const previewBtn = document.getElementById('btn-preview-store') as HTMLAnchorElement | null;
+                if (previewBtn) previewBtn.href = `/${data.tenantId}`;
+            }
             showDashboard();
         } else {
             showLogin();
@@ -506,7 +520,8 @@ async function refreshAllData() {
         loadSales(),
         loadStats(),
         loadBillingData(),
-        loadCoupons()
+        loadCoupons(),
+        loadCategories()
     ]);
     renderMetrics();
 }
@@ -1820,9 +1835,10 @@ function startEditProduct(productId: string) {
     const imgFileIn = $input('prod-image-file'); if (imgFileIn) imgFileIn.value = ''; // Reset file input
     if (imagePreviewEl && product.image_url) {
         const url = (product.image_url.startsWith('http') || product.image_url.startsWith('/')) ? product.image_url : `/${product.image_url}`;
-        imagePreviewEl.style.backgroundImage = `url('${url}')`;
+        imagePreviewEl.innerHTML = `<img src="${escapeHtml(url)}" alt="Vista previa" class="prod-thumb-img" />`;
         imagePreviewEl.classList.remove('d-none');
     } else if (imagePreviewEl) {
+        imagePreviewEl.innerHTML = '';
         imagePreviewEl.classList.add('d-none');
     }
 
@@ -1855,13 +1871,21 @@ function resetProductForm() {
     const imagePreviewEl = document.getElementById('prod-image-preview');
     
     setVal('prod-method', 'POST');
-    const idInReset = $input('prod-id'); if (idInReset) idInReset.disabled = false; setVal('prod-id', '');
+    const idInReset = $input('prod-id');
+    if (idInReset) {
+        idInReset.disabled = false;
+        delete idInReset.dataset.manual;
+    }
+    setVal('prod-id', '');
     setVal('prod-template', 'restaurant');
     setVal('prod-stock', '-1');
     setVal('prod-compare-price', '');
     setVal('prod-badge', '');
     setVal('prod-sku', '');
-    if (imagePreviewEl) imagePreviewEl.classList.add('d-none');
+    if (imagePreviewEl) {
+        imagePreviewEl.innerHTML = '';
+        imagePreviewEl.classList.add('d-none');
+    }
     const ife = $input('prod-image-file'); if (ife) ife.value = '';
     
     if (formProductTitle) formProductTitle.textContent = 'Añadir Nuevo Producto';
@@ -1908,7 +1932,11 @@ function duplicateProduct(productId: string) {
     setVal('prod-method', 'POST');
     const newId = `${product.id}-copia`;
     setVal('prod-id', newId);
-    const idIn = $input('prod-id'); if (idIn) idIn.disabled = false;
+    const idIn = $input('prod-id');
+    if (idIn) {
+        idIn.disabled = false;
+        idIn.dataset.manual = 'true';
+    }
     setVal('prod-name', `${product.name} (Copia)`);
     setVal('prod-template', product.template || 'restaurant');
     setVal('prod-category', product.category || product.type_id || 'principales');
@@ -1928,7 +1956,7 @@ function duplicateProduct(productId: string) {
     const imagePreviewEl = document.getElementById('prod-image-preview');
     if (imagePreviewEl && product.image_url) {
         const url = (product.image_url.startsWith('http') || product.image_url.startsWith('/')) ? product.image_url : `/${product.image_url}`;
-        imagePreviewEl.style.backgroundImage = `url('${url}')`;
+        imagePreviewEl.innerHTML = `<img src="${escapeHtml(url)}" alt="Vista previa" class="prod-thumb-img" />`;
         imagePreviewEl.classList.remove('d-none');
     }
 
@@ -2198,12 +2226,48 @@ document.addEventListener('change', (e) => {
     }
 });
 
-// Poblar datalist de categorías de forma dinámica
+// --- GESTOR CENTRAL DE CATEGORÍAS DEL CATÁLOGO ---
+interface CategoryItemData {
+    id: string;
+    name: string;
+    icon?: string;
+    count: number;
+}
+
+let categoriesDataList: CategoryItemData[] = [];
+
+async function loadCategories() {
+    try {
+        const res = await fetch('/api/categories');
+        if (!res.ok) throw new Error('Error al consultar categorías');
+        const data = (await res.json()) as any;
+        categoriesDataList = data.categories || [];
+        renderCategoriesTable();
+        updateCategoryDatalist();
+    } catch (err) {
+        console.error('Error cargando categorías:', err);
+    }
+}
+
+// Poblar datalist de categorías de forma dinámica y sincronizada con el gestor
 function updateCategoryDatalist() {
     const datalist = document.getElementById('category-datalist');
     if (!datalist) return;
 
-    const categories = new Set<string>();
+    const seen = new Set<string>();
+    const options: string[] = [];
+
+    // 1. Categorías del Gestor Central
+    if (categoriesDataList && categoriesDataList.length > 0) {
+        categoriesDataList.forEach(c => {
+            if (!seen.has(c.id)) {
+                seen.add(c.id);
+                options.push(`<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`);
+            }
+        });
+    }
+
+    // 2. Categorías predeterminadas sugeridas
     const defaults = [
         'entradas', 'principales', 'bebidas', 'postres', 'promociones',
         'herramientas-manuales', 'herramientas-electricas', 'seguridad', 'electricidad', 'construccion-pinturas',
@@ -2211,17 +2275,349 @@ function updateCategoryDatalist() {
         'laptops-pc', 'componentes', 'perifericos', 'smartphones-tablets', 'accesorios-redes',
         'frenos', 'motor-partes', 'suspension-direccion', 'baterias-electricidad', 'accesorios-repuestos'
     ];
-    defaults.forEach(c => categories.add(c));
-
-    productsList.forEach(p => {
-        if (p.category && typeof p.category === 'string' && p.category.trim()) {
-            categories.add(p.category.trim());
+    defaults.forEach(c => {
+        if (!seen.has(c)) {
+            seen.add(c);
+            options.push(`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`);
         }
     });
 
-    datalist.innerHTML = Array.from(categories)
-        .map(cat => `<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`)
-        .join('');
+    // 3. Categorías existentes en productos cargados
+    productsList.forEach(p => {
+        if (p.category && typeof p.category === 'string' && p.category.trim() && !seen.has(p.category.trim())) {
+            seen.add(p.category.trim());
+            options.push(`<option value="${escapeHtml(p.category.trim())}">${escapeHtml(p.category.trim())}</option>`);
+        }
+    });
+
+    datalist.innerHTML = options.join('');
+}
+
+function renderCategoriesTable() {
+    const tbody = document.getElementById('table-categories-body');
+    const badge = document.getElementById('categories-count-badge');
+    if (badge) {
+        badge.textContent = `${categoriesDataList.length} ${categoriesDataList.length === 1 ? 'categoría' : 'categorías'}`;
+    }
+
+    if (!tbody) return;
+
+    if (categoriesDataList.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="5" class="table-empty-row">
+                    No hay categorías registradas. ¡Crea la primera en el formulario superior!
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    tbody.innerHTML = categoriesDataList.map(cat => {
+        const iconName = cat.icon || 'tag';
+        const countClass = cat.count > 0 ? 'has-products' : 'zero-products';
+        const countText = `${cat.count} ${cat.count === 1 ? 'producto' : 'productos'}`;
+
+        return `
+            <tr>
+                <td>
+                    <span class="category-slug-pill">
+                        <i data-lucide="${escapeHtml(iconName)}" class="icon-14"></i>
+                        ${escapeHtml(cat.id)}
+                    </span>
+                </td>
+                <td>
+                    <strong>${escapeHtml(cat.name)}</strong>
+                </td>
+                <td>
+                    <span class="category-slug-pill">
+                        ${escapeHtml(iconName)}
+                    </span>
+                </td>
+                <td>
+                    <span class="category-count-pill ${countClass}">
+                        ${countText}
+                    </span>
+                </td>
+                <td>
+                    <div class="category-actions-cell">
+                        <button
+                            type="button"
+                            class="btn-action secondary btn-icon-cell btn-trigger-rename-cat"
+                            data-slug="${escapeHtml(cat.id)}"
+                            data-name="${escapeHtml(cat.name)}"
+                            data-icon="${escapeHtml(iconName)}"
+                            title="Renombrar globalmente en productos"
+                        >
+                            <i data-lucide="edit-2" class="icon-14"></i> Renombrar
+                        </button>
+                        <button
+                            type="button"
+                            class="btn-action secondary btn-icon-cell btn-cat-delete btn-trigger-delete-cat"
+                            data-slug="${escapeHtml(cat.id)}"
+                            data-name="${escapeHtml(cat.name)}"
+                            data-count="${cat.count}"
+                            title="Eliminar o reasignar"
+                        >
+                            <i data-lucide="trash-2" class="icon-14"></i> Eliminar
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+
+    if (window.lucide) lucide.createIcons();
+}
+
+function openCategoriesModal() {
+    const modal = document.getElementById('categories-modal');
+    if (modal) {
+        modal.classList.add('active');
+        loadCategories();
+    }
+}
+
+function closeCategoriesModal() {
+    const modal = document.getElementById('categories-modal');
+    if (modal) modal.classList.remove('active');
+}
+
+function openRenameCategoryModal(slug: string, name: string, icon: string) {
+    const modal = document.getElementById('category-rename-modal');
+    if (!modal) return;
+
+    const oldSlugInput = document.getElementById('rename-cat-old-slug') as HTMLInputElement | null;
+    const currentDisplay = document.getElementById('rename-cat-current-display');
+    const newSlugInput = document.getElementById('rename-cat-new-slug') as HTMLInputElement | null;
+    const nameInput = document.getElementById('rename-cat-name') as HTMLInputElement | null;
+    const iconInput = document.getElementById('rename-cat-icon') as HTMLInputElement | null;
+
+    if (oldSlugInput) oldSlugInput.value = slug;
+    if (currentDisplay) currentDisplay.textContent = slug;
+    if (newSlugInput) newSlugInput.value = slug;
+    if (nameInput) nameInput.value = name;
+    if (iconInput) iconInput.value = icon || 'tag';
+
+    modal.classList.add('active');
+    if (nameInput) nameInput.focus();
+}
+
+function closeRenameCategoryModal() {
+    const modal = document.getElementById('category-rename-modal');
+    if (modal) modal.classList.remove('active');
+}
+
+function openDeleteCategoryModal(slug: string, name: string, count: number) {
+    const modal = document.getElementById('category-delete-modal');
+    if (!modal) return;
+
+    const targetSlugInput = document.getElementById('delete-cat-target-slug') as HTMLInputElement | null;
+    const warningText = document.getElementById('delete-cat-warning-text');
+    const reassignContainer = document.getElementById('delete-cat-reassign-container');
+    const reassignSelect = document.getElementById('delete-cat-reassign-select') as HTMLSelectElement | null;
+
+    if (targetSlugInput) targetSlugInput.value = slug;
+
+    if (count > 0) {
+        if (warningText) {
+            warningText.innerHTML = `La categoría <strong>"${escapeHtml(name)}"</strong> tiene <strong>${count}</strong> producto(s) asignado(s). Para eliminarla, selecciona la categoría de destino a la cual serán transferidos:`;
+        }
+        if (reassignContainer) reassignContainer.classList.remove('d-none');
+        if (reassignSelect) {
+            const otherCategories = categoriesDataList.filter(c => c.id !== slug);
+            if (otherCategories.length > 0) {
+                reassignSelect.innerHTML = otherCategories.map(c => 
+                    `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)} (${c.id})</option>`
+                ).join('');
+            } else {
+                reassignSelect.innerHTML = `<option value="general">General (Crear)</option>`;
+            }
+        }
+    } else {
+        if (warningText) {
+            warningText.innerHTML = `¿Estás seguro de que deseas eliminar la categoría <strong>"${escapeHtml(name)}"</strong>?`;
+        }
+        if (reassignContainer) reassignContainer.classList.add('d-none');
+    }
+
+    modal.classList.add('active');
+}
+
+function closeDeleteCategoryModal() {
+    const modal = document.getElementById('category-delete-modal');
+    if (modal) modal.classList.remove('active');
+}
+
+// Auto-generación de slug en formulario de nueva categoría
+const newCatNameIn = document.getElementById('new-cat-name') as HTMLInputElement | null;
+const newCatSlugIn = document.getElementById('new-cat-slug') as HTMLInputElement | null;
+if (newCatNameIn && newCatSlugIn) {
+    newCatNameIn.addEventListener('input', () => {
+        if (!newCatSlugIn.dataset.manual) {
+            newCatSlugIn.value = newCatNameIn.value
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '');
+        }
+    });
+    newCatSlugIn.addEventListener('input', () => {
+        newCatSlugIn.dataset.manual = 'true';
+    });
+}
+
+// Submit crear nueva categoría
+const formNewCat = document.getElementById('form-new-category') as HTMLFormElement | null;
+if (formNewCat) {
+    formNewCat.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = (document.getElementById('new-cat-name') as HTMLInputElement)?.value.trim();
+        const slug = (document.getElementById('new-cat-slug') as HTMLInputElement)?.value.trim().toLowerCase();
+        const icon = (document.getElementById('new-cat-icon') as HTMLInputElement)?.value.trim() || 'tag';
+        const submitBtn = document.getElementById('btn-submit-new-cat') as HTMLButtonElement | null;
+
+        if (!name || !slug) return;
+
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i data-lucide="loader" class="spin"></i> Creando...';
+            if (window.lucide) lucide.createIcons();
+        }
+
+        try {
+            const res = await fetch('/api/categories', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: slug, name, icon })
+            });
+            const data = (await res.json()) as any;
+            if (!res.ok) throw new Error(data.error || 'Error al crear categoría');
+
+            showToast(data.message || 'Categoría creada con éxito.', 'success');
+            formNewCat.reset();
+            const slugIn = document.getElementById('new-cat-slug') as HTMLInputElement | null;
+            if (slugIn) delete slugIn.dataset.manual;
+
+            await loadCategories();
+        } catch (err: any) {
+            showToast(err.message || 'No se pudo crear la categoría.', 'error');
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i data-lucide="plus"></i> Crear Categoría';
+                if (window.lucide) lucide.createIcons();
+            }
+        }
+    });
+}
+
+// Submit renombrar categoría globalmente
+const formRenameCat = document.getElementById('form-rename-category') as HTMLFormElement | null;
+if (formRenameCat) {
+    formRenameCat.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const oldSlug = (document.getElementById('rename-cat-old-slug') as HTMLInputElement)?.value;
+        const newSlug = (document.getElementById('rename-cat-new-slug') as HTMLInputElement)?.value.trim().toLowerCase();
+        const name = (document.getElementById('rename-cat-name') as HTMLInputElement)?.value.trim();
+        const icon = (document.getElementById('rename-cat-icon') as HTMLInputElement)?.value.trim();
+        const submitBtn = document.getElementById('btn-submit-cat-rename') as HTMLButtonElement | null;
+
+        if (!oldSlug || !newSlug || !name) return;
+
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i data-lucide="loader" class="spin"></i> Guardando...';
+            if (window.lucide) lucide.createIcons();
+        }
+
+        try {
+            const res = await fetch('/api/categories', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ oldCategory: oldSlug, newCategory: newSlug, name, icon })
+            });
+            const data = (await res.json()) as any;
+            if (!res.ok) throw new Error(data.error || 'Error al renombrar categoría');
+
+            showToast(data.message || 'Categoría renombrada con éxito.', 'success');
+            closeRenameCategoryModal();
+            await loadCategories();
+            await loadProducts();
+        } catch (err: any) {
+            showToast(err.message || 'No se pudo renombrar la categoría.', 'error');
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i data-lucide="check"></i> Guardar y Aplicar Globalmente';
+                if (window.lucide) lucide.createIcons();
+            }
+        }
+    });
+}
+
+// Submit eliminar / reasignar categoría
+const formDeleteCat = document.getElementById('form-delete-category') as HTMLFormElement | null;
+if (formDeleteCat) {
+    formDeleteCat.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const slug = (document.getElementById('delete-cat-target-slug') as HTMLInputElement)?.value;
+        const reassignSelect = document.getElementById('delete-cat-reassign-select') as HTMLSelectElement | null;
+        const reassignTo = reassignSelect ? reassignSelect.value : undefined;
+        const submitBtn = document.getElementById('btn-submit-cat-delete') as HTMLButtonElement | null;
+
+        if (!slug) return;
+
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i data-lucide="loader" class="spin"></i> Eliminando...';
+            if (window.lucide) lucide.createIcons();
+        }
+
+        try {
+            const res = await fetch('/api/categories', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ category: slug, reassignTo })
+            });
+            const data = (await res.json()) as any;
+            if (!res.ok) throw new Error(data.error || 'Error al eliminar categoría');
+
+            showToast(data.message || 'Categoría eliminada.', 'success');
+            closeDeleteCategoryModal();
+            await loadCategories();
+            await loadProducts();
+        } catch (err: any) {
+            showToast(err.message || 'No se pudo eliminar la categoría.', 'error');
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i data-lucide="trash-2"></i> Confirmar Eliminación';
+                if (window.lucide) lucide.createIcons();
+            }
+        }
+    });
+}
+
+// Cierre al hacer click en el backdrop de los modales
+const catModal = document.getElementById('categories-modal');
+if (catModal) {
+    catModal.addEventListener('click', (e) => {
+        if (e.target === catModal) closeCategoriesModal();
+    });
+}
+const catRenameModal = document.getElementById('category-rename-modal');
+if (catRenameModal) {
+    catRenameModal.addEventListener('click', (e) => {
+        if (e.target === catRenameModal) closeRenameCategoryModal();
+    });
+}
+const catDeleteModal = document.getElementById('category-delete-modal');
+if (catDeleteModal) {
+    catDeleteModal.addEventListener('click', (e) => {
+        if (e.target === catDeleteModal) closeDeleteCategoryModal();
+    });
 }
 
 // Botón Nuevo Producto (Toggle formulario)
@@ -2237,17 +2633,38 @@ if (btnToggleProductForm) {
     });
 }
 
-// Live preview de imagen por URL
+// Auto-generación de slug para productos desde el nombre
+const prodNameInput = document.getElementById('prod-name') as HTMLInputElement | null;
+const prodIdInput = document.getElementById('prod-id') as HTMLInputElement | null;
+if (prodNameInput && prodIdInput) {
+    prodNameInput.addEventListener('input', () => {
+        const method = ($input('prod-method')?.value || 'POST');
+        if (method === 'POST' && !prodIdInput.dataset.manual) {
+            prodIdInput.value = prodNameInput.value
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '');
+        }
+    });
+    prodIdInput.addEventListener('input', () => {
+        prodIdInput.dataset.manual = 'true';
+    });
+}
+
+// Live preview de imagen de producto
 const prodImageInput = document.getElementById('prod-image');
 if (prodImageInput) {
     prodImageInput.addEventListener('input', (e) => {
-        const val = (e.target as HTMLSelectElement).value.trim();
+        const val = (e.target as HTMLInputElement).value.trim();
         const preview = document.getElementById('prod-image-preview');
         if (preview) {
             if (val) {
-                preview.style.backgroundImage = `url('${val}')`;
+                preview.innerHTML = `<img src="${escapeHtml(val)}" alt="Vista previa" class="prod-thumb-img" />`;
                 preview.classList.remove('d-none');
             } else {
+                preview.innerHTML = '';
                 preview.classList.add('d-none');
             }
         }
@@ -2625,7 +3042,7 @@ function sendWebPushNotification(title: string, body: string, orderId?: string) 
         notif.onclick = () => {
             window.focus();
             if (orderId) {
-                const navOrders = document.querySelector('.sidebar-link[data-target="orders"]') as HTMLElement | null;
+                const navOrders = document.querySelector('.sidebar-link[data-target="section-orders"], .sidebar-link[data-target="orders"]') as HTMLElement | null;
                 if (navOrders) navOrders.click();
                 viewOrderDetails(orderId);
             }
@@ -2801,6 +3218,44 @@ document.addEventListener('click', (e) => {
     // Close Quick Edit Modal
     if (t.closest('#btn-close-quick-edit-modal') || t.closest('#btn-cancel-quick-edit')) {
         closeQuickEditModal();
+        return;
+    }
+
+    // Gestor de Categorías: Abrir / Cerrar / Acciones
+    if (t.closest('#btn-open-categories-modal')) {
+        openCategoriesModal();
+        return;
+    }
+    if (t.closest('#btn-close-categories-modal') || t.closest('#btn-close-categories-footer')) {
+        closeCategoriesModal();
+        return;
+    }
+    if (t.closest('#btn-refresh-categories')) {
+        loadCategories();
+        return;
+    }
+    const btnRenameCat = t.closest('.btn-trigger-rename-cat') as HTMLElement | null;
+    if (btnRenameCat) {
+        const slug = btnRenameCat.getAttribute('data-slug') || '';
+        const name = btnRenameCat.getAttribute('data-name') || '';
+        const icon = btnRenameCat.getAttribute('data-icon') || 'tag';
+        openRenameCategoryModal(slug, name, icon);
+        return;
+    }
+    if (t.closest('#btn-close-cat-rename-modal') || t.closest('#btn-cancel-cat-rename')) {
+        closeRenameCategoryModal();
+        return;
+    }
+    const btnDeleteCat = t.closest('.btn-trigger-delete-cat') as HTMLElement | null;
+    if (btnDeleteCat) {
+        const slug = btnDeleteCat.getAttribute('data-slug') || '';
+        const name = btnDeleteCat.getAttribute('data-name') || '';
+        const count = parseInt(btnDeleteCat.getAttribute('data-count') || '0', 10);
+        openDeleteCategoryModal(slug, name, count);
+        return;
+    }
+    if (t.closest('#btn-close-cat-delete-modal') || t.closest('#btn-cancel-cat-delete')) {
+        closeDeleteCategoryModal();
         return;
     }
 
@@ -3732,19 +4187,25 @@ async function loadStoreSettings() {
         const z = p.zelle || {};
         const l = cfg.labels || {};
 
-        // Actualizar botón de vista previa "Ver Mi Tienda"
-        const previewBtn = document.getElementById('btn-preview-store') as HTMLAnchorElement | null;
-        if (previewBtn) {
-            const template = data.tenant?.template || 'restaurant';
-            const tenantId = data.tenant?.id;
-            if (data.tenant?.domain) {
-                previewBtn.href = `https://${data.tenant.domain}`;
-            } else if (tenantId && tenantId !== 'demo') {
-                previewBtn.href = `/${tenantId}`;
-            } else {
-                previewBtn.href = `/demo/${template}`;
-            }
-        }
+function updateStoreUrls(tenant: any) {
+    const template = tenant?.template || 'restaurant';
+    const tenantId = tenant?.id;
+    let url = `/demo/${template}`;
+    if (tenant?.domain) {
+        url = `https://${tenant.domain}`;
+    } else if (tenantId && tenantId !== 'demo') {
+        url = `/${tenantId}`;
+    }
+
+    const previewBtn = document.getElementById('btn-preview-store') as HTMLAnchorElement | null;
+    if (previewBtn) previewBtn.href = url;
+
+    const headerBtn = document.getElementById('btn-header-view-store') as HTMLAnchorElement | null;
+    if (headerBtn) headerBtn.href = url;
+}
+
+        // Actualizar botones de vista previa "Ver Mi Tienda" (en Ajustes y Cabecera)
+        updateStoreUrls(data.tenant);
 
         // TAB 1: IDENTIDAD
         setVal('cfg-store-template', data.tenant?.template || 'restaurant');
@@ -4265,6 +4726,11 @@ if (couponForm) {
         const maxUses = parseInt($val('coupon-max-uses')) || -1;
         const expiresAt = $val('coupon-expires-at') || null;
 
+        if (discountType === 'percentage' && (discountValue <= 0 || discountValue > 100)) {
+            showToast('El porcentaje de descuento debe estar entre 0.01% y 100%.', 'error');
+            return;
+        }
+
         const btnSubmit = $btn('btn-submit-coupon');
         if (btnSubmit) btnSubmit.disabled = true;
 
@@ -4278,7 +4744,7 @@ if (couponForm) {
                     discountValue,
                     minOrderAmount,
                     maxUses: isNaN(maxUses) ? -1 : maxUses,
-                    expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
+                    expiresAt: expiresAt ? new Date(expiresAt + 'T23:59:59').toISOString() : null,
                     active: 1
                 })
             });

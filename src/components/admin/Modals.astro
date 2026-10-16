@@ -473,3 +473,208 @@
         </form>
     </div>
 </div>
+
+<!-- Modal Gestor Central de Categorías -->
+<div class="modal" id="categories-modal">
+    <div class="modal-content modal-categories">
+        <div class="modal-header">
+            <div class="modal-title-with-badge">
+                <h3>🏷️ Gestor Central de Categorías</h3>
+                <span class="badge-count" id="categories-count-badge">0 categorías</span>
+            </div>
+            <button class="modal-close" id="btn-close-categories-modal">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p class="modal-desc">
+                Crea nuevas categorías, renómbralas globalmente en todos tus productos y reasigna inventario en 1 solo clic.
+            </p>
+
+            <!-- Card de Creación de Categoría -->
+            <div class="category-creator-card">
+                <h4 class="creator-card-title">
+                    <i data-lucide="plus-circle" class="icon-16 text-primary"></i> Añadir Nueva Categoría
+                </h4>
+                <form id="form-new-category" class="category-creator-form">
+                    <div class="form-grid-3">
+                        <div class="form-group">
+                            <label for="new-cat-name">Nombre Visible *</label>
+                            <input
+                                type="text"
+                                id="new-cat-name"
+                                class="form-control"
+                                placeholder="Ej: Hamburguesas & Combos 🍔"
+                                required
+                            />
+                        </div>
+                        <div class="form-group">
+                            <label for="new-cat-slug">Slug / Identificador *</label>
+                            <input
+                                type="text"
+                                id="new-cat-slug"
+                                class="form-control"
+                                placeholder="ej: hamburguesas"
+                                required
+                            />
+                            <span class="field-hint">Solo minúsculas, números y guiones</span>
+                        </div>
+                        <div class="form-group">
+                            <label for="new-cat-icon">Icono Lucide</label>
+                            <input
+                                type="text"
+                                id="new-cat-icon"
+                                class="form-control"
+                                placeholder="ej: utensils, tag, package"
+                            />
+                        </div>
+                    </div>
+                    <div class="creator-actions">
+                        <button type="submit" class="btn-action" id="btn-submit-new-cat">
+                            <i data-lucide="plus"></i> Crear Categoría
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Listado de Categorías -->
+            <div class="categories-list-header">
+                <h4>Categorías del Catálogo</h4>
+                <button type="button" class="btn-action secondary btn-compact" id="btn-refresh-categories">
+                    <i data-lucide="refresh-cw" class="icon-14"></i> Actualizar
+                </button>
+            </div>
+
+            <div class="table-responsive category-table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Slug / ID</th>
+                            <th>Nombre Visible</th>
+                            <th>Icono</th>
+                            <th>Productos</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-categories-body">
+                        <tr>
+                            <td colspan="5" class="table-empty-row">
+                                Cargando categorías...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-action secondary" id="btn-close-categories-footer">
+                Cerrar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Renombrar Categoría -->
+<div class="modal" id="category-rename-modal">
+    <div class="modal-content modal-md">
+        <div class="modal-header">
+            <h3>✏️ Renombrar Categoría Globalmente</h3>
+            <button class="modal-close" id="btn-close-cat-rename-modal">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        <form id="form-rename-category">
+            <input type="hidden" id="rename-cat-old-slug" />
+            <div class="modal-body modal-body-compact">
+                <div class="alert-info-box">
+                    <i data-lucide="info" class="icon-18"></i>
+                    <p>
+                        Renombrar el identificador actualizará atómicamente la categoría de todos los productos vinculados sin afectar tus ventas.
+                    </p>
+                </div>
+                <div class="form-group">
+                    <label>Categoría Actual</label>
+                    <div class="current-slug-display" id="rename-cat-current-display">-</div>
+                </div>
+                <div class="form-group">
+                    <label for="rename-cat-name">Nombre Visible *</label>
+                    <input
+                        type="text"
+                        id="rename-cat-name"
+                        class="form-control"
+                        placeholder="Ej: Hamburguesas & Combos"
+                        required
+                    />
+                </div>
+                <div class="form-group">
+                    <label for="rename-cat-new-slug">Nuevo Slug / Identificador *</label>
+                    <input
+                        type="text"
+                        id="rename-cat-new-slug"
+                        class="form-control"
+                        placeholder="ej: hamburguesas-combos"
+                        required
+                    />
+                    <span class="field-hint">Solo minúsculas, números y guiones</span>
+                </div>
+                <div class="form-group">
+                    <label for="rename-cat-icon">Icono Lucide</label>
+                    <input
+                        type="text"
+                        id="rename-cat-icon"
+                        class="form-control"
+                        placeholder="ej: utensils"
+                    />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-action secondary" id="btn-cancel-cat-rename">
+                    Cancelar
+                </button>
+                <button type="submit" class="btn-action" id="btn-submit-cat-rename">
+                    <i data-lucide="check"></i> Guardar y Aplicar Globalmente
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Eliminar / Reasignar Categoría -->
+<div class="modal" id="category-delete-modal">
+    <div class="modal-content modal-md">
+        <div class="modal-header">
+            <h3>🗑️ Eliminar Categoría</h3>
+            <button class="modal-close" id="btn-close-cat-delete-modal">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        <form id="form-delete-category">
+            <input type="hidden" id="delete-cat-target-slug" />
+            <div class="modal-body modal-body-compact">
+                <p id="delete-cat-warning-text" class="modal-desc">
+                    ¿Estás seguro de que deseas eliminar esta categoría?
+                </p>
+
+                <div id="delete-cat-reassign-container" class="form-group d-none">
+                    <label for="delete-cat-reassign-select">
+                        Reasignar productos vinculados a:
+                    </label>
+                    <select id="delete-cat-reassign-select" class="form-control">
+                        <!-- Opciones cargadas dinámicamente -->
+                    </select>
+                    <span class="field-hint">
+                        Los productos asociados se moverán a esta categoría automáticamente.
+                    </span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-action secondary" id="btn-cancel-cat-delete">
+                    Cancelar
+                </button>
+                <button type="submit" class="btn-action btn-danger" id="btn-submit-cat-delete">
+                    <i data-lucide="trash-2"></i> Confirmar Eliminación
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

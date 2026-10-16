@@ -66,6 +66,24 @@
     margin-bottom: 1.5rem;
     border-bottom: 1px solid var(--border-color);
     scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+.settings-tabs-nav::-webkit-scrollbar {
+    height: 4px;
+}
+
+.settings-tabs-nav::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.settings-tabs-nav::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+}
+
+.settings-tabs-nav::-webkit-scrollbar-thumb:hover {
+    background: var(--primary);
 }
 
 .settings-tab-btn {
