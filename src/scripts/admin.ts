@@ -30,10 +30,13 @@ let soundEnabled = localStorage.getItem('admin_sound_enabled') !== 'false';
 // Paginación State
 let ordersPage = 1;
 let ordersTotalPages = 1;
+let ordersTotalCount = 0;
 let productsPage = 1;
 let productsTotalPages = 1;
+let productsTotalCount = 0;
 let salesPage = 1;
 let salesTotalPages = 1;
+let salesTotalCount = 0;
 
 
 // Helper DOM accessors
@@ -180,22 +183,22 @@ async function checkSession() {
 
 function showLogin() {
     if (loginContainer) {
-        loginContainer.style.display = 'flex';
-        if (dashboardContainer) dashboardContainer.style.display = 'none';
+        loginContainer.classList.remove('d-none');
+        if (dashboardContainer) dashboardContainer.classList.add('d-none');
     } else {
         window.location.href = '/login';
     }
 }
 
 function showDashboard() {
-    if (loginContainer) loginContainer.style.display = 'none';
-    if (dashboardContainer) dashboardContainer.style.display = 'flex';
+    if (loginContainer) loginContainer.classList.add('d-none');
+    if (dashboardContainer) dashboardContainer.classList.remove('d-none');
     
     // Mostrar insignia de admin
     const badge = document.getElementById('user-info-badge');
     const badgeName = document.getElementById('admin-user-name');
     if (badge && badgeName && currentAdmin) {
-        badge.style.display = 'flex';
+        badge.classList.remove('d-none');
         badgeName.textContent = currentAdmin.charAt(0).toUpperCase() + currentAdmin.slice(1);
         
         // Actualizar rol en la UI si el elemento existe
@@ -211,8 +214,7 @@ function showDashboard() {
 
 function hideLoader() {
     if (loader) {
-        loader.style.opacity = '0';
-        setTimeout(() => loader.style.display = 'none', 500);
+        loader.classList.add('d-none');
     }
 }
 
@@ -335,13 +337,10 @@ if (changePasswordForm) {
         if (window.lucide) lucide.createIcons();
 
         try {
-            const currentPasswordHash = await sha256(currentPass);
-            const newPasswordHash = await sha256(newPass);
-
             const res = await fetch('/api/auth', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ currentPasswordHash, newPasswordHash })
+                body: JSON.stringify({ currentPassword: currentPass, newPassword: newPass })
             });
 
             const data = (await res.json()) as any;
@@ -381,7 +380,7 @@ sidebarLinks.forEach(link => {
         // Actualizar encabezados
         if (targetId === 'section-metrics') {
             if (dashboardTitle) dashboardTitle.textContent = 'Métricas Generales';
-            if (dashboardSubtitle) dashboardSubtitle.textContent = 'Visión global de rendimiento, pedidos y catálogo en FOGÓN.';
+            if (dashboardSubtitle) dashboardSubtitle.textContent = 'Visión global de rendimiento, pedidos y catálogo.';
         } else if (targetId === 'section-orders') {
             if (dashboardTitle) dashboardTitle.textContent = 'Gestión de Pedidos';
             if (dashboardSubtitle) dashboardSubtitle.textContent = 'Revisa y actualiza el estado de los pedidos recibidos por la web.';
@@ -389,8 +388,12 @@ sidebarLinks.forEach(link => {
             if (dashboardTitle) dashboardTitle.textContent = 'Registro de Ventas';
             if (dashboardSubtitle) dashboardSubtitle.textContent = 'Histórico de pedidos completados y cobrados exitosamente.';
         } else if (targetId === 'section-inventory') {
-            if (dashboardTitle) dashboardTitle.textContent = 'Gestión del Menú';
-            if (dashboardSubtitle) dashboardSubtitle.textContent = 'Agrega, edita precios y administra los platillos ofrecidos.';
+            if (dashboardTitle) dashboardTitle.textContent = 'Catálogo y Productos';
+            if (dashboardSubtitle) dashboardSubtitle.textContent = 'Agrega, edita precios y administra el inventario de tus productos.';
+        } else if (targetId === 'section-coupons') {
+            if (dashboardTitle) dashboardTitle.textContent = 'Cupones de Descuento';
+            if (dashboardSubtitle) dashboardSubtitle.textContent = 'Crea códigos promocionales y campañas de descuento para tus clientes.';
+            loadCoupons();
         } else if (targetId === 'section-billing') {
             if (dashboardTitle) dashboardTitle.textContent = 'Plan y Facturación';
             if (dashboardSubtitle) dashboardSubtitle.textContent = 'Gestiona los límites de tu cuenta y pagos de suscripción.';
@@ -515,10 +518,12 @@ async function loadOrders(page = 1) {
         
         if (responseData.meta) {
             ordersTotalPages = responseData.meta.totalPages || 1;
+            ordersTotalCount = responseData.meta.total ?? (responseData.data ? responseData.data.length : 0);
             ordersList = responseData.data || [];
         } else {
             ordersTotalPages = 1;
-            ordersList = responseData;
+            ordersList = Array.isArray(responseData) ? responseData : (responseData.data || []);
+            ordersTotalCount = ordersList.length;
         }
 
         // Detección de nuevo pedido para reproducir sonido y notificar
@@ -551,13 +556,16 @@ async function loadProducts(page = 1) {
         
         if (responseData.meta) {
             productsTotalPages = responseData.meta.totalPages || 1;
+            productsTotalCount = responseData.meta.total ?? (responseData.data ? responseData.data.length : 0);
             productsList = responseData.data || [];
         } else {
             productsTotalPages = 1;
-            productsList = responseData;
+            productsList = Array.isArray(responseData) ? responseData : (responseData.data || []);
+            productsTotalCount = productsList.length;
         }
         
         renderProductsTable();
+        renderMetrics();
         updatePaginationUI('products', productsPage, productsTotalPages);
     } catch (err) {
         console.error(err);
@@ -586,13 +594,16 @@ async function loadSales(dateFrom: string | null = null, dateTo: string | null =
         
         if (responseData.meta) {
             salesTotalPages = responseData.meta.totalPages || 1;
+            salesTotalCount = responseData.meta.total ?? (responseData.data ? responseData.data.length : 0);
             salesList = responseData.data || [];
         } else {
             salesTotalPages = 1;
-            salesList = responseData;
+            salesList = Array.isArray(responseData) ? responseData : (responseData.data || []);
+            salesTotalCount = salesList.length;
         }
         
         renderSales();
+        renderMetrics();
         updatePaginationUI('sales', salesPage, salesTotalPages);
     } catch (err) {
         console.error(err);
@@ -610,9 +621,13 @@ async function loadStats() {
         
         // Actualizar métrica de ingresos de hoy
         const metricRevenue = document.getElementById('metric-revenue');
+        const metricRevenueBs = document.getElementById('metric-revenue-bs');
         if (metricRevenue) {
             const revenue = parseFloat(data.revenueToday) || 0;
-            metricRevenue.textContent = `Bs ${(Math.round(revenue * 100) / 100).toLocaleString('es-VE')}`;
+            metricRevenue.textContent = `$${revenue.toFixed(2)}`;
+            if (metricRevenueBs && currentBcvRate > 0) {
+                metricRevenueBs.textContent = `≈ Bs ${(revenue * currentBcvRate).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            }
         }
         
         // Renderizar gráfica
@@ -631,10 +646,14 @@ async function loadAnalytics() {
         
         // 1. Ingresos Mes Actual y Crecimiento
         const monthRevEl = document.getElementById('metric-month-revenue');
+        const monthRevBsEl = document.getElementById('metric-month-revenue-bs');
         const growthContainer = document.getElementById('metric-growth-container');
         if (monthRevEl && data.summary) {
             const revMonth = parseFloat(data.summary.revenueThisMonth) || 0;
-            monthRevEl.textContent = `Bs ${(Math.round(revMonth * 100) / 100).toLocaleString('es-VE')}`;
+            monthRevEl.textContent = `$${revMonth.toFixed(2)}`;
+            if (monthRevBsEl && currentBcvRate > 0) {
+                monthRevBsEl.textContent = `≈ Bs ${(revMonth * currentBcvRate).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            }
             
             if (growthContainer) {
                 const growth = data.summary.monthlyGrowthPercentage || 0;
@@ -653,9 +672,13 @@ async function loadAnalytics() {
         
         // 2. Ticket Promedio
         const avgTicketEl = document.getElementById('metric-average-ticket');
+        const avgTicketBsEl = document.getElementById('metric-average-ticket-bs');
         if (avgTicketEl && data.summary) {
             const avg = parseFloat(data.summary.averageTicket) || 0;
-            avgTicketEl.textContent = `Bs ${(Math.round(avg * 100) / 100).toLocaleString('es-VE')}`;
+            avgTicketEl.textContent = `$${avg.toFixed(2)}`;
+            if (avgTicketBsEl && currentBcvRate > 0) {
+                avgTicketBsEl.textContent = `≈ Bs ${(avg * currentBcvRate).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            }
         }
         
         // 3. Top 5 Productos
@@ -898,7 +921,7 @@ function renderSales() {
 // --- RENDER DE MÉTRICAS ---
 function renderMetrics() {
     const metricProdCount = document.getElementById('metric-prod-count');
-    if (metricProdCount) metricProdCount.textContent = String(productsList.length);
+    if (metricProdCount) metricProdCount.textContent = String(productsTotalCount || productsList.length);
 
     const pendingOrders = ordersList.filter(o => o.status === 'pendiente');
     const prodOrders = ordersList.filter(o => o.status === 'en_produccion');
@@ -912,18 +935,14 @@ function renderMetrics() {
     const metricSalesCount = document.getElementById('metric-sales-count');
     
     if (metricSalesCount) {
-        metricSalesCount.textContent = String(salesList.length);
+        metricSalesCount.textContent = String(salesTotalCount || salesList.length);
     }
     
     // Actualizar badge del sidebar
     const badgeOrders = document.getElementById('sidebar-badge-orders');
     if (badgeOrders) {
-        if (pendingOrders.length > 0) {
-            badgeOrders.textContent = String(pendingOrders.length);
-            badgeOrders.style.display = 'inline-block';
-        } else {
-            badgeOrders.style.display = 'none';
-        }
+        badgeOrders.textContent = String(pendingOrders.length);
+        badgeOrders.classList.toggle('visible', pendingOrders.length > 0);
     }
 }
 
@@ -1133,12 +1152,12 @@ async function viewOrderDetails(orderId: string) {
         const receiptModalImg = document.getElementById('receipt-modal-img');
 
         if (order.payment_receipt) {
-            if (receiptContainer) receiptContainer.style.display = 'block';
+            if (receiptContainer) receiptContainer.classList.remove('d-none');
             if (receiptThumb) (receiptThumb as HTMLImageElement).src = order.payment_receipt;
             if (receiptDownloadBtn) (receiptDownloadBtn as HTMLAnchorElement).href = order.payment_receipt;
             if (receiptModalImg) (receiptModalImg as HTMLImageElement).src = order.payment_receipt;
         } else {
-            if (receiptContainer) receiptContainer.style.display = 'none';
+            if (receiptContainer) receiptContainer.classList.add('d-none');
         }
 
         // Información de Delivery
@@ -1153,18 +1172,18 @@ async function viewOrderDetails(orderId: string) {
             deliveryTypeElem.textContent = isDelivery ? '🛵 Delivery a Domicilio' : '🏪 Retiro en Local';
             
             if (isDelivery) {
-                if (deliveryAddressContainer) deliveryAddressContainer.style.display = 'block';
+                if (deliveryAddressContainer) deliveryAddressContainer.classList.remove('d-none');
                 if (deliveryAddressElem) deliveryAddressElem.textContent = order.delivery_address || 'No especificada';
                 
                 if (order.delivery_notes) {
-                    if (deliveryNotesContainer) deliveryNotesContainer.style.display = 'block';
+                    if (deliveryNotesContainer) deliveryNotesContainer.classList.remove('d-none');
                     if (deliveryNotesElem) deliveryNotesElem.textContent = order.delivery_notes;
                 } else {
-                    if (deliveryNotesContainer) deliveryNotesContainer.style.display = 'none';
+                    if (deliveryNotesContainer) deliveryNotesContainer.classList.add('d-none');
                 }
             } else {
-                if (deliveryAddressContainer) deliveryAddressContainer.style.display = 'none';
-                if (deliveryNotesContainer) deliveryNotesContainer.style.display = 'none';
+                if (deliveryAddressContainer) deliveryAddressContainer.classList.add('d-none');
+                if (deliveryNotesContainer) deliveryNotesContainer.classList.add('d-none');
             }
         }
 
@@ -1227,7 +1246,12 @@ async function viewOrderDetails(orderId: string) {
         // Configurar botón de chatear
         const btnChat = document.getElementById('btn-modal-chat') as HTMLAnchorElement | null;
         if (btnChat) {
-            const cleanPhone = String(order.client_phone || '').replace(/[^\d]/g, '');
+            let cleanPhone = String(order.client_phone || '').replace(/[^\d]/g, '');
+            if (cleanPhone.startsWith('0')) {
+                cleanPhone = '58' + cleanPhone.slice(1);
+            } else if (cleanPhone.length === 10 && !cleanPhone.startsWith('58')) {
+                cleanPhone = '58' + cleanPhone;
+            }
             const businessName = $val('cfg-business-name') || 'nuestra tienda';
             const message = `¡Hola ${order.client_name}! Te contactamos de *${businessName}* con respecto a tu pedido *#${order.id}*...`;
             btnChat.href = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
@@ -1317,11 +1341,17 @@ if (paymentForm) {
             if (window.lucide) lucide.createIcons();
         }
         
+        const paymentAmountVal = parseFloat($val('payment-amount'));
+        const payload: any = { id: orderId, status: status, paymentMethod: paymentMethodString };
+        if (!isNaN(paymentAmountVal) && paymentAmountVal >= 0) {
+            payload.paymentAmount = paymentAmountVal;
+        }
+        
         try {
             const response = await fetch('/api/orders', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: orderId, status: status, paymentMethod: paymentMethodString })
+                body: JSON.stringify(payload)
             });
 
             if (!response.ok) throw new Error('Error al actualizar estado');
@@ -1588,9 +1618,9 @@ function startEditProduct(productId: string) {
     if (imagePreviewEl && product.image_url) {
         const url = (product.image_url.startsWith('http') || product.image_url.startsWith('/')) ? product.image_url : `/${product.image_url}`;
         imagePreviewEl.style.backgroundImage = `url('${url}')`;
-        imagePreviewEl.style.display = 'block';
+        imagePreviewEl.classList.remove('d-none');
     } else if (imagePreviewEl) {
-        imagePreviewEl.style.display = 'none';
+        imagePreviewEl.classList.add('d-none');
     }
 
     setVal('prod-sizes', product.sizes || '');
@@ -1602,7 +1632,7 @@ function startEditProduct(productId: string) {
 
     if (formProductTitle) formProductTitle.textContent = `Editando Producto: ${product.name}`;
     if (btnSubmitProduct) btnSubmitProduct.innerHTML = '<i data-lucide="save"></i> Actualizar Producto';
-    if (btnCancelEdit) btnCancelEdit.style.display = 'inline-flex';
+    if (btnCancelEdit) btnCancelEdit.classList.remove('d-none');
     
     if (window.lucide) lucide.createIcons();
 
@@ -1625,12 +1655,12 @@ function resetProductForm() {
     const idInReset = $input('prod-id'); if (idInReset) idInReset.disabled = false; setVal('prod-id', '');
     setVal('prod-template', 'restaurant');
     setVal('prod-stock', '-1');
-    if (imagePreviewEl) imagePreviewEl.style.display = 'none';
+    if (imagePreviewEl) imagePreviewEl.classList.add('d-none');
     const ife = $input('prod-image-file'); if (ife) ife.value = '';
     
     if (formProductTitle) formProductTitle.textContent = 'Añadir Nuevo Producto';
     if (btnSubmitProduct) btnSubmitProduct.innerHTML = '<i data-lucide="plus-circle"></i> Guardar Producto';
-    if (btnCancelEdit) btnCancelEdit.style.display = 'none';
+    if (btnCancelEdit) btnCancelEdit.classList.add('d-none');
     if (window.lucide) lucide.createIcons();
 
     const collapseEl = document.getElementById('product-form-collapse');
@@ -1684,9 +1714,9 @@ if (prodImageInput) {
         if (preview) {
             if (val) {
                 preview.style.backgroundImage = `url('${val}')`;
-                preview.style.display = 'block';
+                preview.classList.remove('d-none');
             } else {
-                preview.style.display = 'none';
+                preview.classList.add('d-none');
             }
         }
     });
@@ -2056,26 +2086,154 @@ function updatePaginationUI(type: string, currentPage: number, totalPages: numbe
     }
 }
 
+// --- FACTURACIÓN: MEJORAR PLAN Y REPORTAR PAGO ---
+function handleUpgradePlan() {
+    const domain = document.getElementById('billing-tenant-domain')?.textContent || 'mi tienda';
+    const msg = `¡Hola Vendly Soporte! Deseo mejorar mi plan para la tienda (${domain}). ¿Cuáles son los planes y opciones disponibles?`;
+    const supportPhone = document.getElementById('pay-phone')?.textContent?.replace(/[^\d]/g, '') || '584141234567';
+    let cleanPhone = supportPhone.startsWith('0') ? '58' + supportPhone.slice(1) : supportPhone;
+    window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+function handleReportPayment() {
+    const domain = document.getElementById('billing-tenant-domain')?.textContent || 'mi tienda';
+    const amount = document.getElementById('pay-amount')?.textContent || '15';
+    const msg = `¡Hola Vendly Soporte! Adjunto mi comprobante de pago de suscripción ($${amount} USD) para la tienda (${domain}).`;
+    const supportPhone = document.getElementById('pay-phone')?.textContent?.replace(/[^\d]/g, '') || '584141234567';
+    let cleanPhone = supportPhone.startsWith('0') ? '58' + supportPhone.slice(1) : supportPhone;
+    window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
 document.addEventListener('click', (e) => {
-    // Orders Pagination
     const t = e.target as HTMLElement | null;
-    if (t?.closest('#btn-orders-prev') && ordersPage > 1) loadOrders(ordersPage - 1);
-    if (t?.closest('#btn-orders-next') && ordersPage < ordersTotalPages) loadOrders(ordersPage + 1);
+    if (!t) return;
+
+    // View Order Details
+    const btnViewOrder = t.closest('[data-action="view-order"]') as HTMLElement | null;
+    if (btnViewOrder) {
+        const orderId = btnViewOrder.getAttribute('data-id');
+        if (orderId) viewOrderDetails(orderId);
+        return;
+    }
+
+    // Delete Order
+    const btnDeleteOrder = t.closest('[data-action="delete-order"]') as HTMLElement | null;
+    if (btnDeleteOrder) {
+        const orderId = btnDeleteOrder.getAttribute('data-id');
+        if (orderId) deleteOrder(orderId);
+        return;
+    }
+
+    // Edit Product
+    const btnEditProduct = t.closest('[data-action="edit-product"]') as HTMLElement | null;
+    if (btnEditProduct) {
+        const prodId = btnEditProduct.getAttribute('data-id');
+        if (prodId) startEditProduct(prodId);
+        return;
+    }
+
+    // Delete Product
+    const btnDeleteProduct = t.closest('[data-action="delete-product"]') as HTMLElement | null;
+    if (btnDeleteProduct) {
+        const prodId = btnDeleteProduct.getAttribute('data-id');
+        if (prodId) deleteProduct(prodId);
+        return;
+    }
+
+    // Toggle Coupon Status
+    const btnToggleCoupon = t.closest('[data-action="toggle-coupon"]') as HTMLElement | null;
+    if (btnToggleCoupon) {
+        const couponId = parseInt(btnToggleCoupon.getAttribute('data-id') || '0', 10);
+        const active = parseInt(btnToggleCoupon.getAttribute('data-active') || '0', 10);
+        if (couponId) toggleCouponStatus(couponId, active);
+        return;
+    }
+
+    // Delete Coupon
+    const btnDeleteCoupon = t.closest('[data-action="delete-coupon"]') as HTMLElement | null;
+    if (btnDeleteCoupon) {
+        const couponId = parseInt(btnDeleteCoupon.getAttribute('data-id') || '0', 10);
+        if (couponId) deleteCoupon(couponId);
+        return;
+    }
+
+    // Print Order Ticket
+    if (t.closest('#btn-print-order-ticket')) {
+        window.print();
+        return;
+    }
+
+    // Billing Upgrade Plan
+    if (t.closest('#btn-upgrade-plan')) {
+        handleUpgradePlan();
+        return;
+    }
+
+    // Billing Report Payment
+    if (t.closest('#btn-report-payment')) {
+        handleReportPayment();
+        return;
+    }
+
+    // Upload Product Image Trigger
+    if (t.closest('#btn-upload-prod-image')) {
+        const fileInput = document.getElementById('prod-image-file') as HTMLInputElement | null;
+        if (fileInput) fileInput.click();
+        return;
+    }
+
+    // Orders Pagination
+    if (t.closest('#btn-orders-prev') && ordersPage > 1) loadOrders(ordersPage - 1);
+    if (t.closest('#btn-orders-next') && ordersPage < ordersTotalPages) loadOrders(ordersPage + 1);
     
     // Products Pagination
-    if (t?.closest('#btn-products-prev') && productsPage > 1) loadProducts(productsPage - 1);
-    if (t?.closest('#btn-products-next') && productsPage < productsTotalPages) loadProducts(productsPage + 1);
+    if (t.closest('#btn-products-prev') && productsPage > 1) loadProducts(productsPage - 1);
+    if (t.closest('#btn-products-next') && productsPage < productsTotalPages) loadProducts(productsPage + 1);
     
     // Sales Pagination
-    if (t?.closest('#btn-sales-prev') && salesPage > 1) {
+    if (t.closest('#btn-sales-prev') && salesPage > 1) {
         const dFrom = $val('sales-date-from');
         const dTo = $val('sales-date-to');
         loadSales(dFrom, dTo, salesPage - 1);
     }
-    if (t?.closest('#btn-sales-next') && salesPage < salesTotalPages) {
+    if (t.closest('#btn-sales-next') && salesPage < salesTotalPages) {
         const dFrom = $val('sales-date-from');
         const dTo = $val('sales-date-to');
         loadSales(dFrom, dTo, salesPage + 1);
+    }
+});
+
+// Delegación centralizada de eventos change
+document.addEventListener('change', (e) => {
+    const t = e.target as HTMLElement | null;
+    if (!t) return;
+
+    // Cambio de estado de pedido en tabla
+    if (t.matches('select[data-action="status-select"]')) {
+        const select = t as unknown as HTMLSelectElement;
+        const orderId = select.getAttribute('data-id');
+        const newStatus = select.value;
+        if (orderId && newStatus) {
+            updateOrderStatus(orderId, newStatus);
+        }
+        return;
+    }
+
+    // Selección de archivo para imagen de producto
+    if (t.id === 'prod-image-file') {
+        const fileInput = t as HTMLInputElement;
+        const file = fileInput.files?.[0];
+        const preview = document.getElementById('prod-image-preview');
+        const urlInput = document.getElementById('prod-image') as HTMLInputElement | null;
+        if (file) {
+            const objectUrl = URL.createObjectURL(file);
+            if (preview) {
+                preview.style.backgroundImage = `url('${objectUrl}')`;
+                preview.classList.remove('d-none');
+            }
+            if (urlInput) urlInput.placeholder = `Archivo: ${file.name} (se subirá al guardar)`;
+            showToast(`Imagen "${file.name}" lista para guardar.`, 'info');
+        }
     }
 });
 
@@ -2167,22 +2325,12 @@ function updateConnectionStatus() {
     if (navigator.onLine) {
         connectionStatus.classList.remove('offline');
         connectionStatus.classList.add('online');
-        connectionStatus.style.background = 'rgba(34, 197, 94, 0.1)';
-        connectionStatus.style.borderColor = 'rgba(34, 197, 94, 0.3)';
-        const dotSuccess = connectionStatus.querySelector('.status-dot') as HTMLElement | null;
-        if (dotSuccess) { dotSuccess.style.background = 'var(--success)'; dotSuccess.style.boxShadow = '0 0 8px var(--success)'; }
-        connectionStatusText.style.color = 'var(--success)';
         connectionStatusText.textContent = 'En línea';
         // Refrescar al reconectar
         if (currentAdmin) refreshAllData();
     } else {
         connectionStatus.classList.remove('online');
         connectionStatus.classList.add('offline');
-        connectionStatus.style.background = 'rgba(239, 68, 68, 0.1)';
-        connectionStatus.style.borderColor = 'rgba(239, 68, 68, 0.3)';
-        const dotDanger = connectionStatus.querySelector('.status-dot') as HTMLElement | null;
-        if (dotDanger) { dotDanger.style.background = 'var(--danger)'; dotDanger.style.boxShadow = '0 0 8px var(--danger)'; }
-        connectionStatusText.style.color = 'var(--danger)';
         connectionStatusText.textContent = 'Sin Conexión';
     }
 }
@@ -2723,6 +2871,7 @@ async function loadStoreSettings() {
         }
 
         // TAB 1: IDENTIDAD
+        setVal('cfg-store-template', data.tenant?.template || 'restaurant');
         setVal('cfg-business-name', b.name || data.tenant?.name || '');
         setVal('cfg-tagline', b.tagline || '');
         setVal('cfg-description', b.description || '');
@@ -3086,6 +3235,7 @@ if (storeSettingsForm) {
                 itemNounPlural: $val('cfg-item-noun-plural') || undefined,
                 emptyCartEmoji: $val('cfg-empty-cart-emoji') || undefined,
             },
+            template: ($val('cfg-store-template') as any) || undefined,
             storePrefix: $val('cfg-store-prefix').toUpperCase() || undefined
         };
 

@@ -6,7 +6,7 @@
         <div class="card-header">
             <div>
                 <h2>Gestión de Catálogo Multinegocio</h2>
-                <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:0.25rem;">
+                <p class="section-desc">
                     Catálogo separado por plantilla: Restaurante, Ferretería, Moda y Tecnología
                 </p>
             </div>
@@ -28,13 +28,12 @@
         <!-- Formulario Añadir/Editar Producto (colapsable) -->
         <div
             id="product-form-collapse"
-            class="collapsible-content"
-            style="padding: 0 2rem;"
+            class="collapsible-content form-collapsible-padded"
         >
-            <div style="padding: 2rem 0; border-bottom: 1px solid var(--border-color);">
+            <div class="form-collapsible-inner">
                 <h3
                     id="form-product-title"
-                    style="font-family: 'Outfit', sans-serif; font-size: 1.1rem; margin-bottom: 1.5rem; color: var(--primary);"
+                    class="form-collapsible-title"
                 >
                     Añadir Nuevo Producto
                 </h3>
@@ -45,7 +44,7 @@
                         value="POST"
                     />
 
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+                    <div class="form-grid-auto">
                         <div class="form-group">
                             <label for="prod-template">
                                 Plantilla / Tipo de Negocio
@@ -72,7 +71,7 @@
                                 placeholder="ej: taladro-percutor-12v"
                                 required
                             />
-                            <span style="font-size:0.75rem; color:var(--text-secondary);">
+                            <span class="field-hint">
                                 Minúsculas, números o guiones.
                             </span>
                         </div>
@@ -98,15 +97,15 @@
                             >
                                 <optgroup label="🍽️ Restaurante">
                                     <option value="entradas">🥗 Entradas</option>
-                                    <option value="principales">🥩 Platos Principales</option>
-                                    <option value="combos">🪙 Combos</option>
-                                    <option value="postres">🍰 Postres</option>
-                                    <option value="bebidas">🥤 Bebidas</option>
+                                    <option value="principales">🍔 Principales & Hamburguesas</option>
+                                    <option value="bebidas">🥤 Bebidas & Cócteles</option>
+                                    <option value="postres">🍰 Postres & Dulces</option>
+                                    <option value="promociones">🔥 Promociones</option>
                                 </optgroup>
                                 <optgroup label="🔨 Ferretería">
+                                    <option value="herramientas-manuales">🛠️ Herramientas Manuales</option>
                                     <option value="herramientas-electricas">⚡ Herramientas Eléctricas</option>
-                                    <option value="herramientas-manuales">🔧 Herramientas Manuales</option>
-                                    <option value="plomeria">🚰 Plomería</option>
+                                    <option value="seguridad">🦺 Seguridad Industrial</option>
                                     <option value="electricidad">💡 Electricidad</option>
                                     <option value="construccion-pinturas">🎨 Construcción & Pinturas</option>
                                 </optgroup>
@@ -124,11 +123,18 @@
                                     <option value="smartphones-tablets">📱 Smartphones & Tablets</option>
                                     <option value="accesorios-redes">📡 Redes & Conectividad</option>
                                 </optgroup>
+                                <optgroup label="🚗 Repuestos">
+                                    <option value="frenos">🛑 Frenos & Discos</option>
+                                    <option value="motor-partes">⚙️ Motor & Partes</option>
+                                    <option value="suspension-direccion">🛞 Suspensión & Dirección</option>
+                                    <option value="baterias-electricidad">🔋 Baterías & Encendido</option>
+                                    <option value="accesorios-repuestos">🧰 Filtros & Accesorios</option>
+                                </optgroup>
                             </select>
                         </div>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+                    <div class="form-grid-220">
                         <div class="form-group">
                             <label for="prod-brand">Marca (Opcional)</label>
                             <input type="text" id="prod-brand" class="form-control" placeholder="ej: Bosch, Makita..." />
@@ -139,7 +145,7 @@
                         </div>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+                    <div class="form-grid-220">
                         <div class="form-group">
                             <label for="prod-price">
                                 Precio en USD ($)
@@ -167,24 +173,28 @@
                         </div>
                         <div class="form-group">
                             <label for="prod-image">
-                                URL de Imagen (Unsplash o externa)
+                                Imagen del Producto
                             </label>
-                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <div class="product-image-uploader">
                                 <input
                                     type="text"
                                     id="prod-image"
                                     class="form-control"
-                                    placeholder="https://images.unsplash.com/... o /assets/..."
+                                    placeholder="https://images.unsplash.com/... o subir archivo"
                                 />
-                                <div id="prod-image-preview" style="width: 42px; height: 42px; border-radius: 8px; border: 1px solid var(--border-color); background-size: cover; background-position: center; display: none; flex-shrink: 0;"></div>
+                                <button type="button" class="btn-action secondary btn-upload-trigger" id="btn-upload-prod-image" title="Subir imagen desde tu dispositivo">
+                                    <i data-lucide="upload"></i>
+                                </button>
+                                <input type="file" id="prod-image-file" class="file-input-hidden" accept="image/*" />
+                                <div id="prod-image-preview" class="prod-image-preview-thumb"></div>
                             </div>
-                            <span style="font-size:0.75rem; color:var(--text-secondary); margin-top: 4px; display:block;">
-                                Pega un enlace directo de imagen para el demo.
+                            <span class="field-hint">
+                                Pega un enlace directo o sube una foto desde tu dispositivo (Cloudflare R2).
                             </span>
                         </div>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+                    <div class="form-grid-220">
                         <div class="form-group">
                             <label for="prod-sizes">
                                 Opciones Rápidas (Separadas por comas)
@@ -208,7 +218,7 @@
                                 value="-1"
                                 min="-1"
                             />
-                            <span style="font-size:0.75rem; color:var(--text-secondary); margin-top: 4px; display:block;">
+                            <span class="field-hint">
                                 -1 = Stock infinito. O define las unidades reales en existencia.
                             </span>
                         </div>
@@ -230,10 +240,7 @@
                         </div>
                     </div>
 
-                    <div
-                        class="form-group"
-                        style="margin-bottom: 1.5rem;"
-                    >
+                    <div class="form-group mb-4">
                         <label for="prod-description">
                             Descripción
                         </label>
@@ -245,12 +252,11 @@
                         ></textarea>
                     </div>
 
-                    <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+                    <div class="form-actions-end">
                         <button
                             type="button"
-                            class="btn-action secondary"
+                            class="btn-action secondary d-none"
                             id="btn-cancel-edit"
-                            style="display: none;"
                         >
                             Cancelar Edición
                         </button>
@@ -269,8 +275,8 @@
 
         <!-- Barra de Filtros por Plantilla -->
         <div class="filter-tabs" id="template-filter-tabs">
-            <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; gap: 0.35rem; margin-right: 0.5rem;">
-                <i data-lucide="filter" style="width: 14px; height: 14px;"></i> Filtrar por Plantilla:
+            <span class="filter-badge-label">
+                <i data-lucide="filter" class="icon-14"></i> Filtrar por Plantilla:
             </span>
             <button type="button" class="filter-tab-btn active" data-filter="all">
                 📦 Todas (<span id="count-all">0</span>)
@@ -293,14 +299,13 @@
         </div>
 
         <!-- Barra de Búsqueda de Productos -->
-        <div style="padding: 0.5rem 1.5rem 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
-            <div style="flex: 1; max-width: 380px;">
+        <div class="table-toolbar">
+            <div class="table-search-box">
                 <input
                     type="text"
                     id="products-search-input"
                     class="form-control"
                     placeholder="🔍 Buscar producto por nombre o slug..."
-                    style="font-size: 0.85rem;"
                 />
             </div>
         </div>
@@ -323,10 +328,7 @@
                 </thead>
                 <tbody id="table-products">
                     <tr>
-                        <td
-                            colspan="10"
-                            style="text-align: center; color: var(--text-secondary); padding: 2rem;"
-                        >
+                        <td colspan="10" class="table-empty-row">
                             Cargando productos...
                         </td>
                     </tr>
@@ -334,10 +336,14 @@
             </table>
         </div>
         
-        <div class="pagination-controls" style="display: flex; justify-content: center; gap: 1rem; padding: 1rem; border-top: 1px solid var(--border-color);">
-            <button class="btn-action secondary" id="btn-products-prev" disabled style="padding: 0.4rem 0.8rem;"><i data-lucide="chevron-left" style="width: 16px; height: 16px;"></i> Anterior</button>
-            <span id="products-page-info" style="align-self: center; font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;">Página 1</span>
-            <button class="btn-action secondary" id="btn-products-next" disabled style="padding: 0.4rem 0.8rem;">Siguiente <i data-lucide="chevron-right" style="width: 16px; height: 16px;"></i></button>
+        <div class="pagination-controls">
+            <button class="btn-action secondary btn-pagination" id="btn-products-prev" disabled>
+                <i data-lucide="chevron-left" class="icon-16"></i> Anterior
+            </button>
+            <span id="products-page-info" class="pagination-info">Página 1</span>
+            <button class="btn-action secondary btn-pagination" id="btn-products-next" disabled>
+                Siguiente <i data-lucide="chevron-right" class="icon-16"></i>
+            </button>
         </div>
     </div>
 </div>

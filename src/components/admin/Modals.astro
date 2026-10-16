@@ -6,7 +6,7 @@
     <div class="modal-content">
         <div class="modal-header">
             <h3 id="modal-order-title">
-                Detalles del Pedido #FOG-XXXX
+                Detalles del Pedido
             </h3>
             <button class="modal-close" id="btn-close-modal">
                 <i data-lucide="x"></i>
@@ -30,7 +30,7 @@
                 </div>
                 <div>
                     <p>Estado del Pedido</p>
-                    <strong style="margin-top: 0.2rem;">
+                    <strong>
                         <span
                             id="modal-order-status"
                             class="status-badge pendiente"
@@ -43,21 +43,20 @@
                     <p>Total del Pedido</p>
                     <strong
                         id="modal-order-total"
-                        style="color: var(--accent); font-size: 1.15rem; margin-top: 0.2rem;"
+                        class="modal-order-total"
                     >
                         -
                     </strong>
-                    <span id="modal-order-total-bs" style="font-size: 0.82rem; color: var(--text-secondary); display: block; margin-top: 2px;"></span>
+                    <span id="modal-order-total-bs" class="modal-order-total-bs"></span>
                 </div>
             </div>
 
             <!-- Información de Entrega -->
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 1rem; color: var(--white); margin-top: 0.5rem; margin-bottom: 0.8rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.4rem;">
+            <h4 class="modal-section-title">
                 Información de Entrega
             </h4>
             <div
-                class="order-meta-info"
-                style="grid-template-columns: 1fr; gap: 0.6rem; margin-bottom: 1.2rem;"
+                class="order-meta-info order-meta-single"
             >
                 <div>
                     <p>Método</p>
@@ -65,14 +64,14 @@
                 </div>
                 <div
                     id="modal-delivery-address-container"
-                    style="display: none;"
+                    class="d-none"
                 >
                     <p>Dirección</p>
                     <strong id="modal-delivery-address">-</strong>
                 </div>
                 <div
                     id="modal-delivery-notes-container"
-                    style="display: none;"
+                    class="d-none"
                 >
                     <p>Notas Adicionales</p>
                     <strong id="modal-delivery-notes">-</strong>
@@ -80,12 +79,11 @@
             </div>
 
             <!-- Información de Pago -->
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 1rem; color: var(--white); margin-top: 0.5rem; margin-bottom: 0.8rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.4rem;">
+            <h4 class="modal-section-title">
                 Datos de Pago
             </h4>
             <div
-                class="order-meta-info"
-                style="grid-template-columns: 1fr 1fr; gap: 0.8rem; margin-bottom: 1.2rem;"
+                class="order-meta-info order-meta-double"
                 id="modal-payment-info-container"
             >
                 <div>
@@ -99,35 +97,35 @@
             </div>
 
             <!-- Comprobante de Pago Adjunto -->
-            <div id="modal-receipt-container" style="display: none; background: rgba(15, 22, 42, 0.4); border: 1px solid var(--border-color); border-radius: 12px; padding: 1rem; margin-bottom: 1.2rem;">
-                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 500;">
+            <div id="modal-receipt-container" class="receipt-card d-none">
+                <p class="receipt-card-title">
                     📸 Comprobante de Pago Adjunto:
                 </p>
-                <div style="display: flex; align-items: center; gap: 1rem;">
-                    <img id="modal-receipt-thumb" src="" alt="Comprobante" style="width: 64px; height: 64px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border-color); cursor: pointer;" />
+                <div class="receipt-card-row">
+                    <img id="modal-receipt-thumb" src="" alt="Comprobante" class="receipt-thumb-img" />
                     <div>
-                        <button type="button" class="btn-action secondary" id="btn-view-receipt-modal" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;">
+                        <button type="button" class="btn-action secondary btn-view-receipt" id="btn-view-receipt-modal">
                             <i data-lucide="eye"></i> Ver Comprobante Completo
                         </button>
-                        <span style="font-size: 0.75rem; color: var(--text-secondary); display: block; margin-top: 4px;">Click para ampliar captura</span>
+                        <span class="field-hint">Click para ampliar captura</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Lista de Productos en Pedido -->
-            <h4 style="font-family: 'Outfit', sans-serif; font-size: 1rem; color: var(--white); margin-bottom: 0.8rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.4rem;">
-                Artículos Solicitados
+            <!-- Lista de Artículos -->
+            <h4 class="modal-section-title">
+                Artículos del Pedido
             </h4>
             <div id="modal-items-list">
                 <!-- Detalle cargado dinámicamente -->
             </div>
         </div>
 
-        <div class="modal-footer" style="justify-content: space-between;">
-            <button type="button" class="btn-action secondary" onclick="window.print()" title="Imprimir ticket para cocina">
+        <div class="modal-footer modal-footer-split">
+            <button type="button" class="btn-action secondary" id="btn-print-order-ticket" title="Imprimir ticket para cocina">
                 <i data-lucide="printer"></i> Imprimir Comanda
             </button>
-            <div style="display: flex; gap: 0.5rem;">
+            <div class="modal-footer-actions">
                 <button
                     class="btn-action secondary"
                     id="btn-modal-close-footer"
@@ -137,9 +135,8 @@
             <a
                 href=""
                 target="_blank"
-                class="btn-action"
+                class="btn-action btn-whatsapp"
                 id="btn-modal-chat"
-                style="background: #25D366; box-shadow: 0 4px 12px rgba(37,211,102,0.3);"
             >
                 <i data-lucide="message-circle"></i> Chatear por
                 WhatsApp
@@ -151,7 +148,7 @@
 
 <!-- Modal Registrar Pago -->
 <div class="modal" id="payment-modal">
-    <div class="modal-content" style="max-width: 480px;">
+    <div class="modal-content modal-md">
         <div class="modal-header">
             <h3>Registrar Pago</h3>
             <button class="modal-close" id="btn-close-payment-modal">
@@ -159,12 +156,12 @@
             </button>
         </div>
         <form id="payment-form">
-            <div class="modal-body" style="max-height: 300px;">
-                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">
+            <div class="modal-body modal-body-compact">
+                <p class="modal-desc">
                     Pedido:{" "}
                     <strong
                         id="payment-modal-order-id"
-                        style="color: var(--primary);"
+                        class="text-primary"
                     ></strong>
                 </p>
                 <div class="form-group">
@@ -224,9 +221,8 @@
                 </button>
                 <button
                     type="submit"
-                    class="btn-action"
+                    class="btn-action btn-modal-success"
                     id="btn-confirm-payment"
-                    style="background: var(--success); box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);"
                 >
                     <i data-lucide="check-circle"></i> Confirmar Pago
                 </button>
@@ -237,7 +233,7 @@
 
 <!-- Modal Cambiar Contraseña -->
 <div class="modal" id="change-password-modal">
-    <div class="modal-content" style="max-width: 440px;">
+    <div class="modal-content modal-sm">
         <div class="modal-header">
             <h3>Cambiar Contraseña</h3>
             <button class="modal-close" id="btn-close-password-modal">
@@ -254,21 +250,21 @@
                         type="password"
                         id="current-password-input"
                         class="form-control"
+                        placeholder="Tu clave actual"
                         required
-                        placeholder="••••••••"
                     />
                 </div>
                 <div class="form-group">
                     <label for="new-password-input">
-                        Nueva Contraseña (mínimo 8 caracteres)
+                        Nueva Contraseña (mínimo 6 caracteres)
                     </label>
                     <input
                         type="password"
                         id="new-password-input"
                         class="form-control"
-                        minlength="8"
+                        placeholder="Nueva contraseña"
+                        minlength="6"
                         required
-                        placeholder="••••••••"
                     />
                 </div>
                 <div class="form-group">
@@ -279,9 +275,9 @@
                         type="password"
                         id="confirm-password-input"
                         class="form-control"
-                        minlength="8"
+                        placeholder="Repite la nueva contraseña"
+                        minlength="6"
                         required
-                        placeholder="••••••••"
                     />
                 </div>
             </div>
@@ -296,7 +292,7 @@
                 <button
                     type="submit"
                     class="btn-action"
-                    id="btn-submit-password"
+                    id="btn-submit-change-password"
                 >
                     <i data-lucide="save"></i> Actualizar Clave
                 </button>
@@ -307,17 +303,17 @@
 
 <!-- Modal Visor de Comprobante -->
 <div class="modal" id="receipt-modal">
-    <div class="modal-content" style="max-width: 600px; padding: 0;">
-        <div class="modal-header" style="padding: 1rem 1.5rem; border-bottom: 1px solid var(--border-color);">
+    <div class="modal-content modal-receipt-content">
+        <div class="modal-header modal-receipt-header">
             <h3>Comprobante de Pago</h3>
             <button class="modal-close" id="btn-close-receipt-modal">
                 <i data-lucide="x"></i>
             </button>
         </div>
-        <div class="modal-body" style="padding: 0; display: flex; justify-content: center; align-items: center; background: #0f172a; min-height: 300px; max-height: 70vh; overflow: hidden;">
-            <img id="receipt-modal-img" src="" alt="Comprobante Completo" style="max-width: 100%; max-height: 70vh; object-fit: contain;" />
+        <div class="modal-body modal-receipt-body">
+            <img id="receipt-modal-img" src="" alt="Comprobante Completo" class="modal-receipt-full-img" />
         </div>
-        <div class="modal-footer" style="padding: 1rem 1.5rem; border-top: 1px solid var(--border-color);">
+        <div class="modal-footer modal-receipt-footer">
             <button type="button" class="btn-action secondary" id="btn-close-receipt-footer">Cerrar</button>
             <a href="#" id="receipt-download-btn" class="btn-action" target="_blank" download="comprobante.jpg">
                 <i data-lucide="download"></i> Descargar
@@ -328,11 +324,11 @@
 
 <!-- Modal Configuración Tasa BCV -->
 <div class="modal" id="bcv-modal">
-    <div class="modal-content" style="max-width: 460px;">
+    <div class="modal-content modal-460">
         <div class="modal-header">
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <i data-lucide="dollar-sign" style="color: var(--primary); width: 22px; height: 22px;"></i>
-                <h3 style="margin: 0;">Configuración Tasa BCV</h3>
+            <div class="bcv-header-title">
+                <i data-lucide="dollar-sign" class="icon-22 text-primary"></i>
+                <h3>Configuración Tasa BCV</h3>
             </div>
             <button class="modal-close" id="btn-close-bcv-modal">
                 <i data-lucide="x"></i>
@@ -340,52 +336,50 @@
         </div>
         <form id="bcv-form">
             <div class="modal-body">
-                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.25rem; line-height: 1.5;">
+                <p class="modal-desc-sm">
                     Define el valor del dólar oficial utilizado para calcular los montos en Bolívares (Bs) en pedidos y catálogos.
                 </p>
 
-                <div class="form-group" style="margin-bottom: 1.25rem;">
-                    <label for="bcv-rate-input" style="font-weight: 600; display: block; margin-bottom: 0.4rem;">
+                <div class="form-group bcv-form-group-spacing">
+                    <label for="bcv-rate-input" class="bcv-label-bold">
                         Tasa Activa (Bs. / USD)
                     </label>
-                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <div class="bcv-input-row">
                         <input
                             type="number"
                             id="bcv-rate-input"
-                            class="form-control"
+                            class="form-control bcv-rate-input"
                             step="0.01"
                             min="0.01"
                             required
                             placeholder="Ej: 853.50"
-                            style="font-size: 1.1rem; font-weight: 700; color: var(--primary);"
                         />
                         <button
                             type="button"
-                            class="btn-action secondary"
+                            class="btn-action secondary btn-filter-sync"
                             id="btn-force-bcv-sync"
                             title="Sincronizar en vivo con la API oficial del BCV"
-                            style="white-space: nowrap; padding: 0.6rem 0.9rem; font-size: 0.85rem;"
                         >
                             <i data-lucide="refresh-cw"></i> Sincronizar
                         </button>
                     </div>
-                    <span id="bcv-last-sync-label" style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px; display: block;">
+                    <span id="bcv-last-sync-label" class="field-hint">
                         Cargando estado...
                     </span>
                 </div>
 
-                <div class="form-group" style="margin-bottom: 0.5rem; background: rgba(255, 255, 255, 0.03); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
-                    <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer; margin: 0;">
+                <div class="form-group bcv-auto-box">
+                    <label class="bcv-checkbox-label">
                         <input
                             type="checkbox"
                             id="bcv-auto-toggle"
-                            style="width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer;"
+                            class="checkbox-primary"
                         />
                         <div>
-                            <span style="display: block; font-weight: 600; color: var(--white); font-size: 0.9rem;">
+                            <span class="bcv-auto-title">
                                 Actualización Automática
                             </span>
-                            <span style="display: block; font-size: 0.75rem; color: var(--text-secondary); line-height: 1.4;">
+                            <span class="bcv-auto-sub">
                                 Consulta periódicamente la API oficial para actualizar la tasa sin intervención manual.
                             </span>
                         </div>
@@ -402,8 +396,7 @@
                 </button>
                 <button
                     type="submit"
-                    class="btn-action"
-                    style="background: var(--primary); box-shadow: 0 4px 12px rgba(201, 116, 138, 0.3);"
+                    class="btn-action btn-modal-primary"
                 >
                     <i data-lucide="save"></i> Guardar Configuración
                 </button>
@@ -411,4 +404,3 @@
         </form>
     </div>
 </div>
-

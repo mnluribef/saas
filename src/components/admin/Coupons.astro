@@ -7,7 +7,7 @@
         <div class="card-header">
             <div>
                 <h2>Cupones de Descuento Promocionales</h2>
-                <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:0.25rem;">
+                <p class="section-desc">
                     Crea códigos promocionales porcentuales o de monto fijo para tus campañas de venta
                 </p>
             </div>
@@ -22,24 +22,23 @@
         </div>
 
         <!-- Formulario Crear Cupón (colapsable) -->
-        <div id="coupon-form-collapse" class="collapsible-content" style="padding: 0 2rem;">
-            <div style="padding: 2rem 0; border-bottom: 1px solid var(--border-color);">
-                <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.1rem; margin-bottom: 1.5rem; color: var(--primary);">
+        <div id="coupon-form-collapse" class="collapsible-content form-collapsible-padded">
+            <div class="form-collapsible-inner">
+                <h3 class="form-collapsible-title">
                     Crear Código de Descuento
                 </h3>
                 <form id="coupon-form">
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+                    <div class="form-grid-auto">
                         <div class="form-group">
                             <label for="coupon-code">Código del Cupón</label>
                             <input
                                 type="text"
                                 id="coupon-code"
-                                class="form-control"
+                                class="form-control input-uppercase"
                                 placeholder="ej: BIENVENIDO10"
-                                style="text-transform: uppercase;"
                                 required
                             />
-                            <span style="font-size:0.75rem; color:var(--text-secondary); margin-top: 4px; display:block;">
+                            <span class="field-hint">
                                 Solo letras, números y guiones.
                             </span>
                         </div>
@@ -76,7 +75,7 @@
                         </div>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+                    <div class="form-grid-auto">
                         <div class="form-group">
                             <label for="coupon-max-uses">Límite Máximo de Usos</label>
                             <input
@@ -87,7 +86,7 @@
                                 value="-1"
                                 min="-1"
                             />
-                            <span style="font-size:0.75rem; color:var(--text-secondary); margin-top: 4px; display:block;">
+                            <span class="field-hint">
                                 -1 = Ilimitado. O ingresa cuántas veces puede canjearse.
                             </span>
                         </div>
@@ -98,17 +97,17 @@
                                 id="coupon-expires-at"
                                 class="form-control"
                             />
-                            <span style="font-size:0.75rem; color:var(--text-secondary); margin-top: 4px; display:block;">
+                            <span class="field-hint">
                                 Opcional. Dejar vacío si no caduca.
                             </span>
                         </div>
                     </div>
 
-                    <div style="display: flex; gap: 1rem; align-items: center;">
+                    <div class="form-actions-row">
                         <button type="submit" class="btn-action" id="btn-submit-coupon">
                             <i data-lucide="plus-circle"></i> Guardar Cupón
                         </button>
-                        <button type="button" class="btn-action secondary" id="btn-cancel-coupon" style="display: none;">
+                        <button type="button" class="btn-action secondary d-none" id="btn-cancel-coupon">
                             Cancelar
                         </button>
                     </div>
@@ -133,7 +132,7 @@
                 </thead>
                 <tbody id="table-coupons">
                     <tr>
-                        <td colspan="8" style="text-align: center; color: var(--text-secondary); padding: 2rem;">
+                        <td colspan="8" class="table-empty-row">
                             Cargando cupones...
                         </td>
                     </tr>

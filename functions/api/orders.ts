@@ -50,7 +50,8 @@ export type CreateOrderInput = z.infer<typeof createOrderSchema>;
 export const updateOrderStatusSchema = z.object({
     id: z.string().min(1),
     status: z.enum(['pendiente', 'en_produccion', 'listo_entrega', 'completado', 'cancelado']),
-    paymentMethod: z.string().optional()
+    paymentMethod: z.string().optional(),
+    paymentAmount: z.number().min(0).or(z.string().transform(v => parseFloat(v))).optional()
 });
 
 export type UpdateOrderStatusInput = z.infer<typeof updateOrderStatusSchema>;
@@ -436,7 +437,7 @@ export const onRequestPut: PagesHandler<Env> = async (context) => {
             return jsonResponse({ error: "Datos de estado inválidos", details: parseResult.error.issues }, 400);
         }
 
-        const { id, status, paymentMethod } = parseResult.data;
+        const { id, status, paymentMethod, paymentAmount } = parseResult.data;
 
         const order = await db.prepare("SELECT * FROM orders WHERE id = ? AND tenant_id = ?").bind(id, tenantId).first<OrderRow>();
         if (!order) return jsonResponse({ error: "Pedido no encontrado." }, 404);
@@ -448,9 +449,12 @@ export const onRequestPut: PagesHandler<Env> = async (context) => {
         if (status === "completado") {
             const existingSale = await db.prepare("SELECT id FROM sales WHERE order_id = ?").bind(id).first();
             if (!existingSale) {
+                const finalMonto = (paymentAmount !== undefined && !isNaN(Number(paymentAmount)) && Number(paymentAmount) >= 0)
+                    ? Number(paymentAmount)
+                    : order.total_price;
                 statements.push(
                     db.prepare("INSERT INTO sales (order_id, monto, metodo_pago, fecha, tenant_id) VALUES (?, ?, ?, CURRENT_TIMESTAMP, ?)")
-                    .bind(id, order.total_price, paymentMethod || order.payment_method || "WhatsApp / Por acordar", tenantId)
+                    .bind(id, finalMonto, paymentMethod || order.payment_method || "WhatsApp / Por acordar", tenantId)
                 );
             }
         } else if (status === "cancelado" && order.status !== "cancelado") {

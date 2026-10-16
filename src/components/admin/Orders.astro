@@ -8,15 +8,14 @@
                 Todos los Pedidos Recibidos{" "}
                 <span
                     id="orders-total-summary"
-                    style="font-size: 0.95rem; color: var(--accent); margin-left: 1rem; font-weight: 500;"
+                    class="header-accent-badge"
                 ></span>
             </h2>
             <div class="card-actions">
                 <button
-                    class="btn-action secondary"
+                    class="btn-action secondary btn-compact"
                     id="btn-toggle-sound"
                     title="Alternar alertas de sonido para nuevos pedidos"
-                    style="padding: 0.55rem 0.85rem;"
                 >
                     <i data-lucide="volume-2" id="sound-icon"></i>
                 </button>
@@ -37,21 +36,20 @@
         </div>
 
         <!-- Barra de Búsqueda y Filtros de Pedidos -->
-        <div style="padding: 0 1.5rem 1.25rem 1.5rem; display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color);">
-            <div style="flex: 1; min-width: 260px; max-width: 480px; position: relative;">
+        <div class="table-toolbar-border">
+            <div class="table-search-box">
                 <input
                     type="text"
                     id="orders-search-input"
-                    class="form-control"
+                    class="form-control table-search-input-padded"
                     placeholder="🔍 Buscar por cliente, teléfono o #pedido..."
-                    style="padding-left: 1rem; font-size: 0.9rem;"
                 />
             </div>
-            <div style="display: flex; gap: 0.75rem; align-items: center;">
-                <label for="orders-status-filter" style="font-size: 0.85rem; color: var(--text-secondary); white-space: nowrap;">
+            <div class="table-filter-group">
+                <label for="orders-status-filter" class="table-filter-label">
                     Filtrar por estado:
                 </label>
-                <select id="orders-status-filter" class="form-control" style="width: auto; padding: 0.45rem 1rem; font-size: 0.85rem;">
+                <select id="orders-status-filter" class="form-control table-filter-select">
                     <option value="">⚡ Todos los estados</option>
                     <option value="pendiente">🟡 Pendiente</option>
                     <option value="en_produccion">🔵 En Producción</option>
@@ -80,7 +78,7 @@
                     <tr>
                         <td
                             colspan="8"
-                            style="text-align: center; color: var(--text-secondary);"
+                            class="table-empty-row"
                         >
                             No hay pedidos registrados en el sistema.
                         </td>
@@ -89,10 +87,14 @@
             </table>
         </div>
         
-        <div class="pagination-controls" style="display: flex; justify-content: center; gap: 1rem; padding: 1rem; border-top: 1px solid var(--border-color);">
-            <button class="btn-action secondary" id="btn-orders-prev" disabled style="padding: 0.4rem 0.8rem;"><i data-lucide="chevron-left" style="width: 16px; height: 16px;"></i> Anterior</button>
-            <span id="orders-page-info" style="align-self: center; font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;">Página 1</span>
-            <button class="btn-action secondary" id="btn-orders-next" disabled style="padding: 0.4rem 0.8rem;">Siguiente <i data-lucide="chevron-right" style="width: 16px; height: 16px;"></i></button>
+        <div class="pagination-controls">
+            <button class="btn-action secondary btn-pagination" id="btn-orders-prev" disabled>
+                <i data-lucide="chevron-left" class="icon-16"></i> Anterior
+            </button>
+            <span id="orders-page-info" class="pagination-info">Página 1</span>
+            <button class="btn-action secondary btn-pagination" id="btn-orders-next" disabled>
+                Siguiente <i data-lucide="chevron-right" class="icon-16"></i>
+            </button>
         </div>
     </div>
 </div>

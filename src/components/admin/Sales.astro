@@ -8,7 +8,7 @@
                 Registro Histórico de Ventas{" "}
                 <span
                     id="sales-total-amount"
-                    style="font-size: 0.95rem; color: var(--success); margin-left: 1rem; font-weight: 500;"
+                    class="header-success-badge"
                 ></span>
             </h2>
             <div class="card-actions">
@@ -29,24 +29,23 @@
         </div>
 
         <!-- Barra de Búsqueda de Ventas -->
-        <div style="padding: 0 1.5rem 1.25rem 1.5rem; display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color);">
-            <div style="flex: 1; min-width: 260px; max-width: 480px;">
+        <div class="table-toolbar-border">
+            <div class="table-search-box">
                 <input
                     type="text"
                     id="sales-search-input"
-                    class="form-control"
+                    class="form-control table-search-input-padded"
                     placeholder="🔍 Buscar venta por cliente, método o #pedido..."
-                    style="padding-left: 1rem; font-size: 0.9rem;"
                 />
             </div>
-            <div style="display: flex; gap: 0.5rem; align-items: center;">
-                <label for="sales-date-from" style="font-size: 0.85rem; color: var(--text-secondary);">Desde:</label>
-                <input type="date" id="sales-date-from" class="form-control" style="width: auto; padding: 0.35rem; font-size: 0.85rem;" />
+            <div class="date-filter-row">
+                <label for="sales-date-from" class="date-label">Desde:</label>
+                <input type="date" id="sales-date-from" class="form-control input-auto-width input-compact" />
                 
-                <label for="sales-date-to" style="font-size: 0.85rem; color: var(--text-secondary); margin-left: 0.5rem;">Hasta:</label>
-                <input type="date" id="sales-date-to" class="form-control" style="width: auto; padding: 0.35rem; font-size: 0.85rem;" />
+                <label for="sales-date-to" class="date-label date-label-spacing">Hasta:</label>
+                <input type="date" id="sales-date-to" class="form-control input-auto-width input-compact" />
                 
-                <button class="btn-action" id="btn-filter-sales-dates" style="padding: 0.45rem 0.8rem; font-size: 0.85rem; margin-left: 0.5rem;">
+                <button class="btn-action date-btn-spacing" id="btn-filter-sales-dates">
                     Filtrar
                 </button>
             </div>
@@ -69,7 +68,7 @@
                     <tr>
                         <td
                             colspan="7"
-                            style="text-align: center; color: var(--text-secondary);"
+                            class="table-empty-row"
                         >
                             Cargando registro de ventas...
                         </td>
@@ -78,10 +77,14 @@
             </table>
         </div>
         
-        <div class="pagination-controls" style="display: flex; justify-content: center; gap: 1rem; padding: 1rem; border-top: 1px solid var(--border-color);">
-            <button class="btn-action secondary" id="btn-sales-prev" disabled style="padding: 0.4rem 0.8rem;"><i data-lucide="chevron-left" style="width: 16px; height: 16px;"></i> Anterior</button>
-            <span id="sales-page-info" style="align-self: center; font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;">Página 1</span>
-            <button class="btn-action secondary" id="btn-sales-next" disabled style="padding: 0.4rem 0.8rem;">Siguiente <i data-lucide="chevron-right" style="width: 16px; height: 16px;"></i></button>
+        <div class="pagination-controls">
+            <button class="btn-action secondary btn-pagination" id="btn-sales-prev" disabled>
+                <i data-lucide="chevron-left" class="icon-16"></i> Anterior
+            </button>
+            <span id="sales-page-info" class="pagination-info">Página 1</span>
+            <button class="btn-action secondary btn-pagination" id="btn-sales-next" disabled>
+                Siguiente <i data-lucide="chevron-right" class="icon-16"></i>
+            </button>
         </div>
     </div>
 </div>
