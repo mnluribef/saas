@@ -5,6 +5,7 @@ import type { TenantRow } from '../types';
 
 export interface PlanConfig {
     name: string;
+    monthlyPriceUsd: number;
     maxProducts: number;
     maxOrdersPerMonth: number;
     features: string[];
@@ -13,18 +14,21 @@ export interface PlanConfig {
 export const PLANS: Record<string, PlanConfig> = {
     'basic': {
         name: 'Básico',
+        monthlyPriceUsd: 15,
         maxProducts: 30,
         maxOrdersPerMonth: 100,
         features: ['catalog', 'whatsapp_orders']
     },
     'pro': {
         name: 'Profesional',
+        monthlyPriceUsd: 30,
         maxProducts: 200,
         maxOrdersPerMonth: 1000,
         features: ['catalog', 'whatsapp_orders', 'inventory', 'analytics']
     },
     'enterprise': {
         name: 'Empresarial',
+        monthlyPriceUsd: 99,
         maxProducts: 999999, // Ilimitado práctico
         maxOrdersPerMonth: 999999, // Ilimitado práctico
         features: ['catalog', 'whatsapp_orders', 'inventory', 'analytics', 'api', 'custom_domain']

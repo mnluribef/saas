@@ -4,6 +4,9 @@ import type { D1Database } from '@cloudflare/workers-types';
 import { parseCookies } from './_helpers';
 import type { TenantResolution, TenantRow } from '../types';
 
+export const SYSTEM_PATHS = new Set(['api', 'admin', 'login', 'register', 'precios', 'superadmin', 'demo', 'assets', '_astro']);
+export const SYSTEM_SUBDOMAINS = new Set(['www', 'app', 'admin', 'demo', 'api']);
+
 /**
  * Resuelve el tenant_id desde:
  * 1. Header X-Tenant-Id (para testing/admin)
@@ -33,36 +36,7 @@ export async function resolveTenant(request: Request, db: D1Database): Promise<T
         if (tenant) return { id: headerTenantId, tenant };
     }
 
-    // 0.3 Referer Header (API calls desde páginas del frontend)
-    const referer = request.headers.get('Referer');
-    if (referer) {
-        try {
-            const refererUrl = new URL(referer);
-            // 1. Query parameter en Referer
-            const refererTenant = refererUrl.searchParams.get('tenant');
-            if (refererTenant) {
-                const tenant = await getTenantById(db, refererTenant);
-                if (tenant) return { id: refererTenant, tenant };
-            }
-            // 2. Primer segmento del path en Referer
-            const refPathParts = refererUrl.pathname.split('/').filter(Boolean);
-            if (refPathParts.length > 0) {
-                let candidate = refPathParts[0].toLowerCase();
-                if (candidate === 's' && refPathParts.length > 1) {
-                    candidate = refPathParts[1].toLowerCase();
-                }
-                const SYSTEM_PATHS = new Set(['api', 'admin', 'login', 'register', 'precios', 'superadmin', 'demo', 'assets', '_astro']);
-                if (candidate && !SYSTEM_PATHS.has(candidate) && !candidate.includes('.')) {
-                    const tenant = await getTenantById(db, candidate);
-                    if (tenant) return { id: candidate, tenant };
-                }
-            }
-        } catch {
-            // Ignore invalid referer URLs
-        }
-    }
-
-    // 0.4 Cookie de Sesión
+    // 0.3 Cookie de Sesión
     const cookies = parseCookies(request.headers.get('Cookie'));
     const sessionToken = cookies['vendly_session'];
     if (sessionToken && db) {
@@ -87,7 +61,6 @@ export async function resolveTenant(request: Request, db: D1Database): Promise<T
         if (candidate === 's' && pathParts.length > 1) {
             candidate = pathParts[1].toLowerCase();
         }
-        const SYSTEM_PATHS = new Set(['api', 'admin', 'login', 'register', 'precios', 'superadmin', 'demo', 'assets', '_astro']);
         if (candidate && !SYSTEM_PATHS.has(candidate) && !candidate.includes('.')) {
             const tenant = await getTenantById(db, candidate);
             if (tenant) return { id: candidate, tenant };
@@ -95,7 +68,6 @@ export async function resolveTenant(request: Request, db: D1Database): Promise<T
     }
 
     // 2. Subdominio: fogon.vendly.app (excluir subdominios del sistema)
-    const SYSTEM_SUBDOMAINS = new Set(['www', 'app', 'admin', 'demo', 'api']);
     const parts = host.split('.');
     if (parts.length >= 3) {
         const subdomain = parts[0].toLowerCase();

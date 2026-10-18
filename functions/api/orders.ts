@@ -6,13 +6,16 @@ import { verifySession, unauthorizedResponse, forbiddenResponse } from "./_auth"
 import { resolveTenant } from "./_tenant";
 import { checkOrderLimit } from "./_plans";
 import { getDB, jsonResponse } from "./_helpers";
+import {
+    generateOrderId,
+    verifyTurnstile,
+    generateWebhookSignature,
+    resolveBcvRate,
+    calculateOrderTotals
+} from "./_order-service";
+import { applyCoupon } from "./_coupon-service";
+import { buildOrderStatusWhatsAppUrl } from "./_whatsapp";
 import type { Env, PagesHandler } from '../types';
-
-function generateOrderId(prefix = "VEN"): string {
-    const ts = Date.now().toString(36).toUpperCase();
-    const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
-    return `${prefix}-${ts}${rand}`;
-}
 
 export const orderItemSchema = z.object({
     id: z.string().optional(),
@@ -94,23 +97,6 @@ interface ProductShortRow {
     stock: number;
 }
 
-async function verifyTurnstile(token: string, secret: string, ip: string): Promise<boolean> {
-    if (!secret || !token) return false;
-    const formData = new FormData();
-    formData.append('secret', secret);
-    formData.append('response', token);
-    formData.append('remoteip', ip);
-    try {
-        const result = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-            body: formData, method: 'POST'
-        });
-        const outcome = await result.json() as { success: boolean };
-        return outcome.success;
-    } catch {
-        return false;
-    }
-}
-
 /**
  * GET /api/orders - Admin only, filtrado por tenant
  */
@@ -174,7 +160,7 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
 };
 
 /**
- * POST /api/orders - Público, pero siempre ligado al tenant resuelto
+ * POST /api/orders - Checkout público, ligado al tenant resuelto
  */
 export const onRequestPost: PagesHandler<Env> = async (context) => {
     const { env, request } = context;
@@ -182,7 +168,7 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
     const clientIp = request.headers.get("CF-Connecting-IP") || "unknown";
     const { id: tenantId, tenant } = await resolveTenant(request, db);
 
-    // Verificación de Límite de Pedidos Mensuales
+    // 1. Verificación de Límite de Pedidos Mensuales
     const limitCheck = await checkOrderLimit(db, tenant);
     if (!limitCheck.allowed) {
         return jsonResponse({ 
@@ -199,21 +185,33 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
 
         const data = result.data;
 
-        if (env.TURNSTILE_SECRET_KEY) {
-            if (!data.turnstileToken) {
-                return jsonResponse({ error: "Verificación de seguridad requerida." }, 400);
-            }
-            const isHuman = await verifyTurnstile(data.turnstileToken, env.TURNSTILE_SECRET_KEY, clientIp);
-            if (!isHuman) {
-                return jsonResponse({ error: "No se pudo verificar que eres humano." }, 403);
-            }
+        // 2. Validación de Turnstile CAPTCHA (Fix #1: Requerido obligatoriamente en producción)
+        const isTestEnv = env.ENVIRONMENT === 'test';
+        if (!env.TURNSTILE_SECRET_KEY && !isTestEnv) {
+            console.error("Configuración de seguridad incompleta: TURNSTILE_SECRET_KEY no definida.");
+            return jsonResponse({ error: "Error de configuración del servidor (seguridad)." }, 500);
+        }
+
+        if (!data.turnstileToken && !isTestEnv) {
+            return jsonResponse({ error: "Verificación de seguridad requerida." }, 400);
+        }
+
+        const isHuman = await verifyTurnstile(
+            data.turnstileToken || '',
+            env.TURNSTILE_SECRET_KEY || '',
+            clientIp,
+            isTestEnv
+        );
+        if (!isHuman) {
+            return jsonResponse({ error: "No se pudo verificar que eres humano." }, 403);
         }
 
         if (data.deliveryType === 'delivery' && !data.deliveryAddress) {
             return jsonResponse({ error: "La dirección es requerida para el delivery." }, 400);
         }
 
-        const prefix = data.storePrefix.toUpperCase();
+        // 3. Generación de Order ID único
+        const prefix = (data.storePrefix || "ORD").toUpperCase();
         let orderId = generateOrderId(prefix);
         let isUnique = false;
         let attempts = 0;
@@ -227,14 +225,14 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
             }
         }
 
-        // Productos solo del tenant actual
+        // 4. Cargar productos scoped al tenant actual
         const { results: rawDbProducts } = await db.prepare(
             "SELECT id, name, price, stock FROM products WHERE tenant_id = ?"
         ).bind(tenantId).all<ProductShortRow>();
         const dbProducts = rawDbProducts || [];
         const productMap = new Map(dbProducts.map(p => [p.id, p]));
 
-        // Validación previa de stock disponible
+        // Pre-validación de stock disponible antes de estructurar el batch
         for (const item of data.items) {
             let matchedProduct: ProductShortRow | undefined;
             if (item.id && productMap.has(item.id)) matchedProduct = productMap.get(item.id);
@@ -250,25 +248,20 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
             }
         }
 
-        // Leer tasa BCV del tenant
-        let finalBcvRate = 36.50;
-        try {
-            const bcvSetting = await db.prepare(
-                "SELECT value FROM settings WHERE key = 'bcv_rate' AND tenant_id = ?"
-            ).bind(tenantId).first<{ value: string }>();
-            if (bcvSetting && parseFloat(bcvSetting.value) > 0) {
-                finalBcvRate = parseFloat(bcvSetting.value);
-            } else if (data.bcvRate && data.bcvRate > 0) {
-                finalBcvRate = data.bcvRate;
-            }
-        } catch {
-            if (data.bcvRate && data.bcvRate > 0) finalBcvRate = data.bcvRate;
+        // 5. Resolución de tasa BCV segura (Fix #12)
+        const bcvResolution = await resolveBcvRate(db, tenantId, data.bcvRate ?? undefined);
+        if (bcvResolution.error || bcvResolution.rate <= 0) {
+            return jsonResponse({ error: bcvResolution.error || "Tasa BCV inválida o no configurada." }, 400);
         }
+        const finalBcvRate = bcvResolution.rate;
 
+        // 6. Armado de sentencias y seguimiento de índices de actualización de stock (Fix #2)
         let totalItems = 0;
-        let totalPrice = 0.0;
+        let itemsTotal = 0.0;
         const statements: D1PreparedStatement[] = [];
+        const stockUpdateIndices: { statementIdx: number; productName: string }[] = [];
 
+        // Insert inicial del pedido (con totales temporales que se actualizarán)
         statements.push(
             db.prepare(
                 "INSERT INTO orders (id, client_name, client_phone, delivery_type, delivery_address, delivery_notes, payment_method, payment_reference, payment_receipt_url, bcv_rate, total_bs, status, total_items, total_price, template, tenant_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
@@ -302,16 +295,19 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
             }
 
             totalItems += qty;
-            totalPrice += price * qty;
+            itemsTotal += price * qty;
 
-            // Descontar inventario de forma atómica si el producto tiene stock controlado
+            // Descontar inventario de forma atómica condicionada con WHERE stock >= ?
             if (matchedProduct && matchedProduct.stock !== null && matchedProduct.stock !== -1) {
+                stockUpdateIndices.push({
+                    statementIdx: statements.length,
+                    productName: matchedProduct.name
+                });
                 statements.push(
                     db.prepare(
                         "UPDATE products SET stock = stock - ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND tenant_id = ? AND stock >= ?"
                     ).bind(qty, matchedProduct.id, tenantId, qty)
                 );
-                matchedProduct.stock -= qty;
             }
 
             statements.push(
@@ -320,46 +316,20 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
             );
         }
 
-        const itemsTotal = totalPrice;
+        // 7. Validación y aplicación de cupón (Fix #10)
         let discountAmount = 0.0;
         let appliedCouponCode: string | null = null;
 
-        // Validación y aplicación de cupón si fue proporcionado
-        if (data.couponCode && data.couponCode.trim()) {
-            const code = data.couponCode.trim().toUpperCase();
-            const coupon = await db.prepare(
-                "SELECT * FROM coupons WHERE code = ? AND tenant_id = ? AND active = 1"
-            ).bind(code, tenantId).first<{
-                id: number;
-                code: string;
-                discount_type: 'percentage' | 'fixed';
-                discount_value: number;
-                min_order_amount: number;
-                max_uses: number;
-                uses_count: number;
-                expires_at: string | null;
-            }>();
-
-            if (coupon) {
-                const isExpired = coupon.expires_at ? new Date(coupon.expires_at) < new Date() : false;
-                const reachedLimit = coupon.max_uses > 0 && coupon.uses_count >= coupon.max_uses;
-                const meetsMinAmount = itemsTotal >= (coupon.min_order_amount || 0);
-
-                if (!isExpired && !reachedLimit && meetsMinAmount) {
-                    appliedCouponCode = coupon.code;
-                    if (coupon.discount_type === 'percentage') {
-                        discountAmount = Math.round((itemsTotal * (coupon.discount_value / 100)) * 100) / 100;
-                    } else {
-                        discountAmount = Math.min(itemsTotal, coupon.discount_value);
-                    }
-                    statements.push(
-                        db.prepare("UPDATE coupons SET uses_count = uses_count + 1 WHERE id = ? AND tenant_id = ?")
-                        .bind(coupon.id, tenantId)
-                    );
-                }
+        if (data.couponCode) {
+            const couponResult = await applyCoupon(db, tenantId, data.couponCode, itemsTotal);
+            if (couponResult.isValid && couponResult.updateStatement) {
+                discountAmount = couponResult.discountAmount;
+                appliedCouponCode = couponResult.appliedCouponCode;
+                statements.push(couponResult.updateStatement);
             }
         }
 
+        // 8. Costo de delivery desde la configuración del tenant
         let deliveryPrice = 5.0;
         try {
             const configJson = tenant?.config_json ? JSON.parse(tenant.config_json) : {};
@@ -368,35 +338,66 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
             }
         } catch {}
 
-        let finalTotalPrice = Math.max(0, itemsTotal - discountAmount);
-        if (data.deliveryType === 'delivery') finalTotalPrice += deliveryPrice;
-        finalTotalPrice = Math.round(finalTotalPrice * 100) / 100;
-        const totalBs = Math.round((finalTotalPrice * finalBcvRate) * 100) / 100;
+        // 9. Cálculo exacto de totales monetarios
+        const totals = calculateOrderTotals(itemsTotal, discountAmount, data.deliveryType, deliveryPrice, finalBcvRate);
 
         statements.push(
             db.prepare("UPDATE orders SET total_items = ?, total_price = ?, total_bs = ? WHERE id = ?")
-            .bind(totalItems, finalTotalPrice, totalBs, orderId)
+            .bind(totalItems, totals.finalTotalPrice, totals.totalBs, orderId)
         );
 
-        await db.batch(statements);
+        // 10. Ejecución del lote DB y verificación atómica de stock (Fix #2: Race Condition Protection)
+        const batchResults = await db.batch(statements);
 
+        let stockExhaustedProduct: string | null = null;
+        for (const updateCheck of stockUpdateIndices) {
+            const res = batchResults[updateCheck.statementIdx];
+            if (res && res.meta && res.meta.changes === 0) {
+                stockExhaustedProduct = updateCheck.productName;
+                break;
+            }
+        }
+
+        if (stockExhaustedProduct) {
+            // Revertir el pedido y detalles insertados
+            await db.batch([
+                db.prepare("DELETE FROM order_items WHERE order_id = ?").bind(orderId),
+                db.prepare("DELETE FROM orders WHERE id = ? AND tenant_id = ?").bind(orderId, tenantId)
+            ]);
+            return jsonResponse({
+                error: `No se pudo completar el pedido: El stock para "${stockExhaustedProduct}" se agotó en un pedido concurrente.`
+            }, 409);
+        }
+
+        // 11. Disparo de Webhook con firma HMAC-SHA256 (Fix #19)
         if (env.WEBHOOK_URL) {
             try {
-                context.waitUntil(fetch(env.WEBHOOK_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        event: 'new_order_created', 
-                        orderId, 
-                        tenantId, 
-                        clientName: data.clientName, 
-                        totalPrice: finalTotalPrice,
-                        discountAmount,
-                        appliedCoupon: appliedCouponCode 
-                    })
-                }));
-            } catch (e) {
-                console.error("Webhook error:", e);
+                const webhookSecret = env.JWT_SECRET || env.SUPERADMIN_KEY || 'vendly-webhook-key';
+                const webhookPayload = JSON.stringify({
+                    event: 'new_order_created',
+                    orderId,
+                    tenantId,
+                    clientName: data.clientName,
+                    totalPrice: totals.finalTotalPrice,
+                    totalBs: totals.totalBs,
+                    discountAmount,
+                    appliedCoupon: appliedCouponCode,
+                    timestamp: new Date().toISOString()
+                });
+                const signature = await generateWebhookSignature(webhookPayload, webhookSecret);
+
+                context.waitUntil(
+                    fetch(env.WEBHOOK_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Vendly-Signature': `sha256=${signature}`
+                        },
+                        body: webhookPayload
+                    }).catch(e => console.error("Error en webhook de nuevo pedido:", e))
+                );
+            } catch (whErr) {
+                console.error("Fallo al preparar webhook:", whErr);
             }
         }
 
@@ -407,19 +408,19 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
             itemsTotal,
             discountAmount,
             appliedCoupon: appliedCouponCode,
-            totalPrice: finalTotalPrice,
-            totalBs,
+            totalPrice: totals.finalTotalPrice,
+            totalBs: totals.totalBs,
             bcvRate: finalBcvRate
         }, 201);
 
     } catch (err) {
         console.error("Error en POST /api/orders:", err);
-        return jsonResponse({ error: "Error interno al procesar el pedido." }, 500);
+        return jsonResponse({ error: "Error interno al procesar pedido." }, 500);
     }
 };
 
 /**
- * PUT /api/orders - Admin only, scoped por tenant
+ * PUT /api/orders - Admin only, actualización de estado scoped por tenant
  */
 export const onRequestPut: PagesHandler<Env> = async (context) => {
     const { env, request } = context;
@@ -442,7 +443,7 @@ export const onRequestPut: PagesHandler<Env> = async (context) => {
         const order = await db.prepare("SELECT * FROM orders WHERE id = ? AND tenant_id = ?").bind(id, tenantId).first<OrderRow>();
         if (!order) return jsonResponse({ error: "Pedido no encontrado." }, 404);
 
-        const statements = [
+        const statements: D1PreparedStatement[] = [
             db.prepare("UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND tenant_id = ?").bind(status, id, tenantId)
         ];
 
@@ -474,39 +475,34 @@ export const onRequestPut: PagesHandler<Env> = async (context) => {
 
         await db.batch(statements);
 
-        // Generar enlace WhatsApp para notificar al cliente el cambio de estado con 1 clic
-        let whatsappNotificationUrl: string | null = null;
-        if (order.client_phone) {
-            const cleanPhone = order.client_phone.replace(/\D/g, '');
-            const formattedPhone = cleanPhone.startsWith('0') 
-                ? '58' + cleanPhone.slice(1) 
-                : (cleanPhone.length === 10 ? '58' + cleanPhone : cleanPhone);
-            
-            let messageText = `Hola ${order.client_name}, el estado de tu pedido #${order.id} es: ${status}.`;
-            if (status === 'en_produccion') {
-                messageText = `¡Hola ${order.client_name}! 👩‍🍳 Tu pedido #${order.id} ya está en preparación. Te avisaremos apenas esté listo.`;
-            } else if (status === 'listo_entrega') {
-                messageText = order.delivery_type === 'delivery'
-                    ? `¡Hola ${order.client_name}! 🛵 Tu pedido #${order.id} ya está listo y va en camino a tu dirección: ${order.delivery_address || ''}.`
-                    : `¡Hola ${order.client_name}! 🛍️ Tu pedido #${order.id} ya está listo para ser retirado en tienda.`;
-            } else if (status === 'completado') {
-                messageText = `¡Hola ${order.client_name}! 🎉 Tu pedido #${order.id} ha sido completado con éxito. ¡Muchas gracias por tu compra!`;
-            } else if (status === 'cancelado') {
-                messageText = `Hola ${order.client_name}. Te informamos que tu pedido #${order.id} ha sido cancelado. Si tienes alguna duda, estamos a la orden.`;
-            }
+        // Generar enlace WhatsApp para notificar al cliente con un clic (Fix #10)
+        const whatsappNotificationUrl = buildOrderStatusWhatsAppUrl(order);
 
-            whatsappNotificationUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(messageText)}`;
-        }
-
+        // Webhook con firma HMAC (Fix #19)
         if (env.WEBHOOK_URL) {
             try {
-                context.waitUntil(fetch(env.WEBHOOK_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ event: 'order_status_updated', orderId: id, newStatus: status, tenantId, order })
-                }));
-            } catch (e) {
-                console.error("Webhook error:", e);
+                const webhookSecret = env.JWT_SECRET || env.SUPERADMIN_KEY || 'vendly-webhook-key';
+                const webhookPayload = JSON.stringify({
+                    event: 'order_status_updated',
+                    orderId: id,
+                    newStatus: status,
+                    tenantId,
+                    timestamp: new Date().toISOString()
+                });
+                const signature = await generateWebhookSignature(webhookPayload, webhookSecret);
+
+                context.waitUntil(
+                    fetch(env.WEBHOOK_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Vendly-Signature': `sha256=${signature}`
+                        },
+                        body: webhookPayload
+                    }).catch(e => console.error("Error en webhook de cambio de estado:", e))
+                );
+            } catch (whErr) {
+                console.error("Fallo al preparar webhook de actualización:", whErr);
             }
         }
 

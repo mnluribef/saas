@@ -2,7 +2,7 @@
 // Registro de nuevos clientes (Creación de Tenant + Admin)
 import type { D1Database } from '@cloudflare/workers-types';
 import { z } from "zod";
-import { generateSalt, hashPasswordPBKDF2, hashSHA256 } from "./_auth";
+import { generateSalt, hashPasswordPBKDF2 } from "./_auth";
 import { getDB, jsonResponse } from "./_helpers";
 import type { Env, PagesHandler } from '../types';
 
@@ -250,8 +250,6 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
             }
         }
 
-        const passwordHash = await hashSHA256(password);
-        
         // 2. Verificar disponibilidad de Slug y Username
         const existingTenant = await db.prepare('SELECT id FROM tenants WHERE id = ?').bind(tenantSlug).first();
         if (existingTenant) {
@@ -264,9 +262,9 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
             return jsonResponse({ error: `El nombre de usuario "${username}" ya está registrado en esta tienda.` }, 400);
         }
 
-        // 3. Hash de contraseña con PBKDF2 + salt
+        // 3. Hash de contraseña directo con PBKDF2 + salt (Fix #5)
         const salt = generateSalt();
-        const finalHash = await hashPasswordPBKDF2(passwordHash, salt);
+        const finalHash = await hashPasswordPBKDF2(password, salt);
 
         // 4. Generar sesión automática para que el onboarding no requiera re-login
         const sessionToken = crypto.randomUUID();
@@ -288,12 +286,16 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
             ).bind(tenantSlug, tenantName, 'basic', template, JSON.stringify(legalMetadata), cleanWhatsApp || null, 1),
             
             db.prepare(
-                "INSERT INTO settings (key, value, tenant_id) VALUES ('bcv_rate', '36.50', ?)"
+                "INSERT INTO settings (key, value, tenant_id) VALUES ('bcv_rate', '853.50', ?)"
             ).bind(tenantSlug),
 
             db.prepare(
-                'INSERT INTO users (username, password_hash, password_salt, role, tenant_id) VALUES (?, ?, ?, ?, ?)'
-            ).bind(username.toLowerCase().trim(), finalHash, salt, 'admin', tenantSlug),
+                "INSERT INTO settings (key, value, tenant_id) VALUES ('bcv_auto_update', '1', ?)"
+            ).bind(tenantSlug),
+
+            db.prepare(
+                'INSERT INTO users (username, email, password_hash, password_salt, role, tenant_id) VALUES (?, ?, ?, ?, ?, ?)'
+            ).bind(username.toLowerCase().trim(), email ? email.toLowerCase().trim() : null, finalHash, salt, 'admin', tenantSlug),
 
             db.prepare(
                 'INSERT INTO sessions (token, username, expires_at, tenant_id) VALUES (?, ?, ?, ?)'

@@ -9,13 +9,9 @@ function hexToBytes(hex) {
   return new Uint8Array(Buffer.from(hex, 'hex'));
 }
 
-async function hashClientSHA256(password) {
-  return crypto.createHash('sha256').update(password).digest('hex');
-}
-
-async function hashPBKDF2(clientHash, saltHex) {
+async function hashPBKDF2(password, saltHex) {
   return new Promise((resolve, reject) => {
-    crypto.pbkdf2(clientHash, hexToBytes(saltHex), 100000, 32, 'sha256', (err, derivedKey) => {
+    crypto.pbkdf2(password, hexToBytes(saltHex), 100000, 32, 'sha256', (err, derivedKey) => {
       if (err) reject(err);
       else resolve(derivedKey.toString('hex'));
     });
@@ -37,14 +33,11 @@ async function main() {
   const username = args[0] || 'admin_vendly';
   const password = args[1] || generateSecurePassword(14);
 
-  // 1. Simular hash del cliente (SHA-256)
-  const clientHash = await hashClientSHA256(password);
-
-  // 2. Generar salt aleatorio (128 bits / 16 bytes)
+  // 1. Generar salt aleatorio (128 bits / 16 bytes)
   const saltHex = crypto.randomBytes(16).toString('hex');
 
-  // 3. Generar hash PBKDF2 (100,000 iteraciones con SHA-256)
-  const pbkdf2Hash = await hashPBKDF2(clientHash, saltHex);
+  // 2. Generar hash PBKDF2 directo sobre la contraseña (100,000 iteraciones con SHA-256)
+  const pbkdf2Hash = await hashPBKDF2(password, saltHex);
 
   const role = args[2] || 'admin';
 

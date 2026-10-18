@@ -104,13 +104,13 @@ export function generateSalt(): string {
 }
 
 /**
- * Hashea una contraseña usando PBKDF2 con 100,000 iteraciones
+ * Hashea una contraseña usando PBKDF2 con 100,000 iteraciones (directo sobre el texto plano)
  */
-export async function hashPasswordPBKDF2(passwordHash: string, saltHex: string): Promise<string> {
+export async function hashPasswordPBKDF2(password: string, saltHex: string): Promise<string> {
     const encoder = new TextEncoder();
     const passwordKey = await crypto.subtle.importKey(
         "raw",
-        encoder.encode(passwordHash),
+        encoder.encode(password),
         { name: "PBKDF2" },
         false,
         ["deriveBits"]

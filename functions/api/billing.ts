@@ -34,7 +34,7 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
             id: env.PAYMENT_ID || "No disponible",
             binancePay: env.PAYMENT_BINANCE || "pagos@vendly.app",
             zelle: env.PAYMENT_ZELLE || "pagos@vendly.app",
-            monthlyPriceUsd: planKey === 'basic' ? 15 : planKey === 'pro' ? 30 : 99
+            monthlyPriceUsd: planDetails.monthlyPriceUsd
         };
 
         return jsonResponse({

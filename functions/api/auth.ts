@@ -42,8 +42,23 @@ interface UserDbRow {
     tenant_id: string;
 }
 
+export async function purgeExpiredRateLimits(db: D1Database): Promise<number> {
+    const now = Date.now();
+    try {
+        const res = await db.prepare(
+            "DELETE FROM rate_limits WHERE (? - first_attempt > ?) AND (? >= lockout_until)"
+        ).bind(now, LOCKOUT_TIME_MS, now).run();
+        return res?.meta?.changes ?? 0;
+    } catch {
+        return 0;
+    }
+}
+
 async function checkRateLimit(db: D1Database, ip: string): Promise<{ allowed: boolean; remainingMinutes?: number }> {
     const now = Date.now();
+    
+    // Auto-purga de registros expirados en segundo plano (Fix #8)
+    await purgeExpiredRateLimits(db);
     
     let record: RateLimitRow | null = null;
     try {
@@ -147,7 +162,6 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
         }
         
         const { username, password, tenant: bodyTenant, tenantId: bodyTenantId } = parseResult.data;
-        const passwordHash = await hashSHA256(password);
 
         // Resolución Inteligente del Tenant
         const urlTenant = new URL(request.url).searchParams.get('tenant');
@@ -183,21 +197,37 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
 
         if (!user.password_salt) {
             // Caso 1: Usuario legacy con SHA-256 plano
-            isMatch = (user.password_hash === passwordHash);
+            const legacyHash = await hashSHA256(password);
+            isMatch = (user.password_hash === legacyHash);
             
             if (isMatch) {
-                // Migrar automáticamente al nuevo formato PBKDF2
+                // Migrar automáticamente al nuevo formato PBKDF2 directo (Fix #5)
                 const newSalt = generateSalt();
-                const newHash = await hashPasswordPBKDF2(passwordHash, newSalt);
+                const newHash = await hashPasswordPBKDF2(password, newSalt);
                 
                 await db.prepare("UPDATE users SET password_hash = ?, password_salt = ? WHERE id = ?")
                     .bind(newHash, newSalt, user.id)
                     .run();
             }
         } else {
-            // Caso 2: Usuario con PBKDF2
-            const calculatedHash = await hashPasswordPBKDF2(passwordHash, user.password_salt);
-            isMatch = (user.password_hash === calculatedHash);
+            // Caso 2: Usuario con PBKDF2 directo (Fix #5)
+            const directHash = await hashPasswordPBKDF2(password, user.password_salt);
+            if (user.password_hash === directHash) {
+                isMatch = true;
+            } else {
+                // Caso 2b: Compatibilidad hacia atrás con hash previo PBKDF2(SHA256(password), salt)
+                const legacySha = await hashSHA256(password);
+                const legacyHash = await hashPasswordPBKDF2(legacySha, user.password_salt);
+                if (user.password_hash === legacyHash) {
+                    isMatch = true;
+                    // Auto-migrar silenciosamente a PBKDF2 directo
+                    const newSalt = generateSalt();
+                    const newHash = await hashPasswordPBKDF2(password, newSalt);
+                    await db.prepare("UPDATE users SET password_hash = ?, password_salt = ? WHERE id = ?")
+                        .bind(newHash, newSalt, user.id)
+                        .run();
+                }
+            }
         }
 
         if (!isMatch) {
@@ -240,6 +270,15 @@ export const onRequestPut: PagesHandler<Env> = async (context) => {
 
     const { request, env } = context;
     const db = getDB(env);
+    const clientIp = request.headers.get("CF-Connecting-IP") || request.headers.get("x-real-ip") || "unknown";
+
+    // Protección contra fuerza bruta en cambio de contraseña (Fix #4)
+    const rateCheck = await checkRateLimit(db, clientIp);
+    if (!rateCheck.allowed) {
+        return jsonResponse({ 
+            error: `Demasiados intentos fallidos. Por seguridad, espera ${rateCheck.remainingMinutes} minuto(s) antes de reintentar.` 
+        }, 429);
+    }
 
     try {
         const bodyJson = await request.json();
@@ -250,9 +289,6 @@ export const onRequestPut: PagesHandler<Env> = async (context) => {
         }
 
         const { currentPassword, newPassword } = parseResult.data;
-        
-        const currentPasswordHash = await hashSHA256(currentPassword);
-        const newPasswordHash = await hashSHA256(newPassword);
 
         // Búsqueda estrictamente aislada por username Y tenant_id
         const user = await db.prepare("SELECT * FROM users WHERE username = ? AND tenant_id = ?")
@@ -263,26 +299,37 @@ export const onRequestPut: PagesHandler<Env> = async (context) => {
             return unauthorizedResponse();
         }
 
-        // Verificar contraseña actual
+        // Verificar contraseña actual con soporte retroactivo (Fix #5)
         let currentMatch = false;
         if (!user.password_salt) {
-            currentMatch = (user.password_hash === currentPasswordHash);
+            const currentSha = await hashSHA256(currentPassword);
+            currentMatch = (user.password_hash === currentSha);
         } else {
-            const calculatedHash = await hashPasswordPBKDF2(currentPasswordHash, user.password_salt);
-            currentMatch = (user.password_hash === calculatedHash);
+            const directHash = await hashPasswordPBKDF2(currentPassword, user.password_salt);
+            if (user.password_hash === directHash) {
+                currentMatch = true;
+            } else {
+                const legacySha = await hashSHA256(currentPassword);
+                const legacyHash = await hashPasswordPBKDF2(legacySha, user.password_salt);
+                currentMatch = (user.password_hash === legacyHash);
+            }
         }
 
         if (!currentMatch) {
+            await recordFailedAttempt(db, clientIp);
             return jsonResponse({ error: "La contraseña actual es incorrecta." }, 400);
         }
 
-        // Generar nuevo salt y hash PBKDF2 para la nueva contraseña
+        // Generar nuevo salt y hash PBKDF2 DIRECTO para la nueva contraseña (Fix #5)
         const newSalt = generateSalt();
-        const newHash = await hashPasswordPBKDF2(newPasswordHash, newSalt);
+        const newHash = await hashPasswordPBKDF2(newPassword, newSalt);
 
         await db.prepare("UPDATE users SET password_hash = ?, password_salt = ? WHERE id = ? AND tenant_id = ?")
             .bind(newHash, newSalt, user.id, sessionUser.tenant_id)
             .run();
+
+        // Limpiar intentos fallidos tras éxito
+        await clearRateLimit(db, clientIp);
 
         return jsonResponse({ success: true, message: "Contraseña actualizada exitosamente." });
 

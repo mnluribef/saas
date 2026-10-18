@@ -14,7 +14,8 @@
     "db:seed:local": "wrangler d1 execute vendly-db --local --file=seed_templates.sql",
     "db:migrate:local": "wrangler d1 migrations apply vendly-db --local",
     "db:migrate:remote": "wrangler d1 migrations apply vendly-db --remote",
-    "create-admin": "node scripts/generate-admin.js"
+    "create-admin": "node scripts/generate-admin.js",
+    "test": "vitest run"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.2.3",
@@ -28,6 +29,7 @@
     "@cloudflare/workers-types": "^4.20250620.0",
     "concurrently": "^10.0.5",
     "typescript": "^5.9.3",
+    "vitest": "^5.0.5",
     "wrangler": "^4.147.0"
   }
 }

@@ -28,7 +28,7 @@ interface DeliveryBreakdownRow {
 }
 
 /**
- * GET /api/analytics - Retorna métricas avanzadas del negocio
+ * GET /api/analytics - Retorna métricas analíticas del negocio en paralelo y con caché (Fix #6, #16, #17)
  */
 export const onRequestGet: PagesHandler<Env> = async (context) => {
     const { request, env } = context;
@@ -39,27 +39,144 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
     if (!user) return unauthorizedResponse();
 
     try {
+        const url = new URL(request.url);
         const planKey = tenant?.plan || 'basic';
 
-        // 1. Ingresos del mes actual
-        const revThisMonthRow = await db.prepare(`
-            SELECT COALESCE(SUM(monto), 0) as total, COUNT(*) as count 
-            FROM sales 
-            WHERE tenant_id = ? AND strftime('%Y-%m', fecha) = strftime('%Y-%m', 'now')
-        `).bind(tenantId).first<{ total: number; count: number }>();
+        // Fix #16: Soporte para rangos de fecha personalizados
+        const fromDate = url.searchParams.get("from"); // formato YYYY-MM-DD
+        const toDate = url.searchParams.get("to");     // formato YYYY-MM-DD
+        const hasDateRange = Boolean(fromDate && toDate);
 
-        // 2. Ingresos del mes anterior
-        const revLastMonthRow = await db.prepare(`
-            SELECT COALESCE(SUM(monto), 0) as total, COUNT(*) as count 
-            FROM sales 
-            WHERE tenant_id = ? AND strftime('%Y-%m', fecha) = strftime('%Y-%m', 'now', '-1 month')
-        `).bind(tenantId).first<{ total: number; count: number }>();
+        // Fix #17: Límite configurable para top productos (default 5, min 1, max 50)
+        const limitParam = parseInt(url.searchParams.get("limit") || "5", 10);
+        const topLimit = Math.max(1, Math.min(50, isNaN(limitParam) ? 5 : limitParam));
+
+        // Fix #6: Ejecución en paralelo con Promise.all()
+        if (hasDateRange) {
+            const [
+                revRangeRow,
+                topProductsResult,
+                statusCountsResult,
+                paymentMethodsResult,
+                deliveryTypesResult
+            ] = await Promise.all([
+                db.prepare(`
+                    SELECT COALESCE(SUM(monto), 0) as total, COUNT(*) as count 
+                    FROM sales 
+                    WHERE tenant_id = ? AND date(fecha) >= date(?) AND date(fecha) <= date(?)
+                `).bind(tenantId, fromDate, toDate).first<{ total: number; count: number }>(),
+
+                db.prepare(`
+                    SELECT oi.product_name, SUM(oi.quantity) as total_qty, SUM(oi.quantity * oi.unit_price) as total_revenue
+                    FROM order_items oi
+                    JOIN orders o ON oi.order_id = o.id
+                    WHERE o.tenant_id = ? AND date(o.created_at) >= date(?) AND date(o.created_at) <= date(?)
+                    GROUP BY oi.product_name
+                    ORDER BY total_qty DESC
+                    LIMIT ?
+                `).bind(tenantId, fromDate, toDate, topLimit).all<TopProductRow>(),
+
+                db.prepare(`
+                    SELECT status, COUNT(*) as count
+                    FROM orders
+                    WHERE tenant_id = ? AND date(created_at) >= date(?) AND date(created_at) <= date(?)
+                    GROUP BY status
+                `).bind(tenantId, fromDate, toDate).all<StatusCountRow>(),
+
+                db.prepare(`
+                    SELECT COALESCE(payment_method, 'No especificado') as payment_method, COUNT(*) as count, COALESCE(SUM(total_price), 0) as total
+                    FROM orders
+                    WHERE tenant_id = ? AND date(created_at) >= date(?) AND date(created_at) <= date(?)
+                    GROUP BY payment_method
+                `).bind(tenantId, fromDate, toDate).all<PaymentBreakdownRow>(),
+
+                db.prepare(`
+                    SELECT delivery_type, COUNT(*) as count
+                    FROM orders
+                    WHERE tenant_id = ? AND date(created_at) >= date(?) AND date(created_at) <= date(?)
+                    GROUP BY delivery_type
+                `).bind(tenantId, fromDate, toDate).all<DeliveryBreakdownRow>()
+            ]);
+
+            const revRange = revRangeRow?.total ?? 0;
+            const salesCount = revRangeRow?.count ?? 0;
+            const averageTicket = salesCount > 0 ? Math.round((revRange / salesCount) * 100) / 100 : 0;
+
+            return jsonResponse({
+                plan: planKey,
+                range: { from: fromDate, to: toDate },
+                summary: {
+                    totalRevenue: revRange,
+                    salesCount,
+                    averageTicket
+                },
+                topProducts: topProductsResult.results || [],
+                ordersByStatus: statusCountsResult.results || [],
+                paymentMethods: paymentMethodsResult.results || [],
+                deliveryTypes: deliveryTypesResult.results || []
+            }, 200, {
+                // Fix #6: Caché privada de 5 minutos en borde y navegador
+                "Cache-Control": "private, max-age=300, stale-while-revalidate=60"
+            });
+        }
+
+        // Modo predeterminado (mes actual vs mes anterior) ejecutado en paralelo
+        const [
+            revThisMonthRow,
+            revLastMonthRow,
+            topProductsResult,
+            statusCountsResult,
+            paymentMethodsResult,
+            deliveryTypesResult
+        ] = await Promise.all([
+            db.prepare(`
+                SELECT COALESCE(SUM(monto), 0) as total, COUNT(*) as count 
+                FROM sales 
+                WHERE tenant_id = ? AND strftime('%Y-%m', fecha) = strftime('%Y-%m', 'now')
+            `).bind(tenantId).first<{ total: number; count: number }>(),
+
+            db.prepare(`
+                SELECT COALESCE(SUM(monto), 0) as total, COUNT(*) as count 
+                FROM sales 
+                WHERE tenant_id = ? AND strftime('%Y-%m', fecha) = strftime('%Y-%m', 'now', '-1 month')
+            `).bind(tenantId).first<{ total: number; count: number }>(),
+
+            db.prepare(`
+                SELECT oi.product_name, SUM(oi.quantity) as total_qty, SUM(oi.quantity * oi.unit_price) as total_revenue
+                FROM order_items oi
+                JOIN orders o ON oi.order_id = o.id
+                WHERE o.tenant_id = ?
+                GROUP BY oi.product_name
+                ORDER BY total_qty DESC
+                LIMIT ?
+            `).bind(tenantId, topLimit).all<TopProductRow>(),
+
+            db.prepare(`
+                SELECT status, COUNT(*) as count
+                FROM orders
+                WHERE tenant_id = ?
+                GROUP BY status
+            `).bind(tenantId).all<StatusCountRow>(),
+
+            db.prepare(`
+                SELECT COALESCE(payment_method, 'No especificado') as payment_method, COUNT(*) as count, COALESCE(SUM(total_price), 0) as total
+                FROM orders
+                WHERE tenant_id = ?
+                GROUP BY payment_method
+            `).bind(tenantId).all<PaymentBreakdownRow>(),
+
+            db.prepare(`
+                SELECT delivery_type, COUNT(*) as count
+                FROM orders
+                WHERE tenant_id = ?
+                GROUP BY delivery_type
+            `).bind(tenantId).all<DeliveryBreakdownRow>()
+        ]);
 
         const revThisMonth = revThisMonthRow?.total ?? 0;
         const revLastMonth = revLastMonthRow?.total ?? 0;
         const salesCountThisMonth = revThisMonthRow?.count ?? 0;
 
-        // Calcular porcentaje de crecimiento mensual
         let growthPercentage = 0;
         if (revLastMonth > 0) {
             growthPercentage = Math.round(((revThisMonth - revLastMonth) / revLastMonth) * 100);
@@ -67,43 +184,7 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
             growthPercentage = 100;
         }
 
-        // Ticket promedio
         const averageTicket = salesCountThisMonth > 0 ? Math.round((revThisMonth / salesCountThisMonth) * 100) / 100 : 0;
-
-        // 3. Top 5 productos más vendidos
-        const { results: rawTopProducts } = await db.prepare(`
-            SELECT oi.product_name, SUM(oi.quantity) as total_qty, SUM(oi.quantity * oi.unit_price) as total_revenue
-            FROM order_items oi
-            JOIN orders o ON oi.order_id = o.id
-            WHERE o.tenant_id = ?
-            GROUP BY oi.product_name
-            ORDER BY total_qty DESC
-            LIMIT 5
-        `).bind(tenantId).all<TopProductRow>();
-
-        // 4. Conteo de pedidos por estado
-        const { results: rawStatusCounts } = await db.prepare(`
-            SELECT status, COUNT(*) as count
-            FROM orders
-            WHERE tenant_id = ?
-            GROUP BY status
-        `).bind(tenantId).all<StatusCountRow>();
-
-        // 5. Desglose por método de pago
-        const { results: rawPaymentMethods } = await db.prepare(`
-            SELECT COALESCE(payment_method, 'No especificado') as payment_method, COUNT(*) as count, COALESCE(SUM(total_price), 0) as total
-            FROM orders
-            WHERE tenant_id = ?
-            GROUP BY payment_method
-        `).bind(tenantId).all<PaymentBreakdownRow>();
-
-        // 6. Desglose por tipo de entrega
-        const { results: rawDeliveryTypes } = await db.prepare(`
-            SELECT delivery_type, COUNT(*) as count
-            FROM orders
-            WHERE tenant_id = ?
-            GROUP BY delivery_type
-        `).bind(tenantId).all<DeliveryBreakdownRow>();
 
         return jsonResponse({
             plan: planKey,
@@ -114,11 +195,14 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
                 salesCountThisMonth,
                 averageTicket
             },
-            topProducts: rawTopProducts || [],
-            ordersByStatus: rawStatusCounts || [],
-            paymentMethods: rawPaymentMethods || [],
-            deliveryTypes: rawDeliveryTypes || []
-        }, 200, { "Cache-Control": "no-store, no-cache, must-revalidate" });
+            topProducts: topProductsResult.results || [],
+            ordersByStatus: statusCountsResult.results || [],
+            paymentMethods: paymentMethodsResult.results || [],
+            deliveryTypes: deliveryTypesResult.results || []
+        }, 200, {
+            // Fix #6: Caché de 5 minutos
+            "Cache-Control": "private, max-age=300, stale-while-revalidate=60"
+        });
 
     } catch (err) {
         console.error("Error en GET /api/analytics:", err);

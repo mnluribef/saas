@@ -103,8 +103,8 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
             }
 
             const { results: attributes } = await db.prepare(
-                "SELECT * FROM product_attributes WHERE product_id = ?"
-            ).bind(singleId).all<RawAttributeRow>();
+                "SELECT * FROM product_attributes WHERE tenant_id = ? AND product_id = ?"
+            ).bind(tenantId, singleId).all<RawAttributeRow>();
 
             const parsedAttrs: ProductAttribute[] = (attributes || []).map(attr => {
                 let parsedValues: string[] = [];
@@ -177,8 +177,8 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
             const productIds = products.map(p => p.id);
             const placeholders = productIds.map(() => '?').join(',');
             const { results: allAttributes } = await db.prepare(
-                `SELECT * FROM product_attributes WHERE product_id IN (${placeholders})`
-            ).bind(...productIds).all<RawAttributeRow>();
+                `SELECT * FROM product_attributes WHERE tenant_id = ? AND product_id IN (${placeholders})`
+            ).bind(tenantId, ...productIds).all<RawAttributeRow>();
 
             const attrsMap: Record<string, ProductAttribute[]> = {};
             for (const attr of allAttributes || []) {
@@ -371,7 +371,8 @@ export const onRequestDelete: PagesHandler<Env> = async (context) => {
                 return jsonResponse({ error: "IDs requeridos para eliminación masiva." }, 400);
             }
             const placeholders = ids.map(() => '?').join(',');
-            await db.prepare(`DELETE FROM product_attributes WHERE product_id IN (${placeholders})`).bind(...ids).run();
+            await db.prepare(`DELETE FROM product_attributes WHERE tenant_id = ? AND product_id IN (${placeholders})`).bind(tenantId, ...ids).run();
+            await db.prepare(`DELETE FROM product_variants WHERE tenant_id = ? AND product_id IN (${placeholders})`).bind(tenantId, ...ids).run();
             await db.prepare(`DELETE FROM products WHERE id IN (${placeholders}) AND tenant_id = ?`).bind(...ids, tenantId).run();
             return jsonResponse({ success: true, message: `${ids.length} productos eliminados con éxito.` });
         }
@@ -387,7 +388,8 @@ export const onRequestDelete: PagesHandler<Env> = async (context) => {
         }
 
         await db.batch([
-            db.prepare("DELETE FROM product_attributes WHERE product_id = ? AND product_id IN (SELECT id FROM products WHERE tenant_id = ?)").bind(id, tenantId),
+            db.prepare("DELETE FROM product_attributes WHERE tenant_id = ? AND product_id = ?").bind(tenantId, id),
+            db.prepare("DELETE FROM product_variants WHERE tenant_id = ? AND product_id = ?").bind(tenantId, id),
             db.prepare("DELETE FROM products WHERE id = ? AND tenant_id = ?").bind(id, tenantId)
         ]);
 

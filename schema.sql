@@ -1,3 +1,14 @@
+-- ==============================================================================
+-- ⚠️ NOTA DE ARQUITECTURA: REFERENCIA DE DOCUMENTACIÓN EXCLUSIVA
+-- ==============================================================================
+-- Este archivo representa el esquema canónico de referencia para documentación y diseño.
+-- NO ejecutar directamente en bases de datos existentes con datos vivos.
+-- Para el ciclo de vida y evolución del esquema, la ÚNICA fuente de verdad
+-- ejecutable son las migraciones versionadas en el directorio /migrations/:
+--   pnpm run db:migrate:local   (desarrollo local con Wrangler)
+--   pnpm run db:migrate:remote  (producción en Cloudflare D1)
+-- ==============================================================================
+
 -- Esquema Canónico de Base de Datos - Vendly E-commerce SaaS
 -- Base de datos D1 estándar para arquitectura Multi-Tenant, catálogo, pedidos, inventario y facturación
 
@@ -60,7 +71,8 @@ CREATE TABLE IF NOT EXISTS product_attributes (
     attr_values TEXT NOT NULL,
     attr_type TEXT DEFAULT 'select',
     price_matrix TEXT DEFAULT '{}',
-    required INTEGER DEFAULT 0
+    required INTEGER DEFAULT 0,
+    tenant_id TEXT NOT NULL DEFAULT 'demo'
 );
 
 -- 5. Tabla de Variantes/Opciones de Producto
@@ -71,7 +83,8 @@ CREATE TABLE IF NOT EXISTS product_variants (
     label TEXT NOT NULL,
     price_delta REAL DEFAULT 0.0,
     stock INTEGER DEFAULT -1,
-    active INTEGER DEFAULT 1
+    active INTEGER DEFAULT 1,
+    tenant_id TEXT NOT NULL DEFAULT 'demo'
 );
 
 -- 6. Tabla de Cupones / Códigos de Descuento
@@ -139,6 +152,7 @@ CREATE TABLE IF NOT EXISTS sales (
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL,
+    email TEXT,
     password_hash TEXT NOT NULL,
     password_salt TEXT,
     role TEXT NOT NULL DEFAULT 'admin',
@@ -188,11 +202,15 @@ CREATE TABLE IF NOT EXISTS tenant_settings (
 -- ============================================================
 CREATE INDEX IF NOT EXISTS idx_products_tenant       ON products(tenant_id, active);
 CREATE INDEX IF NOT EXISTS idx_products_template     ON products(template);
+CREATE INDEX IF NOT EXISTS idx_product_attributes_tenant_prod ON product_attributes(tenant_id, product_id);
+CREATE INDEX IF NOT EXISTS idx_product_variants_tenant_prod   ON product_variants(tenant_id, product_id);
 CREATE INDEX IF NOT EXISTS idx_orders_tenant         ON orders(tenant_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_orders_status         ON orders(tenant_id, status);
 CREATE INDEX IF NOT EXISTS idx_order_items_order     ON order_items(order_id);
+CREATE INDEX IF NOT EXISTS idx_order_items_product   ON order_items(product_id);
 CREATE INDEX IF NOT EXISTS idx_sales_tenant          ON sales(tenant_id, fecha DESC);
 CREATE INDEX IF NOT EXISTS idx_users_tenant          ON users(tenant_id, username);
+CREATE INDEX IF NOT EXISTS idx_users_email           ON users(email);
 CREATE INDEX IF NOT EXISTS idx_sessions_expires      ON sessions(expires_at);
 CREATE INDEX IF NOT EXISTS idx_coupons_tenant        ON coupons(tenant_id, code);
 CREATE INDEX IF NOT EXISTS idx_tenant_settings_ns    ON tenant_settings(tenant_id, namespace);

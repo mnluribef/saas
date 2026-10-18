@@ -48,6 +48,9 @@ export interface CatalogProduct {
     attributes?: CatalogProductAttribute[];
     sizes?: string;
     stock?: number;
+    compare_at_price?: number;
+    sku?: string;
+    badge?: string;
 }
 
 export interface TemplateCategory {
