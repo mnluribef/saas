@@ -4,3 +4,4 @@ export * from './order.service';
 export * from './product.service';
 export * from './settings.service';
 export * from './coupon.service';
+export * from './email.service';

@@ -11,6 +11,8 @@ export interface Env {
     SUPERADMIN_KEY?: string;
     TURNSTILE_SECRET_KEY?: string;
     WEBHOOK_URL?: string;
+    RESEND_API_KEY?: string;
+    EMAIL_FROM?: string;
     ENVIRONMENT?: string;
     JWT_SECRET?: string;
     PAYMENT_METHOD?: string;

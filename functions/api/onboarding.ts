@@ -5,6 +5,7 @@ import { z } from "zod";
 import { generateSalt, hashPasswordPBKDF2 } from "./_auth";
 import { strongPasswordSchema } from "./auth";
 import { getDB, jsonResponse } from "./_helpers";
+import { sendWelcomeEmail } from "./_services/email.service";
 import type { Env, PagesHandler } from '../types';
 
 export const onboardingSchema = z.object({
@@ -376,6 +377,27 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
         const storeHost = isVentrinaApp 
             ? `${tenantSlug}.ventrina.app` 
             : (host.includes('localhost') ? `${tenantSlug}.localhost:${url.port || '8788'}` : `${tenantSlug}.${host}`);
+
+        const storeUrl = `https://${storeHost}`;
+        const adminUrl = isVentrinaApp
+            ? `https://${tenantSlug}.ventrina.app/admin`
+            : `${url.origin}/admin?tenant=${tenantSlug}`;
+
+        // Enviar correo de bienvenida con instrucciones de primeros pasos (asíncrono)
+        try {
+            context.waitUntil(
+                sendWelcomeEmail(env, {
+                    to: cleanEmail,
+                    tenantName,
+                    tenantSlug,
+                    template,
+                    storeUrl,
+                    adminUrl
+                })
+            );
+        } catch (emailErr) {
+            console.error('Error al programar envío de email de bienvenida:', emailErr);
+        }
 
         return jsonResponse({
             success: true,
