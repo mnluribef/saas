@@ -11,11 +11,14 @@ export const onboardingSchema = z.object({
     tenantName: z.string().min(2, "El nombre del negocio es muy corto").max(100),
     tenantSlug: z.string().min(3).max(60).regex(/^[a-z0-9-]+$/, "El slug solo puede contener minúsculas, números y guiones."),
     template: z.enum(['restaurant', 'hardware', 'fashion', 'tech', 'autoparts']).default('restaurant'),
-    username: z.string().min(4, "El usuario debe tener al menos 4 caracteres").max(50),
-    password: strongPasswordSchema,
     email: z.email("Formato de correo electrónico inválido").optional().nullable(),
+    username: z.string().max(100).optional().nullable(),
+    password: strongPasswordSchema,
     whatsapp: z.string().max(30).optional().nullable(),
     acceptTerms: z.boolean().optional(),
+}).refine(data => Boolean(data.email || data.username), {
+    message: "Debes ingresar un correo electrónico válido",
+    path: ["email"]
 });
 
 export type OnboardingInput = z.infer<typeof onboardingSchema>;
@@ -83,6 +86,30 @@ async function recordRegistrationAttempt(db: D1Database, ip: string): Promise<vo
         }
     } catch {
         // Ignorar fallas secundarias de registro de rate limit
+    }
+}
+
+/**
+ * Asegura que la columna 'email' exista en la tabla 'users' de forma defensiva y autosanadora.
+ */
+async function ensureUsersEmailColumn(db: D1Database): Promise<boolean> {
+    try {
+        const tableInfo = await db.prepare("PRAGMA table_info(users)").all<{ name: string }>();
+        const hasEmail = tableInfo?.results?.some(col => col.name === 'email');
+        if (!hasEmail) {
+            await db.prepare("ALTER TABLE users ADD COLUMN email TEXT").run();
+            try {
+                await db.prepare("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)").run();
+            } catch {}
+        }
+        return true;
+    } catch {
+        try {
+            await db.prepare("ALTER TABLE users ADD COLUMN email TEXT").run();
+            return true;
+        } catch {
+            return false;
+        }
     }
 }
 
@@ -240,6 +267,8 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
         }
 
         const { tenantName, tenantSlug, template, username, password, email, whatsapp } = result.data;
+        const effectiveEmail = (email || username || '').toLowerCase().trim();
+        const effectiveUsername = effectiveEmail;
         
         // Normalizar número de WhatsApp a formato internacional (E.164 Venezuela / LatAm)
         let cleanWhatsApp = whatsapp ? whatsapp.replace(/[^0-9]/g, '') : null;
@@ -251,16 +280,22 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
             }
         }
 
-        // 2. Verificar disponibilidad de Slug y Username
+        // 2. Verificar disponibilidad de Slug y Correo/Usuario
         const existingTenant = await db.prepare('SELECT id FROM tenants WHERE id = ?').bind(tenantSlug).first();
         if (existingTenant) {
             return jsonResponse({ error: `El subdominio o dirección "${tenantSlug}" ya está en uso.` }, 400);
         }
 
-        const existingUser = await db.prepare('SELECT id FROM users WHERE username = ? AND tenant_id = ?')
-            .bind(username.toLowerCase().trim(), tenantSlug).first();
+        const hasEmailCol = await ensureUsersEmailColumn(db);
+
+        const existingUser = hasEmailCol
+            ? await db.prepare('SELECT id FROM users WHERE (username = ? OR email = ?) AND tenant_id = ?')
+                .bind(effectiveUsername, effectiveEmail, tenantSlug).first()
+            : await db.prepare('SELECT id FROM users WHERE username = ? AND tenant_id = ?')
+                .bind(effectiveUsername, tenantSlug).first();
+
         if (existingUser) {
-            return jsonResponse({ error: `El nombre de usuario "${username}" ya está registrado en esta tienda.` }, 400);
+            return jsonResponse({ error: `El correo "${effectiveEmail}" ya está registrado en esta tienda.` }, 400);
         }
 
         // 3. Hash de contraseña directo con PBKDF2 + salt (Fix #5)
@@ -281,6 +316,14 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
             }
         };
 
+        const userInsertStmt = hasEmailCol
+            ? db.prepare(
+                'INSERT INTO users (username, email, password_hash, password_salt, role, tenant_id) VALUES (?, ?, ?, ?, ?, ?)'
+            ).bind(effectiveUsername, effectiveEmail, finalHash, salt, 'admin', tenantSlug)
+            : db.prepare(
+                'INSERT INTO users (username, password_hash, password_salt, role, tenant_id) VALUES (?, ?, ?, ?, ?)'
+            ).bind(effectiveUsername, finalHash, salt, 'admin', tenantSlug);
+
         const statements: D1PreparedStatement[] = [
             db.prepare(
                 'INSERT INTO tenants (id, name, plan, template, config_json, whatsapp, active) VALUES (?, ?, ?, ?, ?, ?, ?)'
@@ -294,13 +337,11 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
                 "INSERT INTO settings (key, value, tenant_id) VALUES ('bcv_auto_update', '1', ?)"
             ).bind(tenantSlug),
 
-            db.prepare(
-                'INSERT INTO users (username, email, password_hash, password_salt, role, tenant_id) VALUES (?, ?, ?, ?, ?, ?)'
-            ).bind(username.toLowerCase().trim(), email ? email.toLowerCase().trim() : null, finalHash, salt, 'admin', tenantSlug),
+            userInsertStmt,
 
             db.prepare(
                 'INSERT INTO sessions (token, username, expires_at, tenant_id) VALUES (?, ?, ?, ?)'
-            ).bind(sessionToken, username.toLowerCase().trim(), expiresAt, tenantSlug)
+            ).bind(sessionToken, effectiveUsername, expiresAt, tenantSlug)
         ];
 
         // 5. Sembrar productos iniciales de ejemplo para eliminar el efecto de "tablero vacío"

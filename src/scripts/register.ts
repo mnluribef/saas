@@ -115,11 +115,13 @@
                 return;
             }
             
+            const emailValue = (formData.get('email') as string || '').trim().toLowerCase();
             const payload = {
                 tenantName: formData.get('tenantName'),
                 tenantSlug: formData.get('tenantSlug'),
                 template: formData.get('template'),
-                username: formData.get('username'),
+                email: emailValue,
+                username: emailValue,
                 password: passwordStr,
                 whatsapp: formData.get('whatsapp') || null,
                 acceptTerms: true

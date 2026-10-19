@@ -182,21 +182,40 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
             effectiveTenantId = resolvedId;
         }
 
-        // Si aún no está especificado y cae en 'demo', buscar si este username pertenece a un único tenant
-        if (effectiveTenantId === 'demo') {
-            const userMatches = await db.prepare(
-                "SELECT tenant_id FROM users WHERE username = ?"
-            ).bind(username.toLowerCase().trim()).all<{ tenant_id: string }>();
+        const cleanIdentifier = username.toLowerCase().trim();
 
-            if (userMatches?.results && userMatches.results.length === 1) {
-                effectiveTenantId = userMatches.results[0].tenant_id;
+        // Si aún no está especificado y cae en 'demo', buscar si este username/email pertenece a un único tenant
+        if (effectiveTenantId === 'demo') {
+            try {
+                const userMatches = await db.prepare(
+                    "SELECT tenant_id FROM users WHERE username = ? OR email = ?"
+                ).bind(cleanIdentifier, cleanIdentifier).all<{ tenant_id: string }>();
+
+                if (userMatches?.results && userMatches.results.length === 1) {
+                    effectiveTenantId = userMatches.results[0].tenant_id;
+                }
+            } catch {
+                const userMatches = await db.prepare(
+                    "SELECT tenant_id FROM users WHERE username = ?"
+                ).bind(cleanIdentifier).all<{ tenant_id: string }>();
+
+                if (userMatches?.results && userMatches.results.length === 1) {
+                    effectiveTenantId = userMatches.results[0].tenant_id;
+                }
             }
         }
 
-        // Buscar usuario en base de datos (scoped al tenant resuelto)
-        const user = await db.prepare("SELECT * FROM users WHERE username = ? AND tenant_id = ?")
-            .bind(username.toLowerCase().trim(), effectiveTenantId)
-            .first<UserDbRow>();
+        // Buscar usuario en base de datos (scoped al tenant resuelto) por username o email
+        let user: UserDbRow | null = null;
+        try {
+            user = await db.prepare("SELECT * FROM users WHERE (username = ? OR email = ?) AND tenant_id = ?")
+                .bind(cleanIdentifier, cleanIdentifier, effectiveTenantId)
+                .first<UserDbRow>();
+        } catch {
+            user = await db.prepare("SELECT * FROM users WHERE username = ? AND tenant_id = ?")
+                .bind(cleanIdentifier, effectiveTenantId)
+                .first<UserDbRow>();
+        }
 
         if (!user) {
             await recordFailedAttempt(db, clientIp);
