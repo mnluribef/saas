@@ -171,14 +171,36 @@
     }
 
     .step-indicator {
-        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.25rem;
+    }
+
+    .step-progress-track {
+        display: flex;
+        gap: 0.4rem;
+        width: 100px;
+    }
+
+    .step-progress-segment {
+        height: 5px;
+        flex: 1;
+        background: #e2e8f0;
+        border-radius: 99px;
+        transition: background-color 0.3s ease;
+    }
+
+    .step-progress-segment.active {
+        background: var(--primary, #6366f1);
     }
 
     .step-badge {
-        display: inline-block;
-        background: rgba(99, 102, 241, 0.1);
+        display: inline-flex;
+        align-items: center;
+        background: rgba(99, 102, 241, 0.08);
         color: var(--primary);
-        padding: 0.25rem 0.75rem;
+        padding: 0.3rem 0.85rem;
         border-radius: 999px;
         font-size: 0.75rem;
         font-weight: 700;
@@ -189,9 +211,10 @@
 
     .form-step h3 {
         margin-top: 0;
-        margin-bottom: 2rem;
-        font-size: 1.25rem;
-        font-weight: 600;
+        margin-bottom: 1.75rem;
+        font-size: 1.3rem;
+        font-weight: 700;
+        letter-spacing: -0.01em;
         color: var(--text);
     }
 
@@ -202,14 +225,19 @@
     .form-group label {
         display: block;
         margin-bottom: 0.6rem;
-        font-weight: 500;
-        font-size: 0.95rem;
+        font-weight: 600;
+        font-size: 0.92rem;
         color: #334155;
+        letter-spacing: -0.01em;
     }
 
+    .form-group input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
     .form-group input[type="text"],
+    .form-group input[type="email"],
     .form-group input[type="password"],
-    .form-group input[type="tel"] {
+    .form-group input[type="tel"],
+    .form-group input[type="url"],
+    .form-group input[type="number"] {
         width: 100%;
         padding: 0.875rem 1rem;
         background-color: #ffffff;
@@ -217,8 +245,10 @@
         color: var(--text);
         border-radius: 10px;
         font-size: 1rem;
-        transition: all 0.2s ease;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.02) inset;
+        font-family: inherit;
+        box-sizing: border-box;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02) inset;
     }
 
     .form-group input::placeholder {
@@ -233,7 +263,40 @@
         outline: none;
         background-color: #ffffff;
         border-color: var(--primary);
-        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15), 0 1px 2px rgba(0,0,0,0.02) inset;
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15), 0 1px 2px rgba(0, 0, 0, 0.02) inset;
+        position: relative;
+        z-index: 1;
+    }
+
+    .password-wrap {
+        position: relative;
+        display: flex;
+        align-items: center;
+        width: 100%;
+    }
+
+    .password-wrap input {
+        padding-right: 2.75rem !important;
+    }
+
+    .password-toggle-btn {
+        position: absolute;
+        right: 0.75rem;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        color: #94a3b8;
+        padding: 0.35rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        transition: color 0.2s, background-color 0.2s;
+    }
+
+    .password-toggle-btn:hover {
+        color: var(--text);
+        background-color: #f1f5f9;
     }
 
     .input-group {
@@ -359,6 +422,10 @@
         display: block;
         font-size: 0.9rem;
         font-weight: 500;
+    }
+
+    .template-card:last-child:nth-child(odd) {
+        grid-column: span 2;
     }
 
     /* Buttons */
