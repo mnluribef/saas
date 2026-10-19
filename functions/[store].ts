@@ -15,6 +15,8 @@ const SYSTEM_PATHS = new Set([
     'demo',
     'assets',
     'robots.txt',
+    'llms.txt',
+    'ai-catalog.json',
     'favicon.ico',
     'favicon.svg',
     '_astro'

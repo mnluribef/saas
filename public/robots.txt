@@ -1,0 +1,64 @@
+# ==============================================================================
+# robots.txt - Vendly SaaS (https://vendly.app)
+# Plataforma SaaS multi-plantilla para catálogos virtuales y pedidos por WhatsApp
+# ==============================================================================
+
+# LLM & AI Discovery Resources
+# Spec: https://llmstxt.org/
+# Manifest: https://vendly.app/ai-catalog.json
+# OpenAPI: https://vendly.app/api/openapi.json
+# Docs: https://vendly.app/api/docs
+
+# ------------------------------------------------------------------------------
+# 1. Reglas Generales para Rastreadores Web (Googlebot, Bingbot, etc.)
+# ------------------------------------------------------------------------------
+User-agent: *
+Allow: /
+Allow: /precios
+Allow: /register
+Allow: /login
+Allow: /producto
+Allow: /terminos
+Allow: /demo/
+Allow: /assets/
+Allow: /robots.txt
+Allow: /llms.txt
+Allow: /ai-catalog.json
+Allow: /api/openapi.json
+Allow: /api/docs
+
+# Restricción de portales administrativos y endpoints internos
+Disallow: /admin/
+Disallow: /superadmin/
+Disallow: /api/
+
+# ------------------------------------------------------------------------------
+# 2. Agentes de Inteligencia Artificial y LLMs (Búsqueda, Descubrimiento e Inferencia)
+# ------------------------------------------------------------------------------
+User-agent: GPTBot
+User-agent: ChatGPT-User
+User-agent: ClaudeBot
+User-agent: anthropic-ai
+User-agent: PerplexityBot
+User-agent: Google-Extended
+User-agent: Applebot-Extended
+User-agent: cohere-ai
+User-agent: Bytespider
+User-agent: CCBot
+Allow: /
+Allow: /precios
+Allow: /demo/
+Allow: /producto
+Allow: /terminos
+Allow: /llms.txt
+Allow: /ai-catalog.json
+Allow: /api/openapi.json
+Allow: /api/docs
+Disallow: /admin/
+Disallow: /superadmin/
+Disallow: /api/
+
+# ------------------------------------------------------------------------------
+# 3. Mapa del Sitio
+# ------------------------------------------------------------------------------
+Sitemap: https://vendly.app/sitemap.xml
