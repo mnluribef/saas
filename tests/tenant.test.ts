@@ -62,4 +62,64 @@ describe('Tenant Resolution Logic (_tenant.ts)', () => {
         const result = await resolveTenant(req, emptyDb);
         expect(result.id).toBe('demo');
     });
+
+    describe('E-04 & E-06: Progressive KV TTL & Key Namespaces', () => {
+        it('assigns progressive TTL based on tenant plan', async () => {
+            const { getTenantCacheTtl, TTL_BY_PLAN } = await import('../functions/api/_tenant');
+            expect(TTL_BY_PLAN.basic).toBe(60);
+            expect(TTL_BY_PLAN.pro).toBe(300);
+            expect(TTL_BY_PLAN.enterprise).toBe(1800);
+
+            expect(getTenantCacheTtl('basic')).toBe(60);
+            expect(getTenantCacheTtl('pro')).toBe(300);
+            expect(getTenantCacheTtl('enterprise')).toBe(1800);
+            expect(getTenantCacheTtl(null)).toBe(60);
+            expect(getTenantCacheTtl('unknown')).toBe(60);
+        });
+
+        it('generates versioned KV keys with structured prefix', async () => {
+            const { getTenantKvKey, getDomainKvKey } = await import('../functions/api/_tenant');
+            expect(getTenantKvKey('fogon')).toBe('v1:fogon:tenant');
+            expect(getDomainKvKey('fogon.com')).toBe('v1:domain:fogon.com');
+        });
+
+        it('caches tenant in KV with correct structured key and plan TTL', async () => {
+            const { getTenantByIdCached } = await import('../functions/api/_tenant');
+            const mockKv = {
+                get: vi.fn().mockResolvedValue(null),
+                put: vi.fn().mockResolvedValue(undefined)
+            } as any;
+
+            const enterpriseDb = {
+                prepare: vi.fn().mockReturnValue({
+                    bind: vi.fn().mockReturnValue({
+                        first: vi.fn().mockResolvedValue({ id: 'ent-store', plan: 'enterprise', active: 1 })
+                    })
+                })
+            } as unknown as D1Database;
+
+            const tenant = await getTenantByIdCached(enterpriseDb, 'ent-store', mockKv);
+            expect(tenant?.id).toBe('ent-store');
+            expect(mockKv.get).toHaveBeenCalledWith('v1:ent-store:tenant', 'json');
+            expect(mockKv.put).toHaveBeenCalledWith(
+                'v1:ent-store:tenant',
+                expect.any(String),
+                { expirationTtl: 1800 }
+            );
+        });
+
+        it('invalidates both structured and legacy KV keys', async () => {
+            const { invalidateTenantCache } = await import('../functions/api/_tenant');
+            const mockKv = {
+                delete: vi.fn().mockResolvedValue(undefined)
+            } as any;
+
+            await invalidateTenantCache(mockKv, 'fogon', 'fogon.com');
+            expect(mockKv.delete).toHaveBeenCalledWith('v1:fogon:tenant');
+            expect(mockKv.delete).toHaveBeenCalledWith('tenant:fogon');
+            expect(mockKv.delete).toHaveBeenCalledWith('v1:domain:fogon.com');
+            expect(mockKv.delete).toHaveBeenCalledWith('domain:fogon.com');
+        });
+    });
 });
+

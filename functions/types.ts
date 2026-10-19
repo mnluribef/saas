@@ -36,6 +36,30 @@ export type PagesHandler<E = Env, P extends string = string> = (
     context: PagesContext<E, P>
 ) => Response | Promise<Response>;
 
+/**
+ * M-04: Datos enriquecidos disponibles en el contexto de la aplicación tras middleware
+ */
+export interface AppContextData {
+    tenant?: TenantRow | null;
+    tenantId?: string;
+    user?: UserSession | null;
+    db?: D1Database;
+    requestId?: string;
+    startTime?: number;
+    [key: string]: unknown;
+}
+
+/**
+ * M-04: Interface AppContext fuertemente tipada para handlers y middlewares
+ */
+export interface AppContext<E = Env, P extends string = string> extends Omit<PagesContext<E, P>, 'data'> {
+    data: AppContextData;
+}
+
+export type AppHandler<E = Env, P extends string = string> = (
+    context: AppContext<E, P>
+) => Response | Promise<Response>;
+
 export interface TenantRow {
     id: string;
     name: string;

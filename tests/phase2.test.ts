@@ -34,6 +34,29 @@ describe('Phase 2 Improvements Unit Tests', () => {
             expect(headers['Access-Control-Allow-Origin']).toBe('https://vendly.app');
             expect(headers['Access-Control-Allow-Credentials']).toBe('true');
             expect(headers['Vary']).toBe('Origin');
+            expect(headers['Access-Control-Expose-Headers']).toContain('X-Request-Id');
+            expect(headers['Access-Control-Expose-Headers']).toContain('X-Response-Time');
+        });
+
+        it('injects X-Request-Id, X-Response-Time, and version headers in onRequest middleware (M-04, O-02)', async () => {
+            const { onRequest } = await import('../functions/api/_middleware');
+            const mockContext: any = {
+                request: new Request('https://vendly.app/api/products', {
+                    headers: { 'Origin': 'https://vendly.app' }
+                }),
+                next: async () => new Response(JSON.stringify({ ok: true }), {
+                    status: 200,
+                    headers: { 'Content-Type': 'application/json' }
+                }),
+                data: {}
+            };
+
+            const response = await onRequest(mockContext);
+            expect(response.headers.get('X-Request-Id')).toBeDefined();
+            expect(response.headers.get('X-Response-Time')).toMatch(/^\d+ms$/);
+            expect(response.headers.get('X-API-Version')).toBe('1.0.0');
+            expect(mockContext.data.requestId).toBeDefined();
+            expect(mockContext.data.requestId).toBe(response.headers.get('X-Request-Id'));
         });
     });
 

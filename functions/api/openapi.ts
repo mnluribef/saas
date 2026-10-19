@@ -21,11 +21,11 @@ export const openApiSpec = {
     paths: {
         "/health": {
             get: {
-                summary: "Verificación de salud y latencia de base de datos",
+                summary: "Verificación de salud y latencia de subsistemas (D1, KV, Storage)",
                 tags: ["Sistema"],
                 responses: {
-                    "200": { description: "Servidor y base de datos saludables" },
-                    "503": { description: "Servicio degradado" }
+                    "200": { description: "Servidor y subsistemas saludables o degradados tolerables" },
+                    "503": { description: "Fallo crítico en subsistemas principales (D1)" }
                 }
             }
         },

@@ -250,6 +250,7 @@ CREATE INDEX IF NOT EXISTS idx_products_template     ON products(template);
 CREATE INDEX IF NOT EXISTS idx_product_attributes_tenant_prod ON product_attributes(tenant_id, product_id);
 CREATE INDEX IF NOT EXISTS idx_product_variants_tenant_prod   ON product_variants(tenant_id, product_id);
 CREATE INDEX IF NOT EXISTS idx_orders_tenant         ON orders(tenant_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_orders_cursor         ON orders(tenant_id, created_at DESC, id DESC);
 CREATE INDEX IF NOT EXISTS idx_orders_status         ON orders(tenant_id, status);
 CREATE INDEX IF NOT EXISTS idx_order_events_order    ON order_events(order_id);
 CREATE INDEX IF NOT EXISTS idx_order_events_tenant   ON order_events(tenant_id);

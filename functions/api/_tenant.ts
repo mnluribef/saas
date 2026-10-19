@@ -102,13 +102,39 @@ async function getTenantById(db: D1Database, tenantId: string): Promise<TenantRo
 }
 
 /**
- * Obtiene un tenant de la BD o de Cloudflare KV por su ID con TTL de 60s (P-01)
+ * E-04: TTL de caché progresivo según el plan del tenant (en segundos)
+ */
+export const TTL_BY_PLAN: Record<string, number> = {
+    basic: 60,       // 1 minuto
+    pro: 300,        // 5 minutos
+    enterprise: 1800 // 30 minutos
+};
+
+export function getTenantCacheTtl(plan?: string | null): number {
+    if (!plan) return TTL_BY_PLAN.basic;
+    return TTL_BY_PLAN[plan] || TTL_BY_PLAN.basic;
+}
+
+/**
+ * E-06: Convención de claves versionadas con namespace para KV
+ */
+export function getTenantKvKey(tenantId: string): string {
+    return `v1:${tenantId}:tenant`;
+}
+
+export function getDomainKvKey(domain: string): string {
+    return `v1:domain:${domain}`;
+}
+
+/**
+ * Obtiene un tenant de la BD o de Cloudflare KV por su ID con TTL progresivo según plan (P-01, E-04, E-06)
  */
 export async function getTenantByIdCached(db: D1Database, tenantId: string, kv?: KVNamespace): Promise<TenantRow | null> {
-    const cacheKey = `tenant:${tenantId}`;
+    const primaryKey = getTenantKvKey(tenantId);
     if (kv) {
         try {
-            const cached = await kv.get(cacheKey, 'json');
+            // Intentar con prefijo v1 estructurado; fallback a clave legacy para transición suave
+            const cached = await kv.get(primaryKey, 'json') || await kv.get(`tenant:${tenantId}`, 'json');
             if (cached) return cached as TenantRow;
         } catch {}
     }
@@ -116,7 +142,8 @@ export async function getTenantByIdCached(db: D1Database, tenantId: string, kv?:
     const tenant = await getTenantById(db, tenantId);
     if (tenant && kv) {
         try {
-            await kv.put(cacheKey, JSON.stringify(tenant), { expirationTtl: 60 });
+            const ttl = getTenantCacheTtl(tenant.plan);
+            await kv.put(primaryKey, JSON.stringify(tenant), { expirationTtl: ttl });
         } catch {}
     }
     return tenant;
@@ -136,13 +163,13 @@ async function getTenantByDomain(db: D1Database, domain: string): Promise<Tenant
 }
 
 /**
- * Obtiene un tenant por dominio con caché Cloudflare KV con TTL de 60s (P-01)
+ * Obtiene un tenant por dominio con caché Cloudflare KV con TTL progresivo (P-01, E-04, E-06)
  */
 export async function getTenantByDomainCached(db: D1Database, domain: string, kv?: KVNamespace): Promise<TenantRow | null> {
-    const cacheKey = `domain:${domain}`;
+    const primaryKey = getDomainKvKey(domain);
     if (kv) {
         try {
-            const cached = await kv.get(cacheKey, 'json');
+            const cached = await kv.get(primaryKey, 'json') || await kv.get(`domain:${domain}`, 'json');
             if (cached) return cached as TenantRow;
         } catch {}
     }
@@ -150,22 +177,28 @@ export async function getTenantByDomainCached(db: D1Database, domain: string, kv
     const tenant = await getTenantByDomain(db, domain);
     if (tenant && kv) {
         try {
-            await kv.put(cacheKey, JSON.stringify(tenant), { expirationTtl: 60 });
+            const ttl = getTenantCacheTtl(tenant.plan);
+            await kv.put(primaryKey, JSON.stringify(tenant), { expirationTtl: ttl });
         } catch {}
     }
     return tenant;
 }
 
 /**
- * Invalida la caché de un tenant en Cloudflare KV tras actualizar configuración
+ * Invalida la caché de un tenant en Cloudflare KV (limpia keys versionadas y legacy) (E-06)
  */
 export async function invalidateTenantCache(kv: KVNamespace | undefined, tenantId: string, domain?: string | null): Promise<void> {
     if (!kv) return;
     try {
-        await kv.delete(`tenant:${tenantId}`);
+        const promises = [
+            kv.delete(getTenantKvKey(tenantId)),
+            kv.delete(`tenant:${tenantId}`)
+        ];
         if (domain) {
-            await kv.delete(`domain:${domain}`);
+            promises.push(kv.delete(getDomainKvKey(domain)));
+            promises.push(kv.delete(`domain:${domain}`));
         }
+        await Promise.all(promises);
     } catch {}
 }
 

@@ -149,13 +149,22 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
         }
 
         if (after) {
-            // Paginación por cursor: más rápida y eficiente en SQLite/D1
-            conditions.push("created_at < (SELECT created_at FROM orders WHERE id = ?)");
-            params.push(after);
+            // E-01: Paginación keyset con índice compuesto (created_at DESC, id DESC)
+            const cursorRow = await db.prepare(
+                "SELECT created_at, id FROM orders WHERE id = ? AND tenant_id = ?"
+            ).bind(after, tenantId).first<{ created_at: string; id: string }>();
+
+            if (cursorRow) {
+                conditions.push("(created_at < ? OR (created_at = ? AND id < ?))");
+                params.push(cursorRow.created_at, cursorRow.created_at, cursorRow.id);
+            } else {
+                conditions.push("created_at < (SELECT created_at FROM orders WHERE id = ?)");
+                params.push(after);
+            }
 
             const whereClause = "WHERE " + conditions.join(" AND ");
             const { results: rawOrders } = await db.prepare(
-                `SELECT * FROM orders ${whereClause} ORDER BY created_at DESC LIMIT ?`
+                `SELECT * FROM orders ${whereClause} ORDER BY created_at DESC, id DESC LIMIT ?`
             ).bind(...params, limit + 1).all<OrderRow>();
 
             const hasMore = Boolean(rawOrders && rawOrders.length > limit);
