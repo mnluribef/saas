@@ -93,10 +93,15 @@ export class CatalogController {
             if (container) {
                 container.innerHTML = `
                     <div class="catalog-error-box">
-                        ${renderIconSvg('x-circle', { size: 48, stroke: 'var(--primary)', class: 'catalog-error-icon' })}
+                        <div class="catalog-error-icon-wrap">
+                            ${renderIconSvg('alert-circle', { size: 36, class: 'catalog-error-icon' })}
+                        </div>
                         <h3 class="catalog-error-title">No pudimos cargar el catálogo</h3>
                         <p class="catalog-error-msg">Hubo un error de conexión con el servidor. Por favor, intenta de nuevo.</p>
-                        <button id="btn-reload-catalog" class="catalog-error-btn">Recargar Página</button>
+                        <button id="btn-reload-catalog" class="catalog-error-btn" type="button">
+                            ${renderIconSvg('repeat', { size: 16, class: 'catalog-error-btn-icon' })}
+                            <span>Recargar Página</span>
+                        </button>
                     </div>`;
                 document.getElementById('btn-reload-catalog')?.addEventListener('click', () => {
                     window.location.reload();
@@ -173,8 +178,13 @@ export class CatalogController {
         }
 
         if (filtered.length === 0) {
-            container.innerHTML =
-                '<div class="catalog-empty-state"><p>No se encontraron productos que coincidan con tu búsqueda.</p></div>';
+            container.innerHTML = `
+                <div class="catalog-empty-state">
+                    <div class="catalog-empty-icon-wrap">
+                        ${renderIconSvg('search', { size: 30, class: 'catalog-empty-icon' })}
+                    </div>
+                    <p class="catalog-empty-msg">No se encontraron productos que coincidan con tu búsqueda.</p>
+                </div>`;
             if (loadMoreContainer) loadMoreContainer.style.display = 'none';
             return;
         }
