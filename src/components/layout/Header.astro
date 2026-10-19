@@ -8,7 +8,7 @@ export interface Props {
 }
 
 const { config = defaultStoreConfig } = Astro.props;
-const { business, nav, features } = config;
+const { business, nav } = config;
 
 // Separar enlaces de contenido y enlaces de acción (login / registro)
 const isSaas = business.logoTextPrimary === 'VENDLY' || business.name === 'Vendly';
@@ -20,8 +20,9 @@ const ctaLink = nav.links.find(l => l.href === '/register') || (isSaas ? { label
 <header class="glass-nav">
     <div class="container">
         <nav>
-            <a href="/" class="logo" aria-label={`${business.name} Inicio`}>
+            <a href="/" class="logo">
                 <svg
+                    aria-hidden="true"
                     xmlns="http://www.w3.org/2000/svg"
                     width="22"
                     height="22"
@@ -88,18 +89,6 @@ const ctaLink = nav.links.find(l => l.href === '/register') || (isSaas ? { label
             </ul>
 
             <div class="header-actions">
-                {features.showBcvRate && (
-                    <div
-                        id="nav-bcv-badge"
-                        title="Tasa Oficial del Banco Central de Venezuela"
-                    >
-                        <span class="bcv-flag">🇻🇪</span>
-                        <span>
-                            BCV: <strong id="nav-bcv-rate">--</strong> Bs.
-                        </span>
-                    </div>
-                )}
-
                 {loginLink && (
                     <a href={loginLink.href} class="nav-login-link desktop-only-action">
                         {loginLink.label}
@@ -223,26 +212,6 @@ const ctaLink = nav.links.find(l => l.href === '/register') || (isSaas ? { label
         }, { passive: true });
     }
 
-    // Cargar Tasa BCV en la barra superior si existe el elemento
-    const loadHeaderBcv = async () => {
-        const badge = document.getElementById("nav-bcv-badge");
-        const rateSpan = document.getElementById("nav-bcv-rate");
-        if (!badge || !rateSpan) return;
-
-        try {
-            const res = await fetch("/api/bcv");
-            if (res.ok) {
-                const data = (await res.json()) as { rate?: number | string };
-                if (data.rate) {
-                    rateSpan.textContent = parseFloat(
-                        String(data.rate),
-                    ).toFixed(2);
-                    badge.classList.add("visible");
-                }
-            }
-        } catch (e) {}
-    };
-    loadHeaderBcv();
 </script>
 
 <style is:global>
@@ -421,34 +390,6 @@ nav {
     transform: translateY(-1px);
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
     color: #ffffff !important;
-}
-
-#nav-bcv-badge {
-    display: none;
-    align-items: center;
-    gap: 0.35rem;
-    background: var(--badge-bg, rgba(212, 175, 55, 0.12));
-    border: 1px solid var(--badge-border, rgba(212, 175, 55, 0.35));
-    border-radius: 50px;
-    padding: 0.3rem 0.75rem;
-    font-size: 0.78rem;
-    font-weight: 600;
-    color: var(--badge-text, #D4AF37);
-    white-space: nowrap !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-}
-
-#nav-bcv-badge.visible {
-    display: inline-flex;
-}
-
-#nav-bcv-badge strong {
-    color: #ffffff;
-    font-weight: 700;
-}
-
-.bcv-flag {
-    font-size: 0.85rem;
 }
 
 #mobile-menu-btn {

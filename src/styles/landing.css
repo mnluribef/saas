@@ -153,23 +153,6 @@ a {
   background: var(--lp-primary, #6366F1) !important;
 }
 
-/* Badge BCV en tema claro */
-.glass-nav #nav-bcv-badge {
-  background: rgba(6, 182, 212, 0.08) !important;
-  border: 1px solid rgba(6, 182, 212, 0.25) !important;
-  color: #0891B2 !important;
-  font-weight: 700 !important;
-  font-size: 0.78rem !important;
-  padding: 0.35rem 0.75rem !important;
-  border-radius: 9999px !important;
-  box-shadow: none !important;
-  white-space: nowrap !important;
-}
-
-.glass-nav #nav-bcv-badge strong {
-  color: #0E7490 !important;
-  font-weight: 800 !important;
-}
 
 /* Login Link en Navbar */
 .glass-nav .nav-login-link {
@@ -666,7 +649,7 @@ a {
 }
 
 .dash-stat-box.stat-theme-emerald .dash-stat-badge {
-  background: #059669;
+  background: #047857;
   color: #FFFFFF;
   padding: 0.15rem 0.5rem;
   border-radius: 50px;
@@ -682,7 +665,7 @@ a {
 }
 
 .dash-stat-box.stat-theme-amber .dash-stat-badge {
-  background: #D97706;
+  background: #B45309;
   color: #FFFFFF;
   padding: 0.15rem 0.5rem;
   border-radius: 50px;
@@ -773,7 +756,7 @@ a {
   font-size: 0.72rem;
   font-weight: 600;
   background: rgba(16, 185, 129, 0.12);
-  color: #059669;
+  color: #065F46;
 }
 
 /* Mockup Flotante Móvil de WhatsApp */
@@ -814,7 +797,8 @@ a {
   font-size: 0.9rem;
 }
 
-.phone-wa-info h5 {
+.phone-wa-info h5,
+.phone-wa-info .wa-chat-name {
   margin: 0;
   font-size: 0.88rem;
   font-weight: 700;
@@ -854,7 +838,7 @@ a {
 .wa-bubble-time {
   text-align: right;
   font-size: 0.65rem;
-  color: #6B7280;
+  color: #4B5563;
   display: block;
   margin-top: 0.25rem;
 }
@@ -909,7 +893,8 @@ a {
   border: 1.5px solid #C7D2FE;
 }
 
-.ticker-color-indigo h3 {
+.ticker-color-indigo h3,
+.ticker-color-indigo .ticker-value {
   background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -920,7 +905,8 @@ a {
   border: 1.5px solid #A7F3D0;
 }
 
-.ticker-color-emerald h3 {
+.ticker-color-emerald h3,
+.ticker-color-emerald .ticker-value {
   background: linear-gradient(135deg, #059669 0%, #10B981 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -931,7 +917,8 @@ a {
   border: 1.5px solid #BAE6FD;
 }
 
-.ticker-color-cyan h3 {
+.ticker-color-cyan h3,
+.ticker-color-cyan .ticker-value {
   background: linear-gradient(135deg, #0284C7 0%, #06B6D4 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -942,13 +929,15 @@ a {
   border: 1.5px solid #FDE68A;
 }
 
-.ticker-color-amber h3 {
+.ticker-color-amber h3,
+.ticker-color-amber .ticker-value {
   background: linear-gradient(135deg, #D97706 0%, #EA580C 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-.ticker-item h3 {
+.ticker-item h3,
+.ticker-item .ticker-value {
   font-family: 'Outfit', sans-serif;
   font-size: 2.5rem;
   font-weight: 800;
@@ -1381,7 +1370,7 @@ a {
 
 .demo-badge-tag.tag-tech {
   background: #E0F2FE;
-  color: #0284C7;
+  color: #0369A1;
   border: 1px solid #BAE6FD;
 }
 

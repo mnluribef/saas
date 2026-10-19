@@ -1,0 +1,287 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "name": "Vendly AI Commerce Catalog",
+    "version": "1.0.0",
+    "description": "Especificación canónica y manifiesto de integración para agentes de inteligencia artificial (LLM Shopping Agents / Autonomous Commerce Agents) en la plataforma Vendly SaaS.",
+    "homepage": "https://vendly.app",
+    "provider": {
+        "name": "Vendly",
+        "url": "https://vendly.app",
+        "support_email": "soporte@vendly.app",
+        "legal_email": "legal@vendly.app"
+    },
+    "protocols": {
+        "llms_txt": "https://vendly.app/llms.txt",
+        "openapi_spec": "https://vendly.app/api/openapi.json",
+        "api_docs": "https://vendly.app/api/docs",
+        "api_base": "https://vendly.app/api"
+    },
+    "architecture": {
+        "multi_tenant": true,
+        "tenant_resolution": {
+            "path_pattern": "https://vendly.app/{tenant_id}",
+            "subdomain_pattern": "https://{tenant_id}.vendly.app",
+            "header_parameter": "X-Tenant-Id"
+        },
+        "runtime": "Cloudflare Pages & Workers Edge Runtime",
+        "database": "Cloudflare D1 (SQLite at the edge)",
+        "storage": "Cloudflare R2"
+    },
+    "vertical_templates": [
+        {
+            "id": "restaurant",
+            "name": "Restaurante y Gastronomía",
+            "description": "Plantilla orientada a locales de comida rápida, restaurantes y delivery de alimentos y bebidas.",
+            "demo_url": "https://vendly.app/demo/restaurant",
+            "features": [
+                "Personalización de salsas",
+                "Selección de acompañamientos",
+                "Término de cocción",
+                "Opciones de entrega y retiro"
+            ]
+        },
+        {
+            "id": "hardware",
+            "name": "Ferretería y Construcción",
+            "description": "Plantilla optimizada para herramientas, materiales de construcción y ferretería en general.",
+            "demo_url": "https://vendly.app/demo/hardware",
+            "features": [
+                "Unidades de medida",
+                "Búsqueda por especificación técnica",
+                "Descuentos por volumen",
+                "Stock por variante"
+            ]
+        },
+        {
+            "id": "fashion",
+            "name": "Moda, Ropa y Calzado",
+            "description": "Plantilla visual orientada a boutiques, vestimenta, calzado y accesorios de moda.",
+            "demo_url": "https://vendly.app/demo/fashion",
+            "features": [
+                "Matriz de tallas y colores",
+                "Galería de imágenes por variante",
+                "Guía de medidas",
+                "Filtros de temporada"
+            ]
+        },
+        {
+            "id": "tech",
+            "name": "Tecnología y Electrónica",
+            "description": "Plantilla para productos electrónicos, smartphones, periféricos y accesorios informáticos.",
+            "demo_url": "https://vendly.app/demo/tech",
+            "features": [
+                "Fichas técnicas detalladas",
+                "Filtro por marcas y modelos",
+                "Garantías y especificaciones de hardware"
+            ]
+        },
+        {
+            "id": "autoparts",
+            "name": "Repuestos y Autopartes",
+            "description": "Plantilla para repuestos de vehículos, talleres y distribución automotriz.",
+            "demo_url": "https://vendly.app/demo/autoparts",
+            "features": [
+                "Compatibilidad por marca, modelo y año",
+                "Búsqueda por código SKU/OEM",
+                "Condición (nuevo/remanufacturado)"
+            ]
+        }
+    ],
+    "currencies": {
+        "base": {
+            "code": "USD",
+            "symbol": "$",
+            "name": "Dólar Estadounidense"
+        },
+        "local": {
+            "code": "VES",
+            "symbol": "Bs.",
+            "name": "Bolívares Digitales",
+            "rate_source_endpoint": "/api/bcv",
+            "description": "Tasa oficial actualizada provista por el Banco Central de Venezuela."
+        }
+    },
+    "payment_methods": [
+        {
+            "id": "pago_movil",
+            "label": "Pago Móvil",
+            "currency": "VES",
+            "requires_receipt": true
+        },
+        {
+            "id": "transferencia",
+            "label": "Transferencia Bancaria Nacional",
+            "currency": "VES",
+            "requires_receipt": true
+        },
+        {
+            "id": "binance",
+            "label": "Binance Pay (USDT)",
+            "currency": "USD",
+            "requires_receipt": true
+        },
+        {
+            "id": "zelle",
+            "label": "Zelle",
+            "currency": "USD",
+            "requires_receipt": true
+        },
+        {
+            "id": "efectivo",
+            "label": "Efectivo contra entrega",
+            "currency": "USD / VES",
+            "requires_receipt": false
+        }
+    ],
+    "agent_tools": [
+        {
+            "name": "search_products",
+            "description": "Busca productos dentro del catálogo de una tienda específica por término, categoría o plantilla.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "tenant_id": { "type": "string", "description": "Identificador único de la tienda (tenant)" },
+                    "q": { "type": "string", "description": "Término de búsqueda de texto completo" },
+                    "category": { "type": "string", "description": "Filtrar por categoría de producto" },
+                    "template": {
+                        "type": "string",
+                        "enum": ["restaurant", "hardware", "fashion", "tech", "autoparts"]
+                    },
+                    "page": { "type": "integer", "default": 1 },
+                    "limit": { "type": "integer", "default": 20 }
+                },
+                "required": ["tenant_id"]
+            },
+            "endpoint": {
+                "method": "GET",
+                "path": "/api/products"
+            }
+        },
+        {
+            "name": "get_product_detail",
+            "description": "Obtiene la información exhaustiva de un producto: precio en USD, stock, variantes y atributos.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "tenant_id": { "type": "string", "description": "Identificador de la tienda" },
+                    "id": { "type": "string", "description": "ID del producto" }
+                },
+                "required": ["tenant_id", "id"]
+            },
+            "endpoint": {
+                "method": "GET",
+                "path": "/api/products?id={id}"
+            }
+        },
+        {
+            "name": "get_bcv_rate",
+            "description": "Consulta la tasa de cambio oficial vigente del Banco Central de Venezuela para calcular montos en Bs.",
+            "parameters": {
+                "type": "object",
+                "properties": {}
+            },
+            "endpoint": {
+                "method": "GET",
+                "path": "/api/bcv"
+            }
+        },
+        {
+            "name": "create_order",
+            "description": "Crea un nuevo pedido de compra en la tienda seleccionada y calcula el total.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "tenant_id": { "type": "string", "description": "Identificador de la tienda" },
+                    "client_name": { "type": "string", "description": "Nombre completo del cliente" },
+                    "client_phone": { "type": "string", "description": "Teléfono de contacto con código de país" },
+                    "delivery_type": { "type": "string", "enum": ["delivery", "pickup"] },
+                    "delivery_address": { "type": "string", "description": "Dirección física para delivery" },
+                    "payment_method": {
+                        "type": "string",
+                        "enum": ["pago_movil", "transferencia", "binance", "zelle", "efectivo"]
+                    },
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "product_id": { "type": "string" },
+                                "product_name": { "type": "string" },
+                                "quantity": { "type": "integer", "minimum": 1 },
+                                "unit_price": { "type": "number" },
+                                "size": { "type": "string" }
+                            },
+                            "required": ["product_id", "product_name", "quantity", "unit_price"]
+                        }
+                    },
+                    "coupon_code": { "type": "string" }
+                },
+                "required": ["tenant_id", "client_name", "client_phone", "delivery_type", "payment_method", "items"]
+            },
+            "endpoint": {
+                "method": "POST",
+                "path": "/api/orders"
+            }
+        },
+        {
+            "name": "validate_coupon",
+            "description": "Valida un código de cupón de descuento y retorna el monto o porcentaje aplicable.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "tenant_id": { "type": "string", "description": "Identificador de la tienda" },
+                    "code": { "type": "string", "description": "Código del cupón" },
+                    "order_amount": { "type": "number", "description": "Monto total antes de descuento" }
+                },
+                "required": ["tenant_id", "code"]
+            },
+            "endpoint": {
+                "method": "GET",
+                "path": "/api/coupons?code={code}"
+            }
+        }
+    ],
+    "schemas": {
+        "Product": {
+            "type": "object",
+            "properties": {
+                "id": { "type": "string" },
+                "name": { "type": "string" },
+                "description": { "type": "string" },
+                "price": { "type": "number", "description": "Precio en USD" },
+                "compare_at_price": { "type": "number" },
+                "category": { "type": "string" },
+                "image_url": { "type": "string" },
+                "stock": { "type": "integer", "description": "-1 para ilimitado, >=0 para controlado" },
+                "template": { "type": "string" },
+                "brand": { "type": "string" },
+                "model": { "type": "string" },
+                "sku": { "type": "string" },
+                "active": { "type": "integer" }
+            }
+        },
+        "Order": {
+            "type": "object",
+            "properties": {
+                "id": { "type": "string" },
+                "client_name": { "type": "string" },
+                "client_phone": { "type": "string" },
+                "delivery_type": { "type": "string" },
+                "delivery_address": { "type": "string" },
+                "payment_method": { "type": "string" },
+                "bcv_rate": { "type": "number" },
+                "total_price": { "type": "number", "description": "Total en USD" },
+                "total_bs": { "type": "number", "description": "Total en Bolívares" },
+                "status": {
+                    "type": "string",
+                    "enum": ["pendiente", "confirmado", "en_camino", "entregado", "cancelado"]
+                },
+                "coupon_code": { "type": "string" },
+                "discount_amount": { "type": "number" }
+            }
+        }
+    },
+    "whatsapp_integration": {
+        "format_summary": "Al confirmar un pedido, Vendly genera un enlace con codificación URI hacia wa.me/{whatsapp_number} estructurado de la siguiente forma:\n\n*Nuevo Pedido #{order_id}*\n*Cliente:* {client_name}\n*Teléfono:* {client_phone}\n*Entrega:* {delivery_type} ({delivery_address})\n*Método de Pago:* {payment_method}\n\n*Productos:*\n- {quantity}x {product_name} (${unit_price})\n\n*Subtotal:* ${subtotal}\n*Descuento:* -${discount}\n*Total:* ${total_usd} / Bs. {total_bs}\n*Tasa BCV:* Bs. {bcv_rate}\n\nGenerado vía Vendly SaaS (https://vendly.app)"
+    }
+}

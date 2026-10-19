@@ -66,7 +66,7 @@ const currentYear = new Date().getFullYear();
       </div>
 
       <div class="footer-links">
-        <h4>Navegación</h4>
+        <div class="footer-col-title">Navegación</div>
         <ul>
           {nav.links.map((link) => (
             <li><a href={link.href}>{link.label}</a></li>
@@ -75,7 +75,7 @@ const currentYear = new Date().getFullYear();
       </div>
 
       <div class="footer-links">
-        <h4>Contacto</h4>
+        <div class="footer-col-title">Contacto</div>
         <ul>
           {contact.whatsapp && (
             <li>
@@ -215,7 +215,8 @@ footer::after {
     transform: translateY(-3px);
 }
 
-.footer-links h4 {
+.footer-links h4,
+.footer-links .footer-col-title {
     font-family: 'Outfit', sans-serif;
     font-size: 0.82rem;
     font-weight: 700;
@@ -227,7 +228,8 @@ footer::after {
     display: inline-block;
 }
 
-.footer-links h4::after {
+.footer-links h4::after,
+.footer-links .footer-col-title::after {
     content: '';
     position: absolute;
     left: 0;

@@ -39,6 +39,10 @@ const saasConfig = {
             { label: "Iniciar Sesión", href: "/login" },
             { label: "Crear Tienda", href: "/register" }
         ]
+    },
+    features: {
+        ...techTemplate.features,
+        showBcvRate: false
     }
 };
 ---
@@ -151,7 +155,7 @@ const saasConfig = {
                   <div class="dash-stat-box stat-theme-emerald">
                     <span class="dash-stat-label">Tasa Oficial BCV</span>
                     <div class="dash-stat-number">36.50 Bs</div>
-                    <span class="dash-stat-badge blue">Sincronizada en vivo</span>
+                    <span class="dash-stat-badge">Sincronizada en vivo</span>
                   </div>
                   <div class="dash-stat-box stat-theme-amber">
                     <span class="dash-stat-label">Pedidos Completados</span>
@@ -195,7 +199,7 @@ const saasConfig = {
             <div class="phone-wa-header">
               <div class="phone-wa-avatar">V</div>
               <div class="phone-wa-info">
-                <h5>Vendly Bot · Pedido #1082</h5>
+                <div class="wa-chat-name">Vendly Bot · Pedido #1082</div>
                 <span>En línea ahora</span>
               </div>
             </div>
@@ -218,22 +222,22 @@ const saasConfig = {
       <div class="stats-ticker-grid">
         <div class="ticker-item ticker-color-indigo">
           <div class="ticker-icon-bubble">🏪</div>
-          <h3>+500</h3>
+          <div class="ticker-value">+500</div>
           <p>Tiendas y Comercios Activos</p>
         </div>
         <div class="ticker-item ticker-color-emerald">
           <div class="ticker-icon-bubble">💰</div>
-          <h3>$1.2M+</h3>
+          <div class="ticker-value">$1.2M+</div>
           <p>En Ventas sin Comisiones</p>
         </div>
         <div class="ticker-item ticker-color-cyan">
           <div class="ticker-icon-bubble">⚡</div>
-          <h3>99.9%</h3>
+          <div class="ticker-value">99.9%</div>
           <p>Uptime y Disponibilidad</p>
         </div>
         <div class="ticker-item ticker-color-amber">
           <div class="ticker-icon-bubble">⏱️</div>
-          <h3>&lt; 3 min</h3>
+          <div class="ticker-value">&lt; 3 min</div>
           <p>Tiempo Promedio por Pedido</p>
         </div>
       </div>
@@ -383,7 +387,7 @@ const saasConfig = {
           <div class="demo-card-light demo-theme-food">
             <div class="demo-thumbnail">
               <span class="demo-badge-tag tag-food">Gastronomía</span>
-              <img src="/assets/hero_grill.webp" alt="Plantilla Restaurante" loading="lazy" />
+              <img src="/assets/hero_grill.webp" alt="Plantilla Restaurante" width="600" height="340" loading="lazy" />
             </div>
             <div class="demo-info">
               <div>
@@ -401,7 +405,7 @@ const saasConfig = {
           <div class="demo-card-light demo-theme-tech">
             <div class="demo-thumbnail">
               <span class="demo-badge-tag tag-tech">Tecnología</span>
-              <img src="/assets/product_laptop.webp" alt="Plantilla Tecnología" loading="lazy" />
+              <img src="/assets/product_laptop.webp" alt="Plantilla Tecnología" width="600" height="340" loading="lazy" />
             </div>
             <div class="demo-info">
               <div>
@@ -419,7 +423,7 @@ const saasConfig = {
           <div class="demo-card-light demo-theme-fashion">
             <div class="demo-thumbnail">
               <span class="demo-badge-tag tag-fashion">Moda & Estilo</span>
-              <img src="/assets/hero_fashion.webp" alt="Plantilla Moda" loading="lazy" />
+              <img src="/assets/hero_fashion.webp" alt="Plantilla Moda" width="600" height="340" loading="lazy" />
             </div>
             <div class="demo-info">
               <div>
@@ -437,7 +441,7 @@ const saasConfig = {
           <div class="demo-card-light demo-theme-hardware">
             <div class="demo-thumbnail">
               <span class="demo-badge-tag tag-hardware">Ferretería</span>
-              <img src="/assets/product_taladro.webp" alt="Plantilla Ferretería" loading="lazy" />
+              <img src="/assets/product_taladro.webp" alt="Plantilla Ferretería" width="600" height="340" loading="lazy" />
             </div>
             <div class="demo-info">
               <div>
@@ -455,7 +459,7 @@ const saasConfig = {
           <div class="demo-card-light demo-theme-autoparts">
             <div class="demo-thumbnail">
               <span class="demo-badge-tag tag-autoparts">Repuestos</span>
-              <img src="/assets/product_frenos.webp" alt="Plantilla Autopartes" loading="lazy" />
+              <img src="/assets/product_frenos.webp" alt="Plantilla Autopartes" width="600" height="340" loading="lazy" />
             </div>
             <div class="demo-info">
               <div>
@@ -550,7 +554,7 @@ const saasConfig = {
               </p>
             </div>
             <div class="test-author-box">
-              <img src="/assets/client_maria.webp" alt="María González" class="test-avatar" loading="lazy" />
+              <img src="/assets/client_maria.webp" alt="María González" class="test-avatar" width="48" height="48" loading="lazy" />
               <div class="test-author-info">
                 <strong>María González</strong>
                 <span class="test-badge-city">Boutique Chic · Caracas</span>
@@ -567,7 +571,7 @@ const saasConfig = {
               </p>
             </div>
             <div class="test-author-box">
-              <img src="/assets/client_jose.webp" alt="José Rodríguez" class="test-avatar" loading="lazy" />
+              <img src="/assets/client_jose.webp" alt="José Rodríguez" class="test-avatar" width="48" height="48" loading="lazy" />
               <div class="test-author-info">
                 <strong>José Rodríguez</strong>
                 <span class="test-badge-city">Burger House · Valencia</span>
@@ -584,7 +588,7 @@ const saasConfig = {
               </p>
             </div>
             <div class="test-author-box">
-              <img src="/assets/client_ana.webp" alt="Ana Martínez" class="test-avatar" loading="lazy" />
+              <img src="/assets/client_ana.webp" alt="Ana Martínez" class="test-avatar" width="48" height="48" loading="lazy" />
               <div class="test-author-info">
                 <strong>Ana Martínez</strong>
                 <span class="test-badge-city">TechZone · Maracay</span>
@@ -601,7 +605,7 @@ const saasConfig = {
               </p>
             </div>
             <div class="test-author-box">
-              <img src="/assets/client_valentina.webp" alt="Valentina Silva" class="test-avatar" loading="lazy" />
+              <img src="/assets/client_valentina.webp" alt="Valentina Silva" class="test-avatar" width="48" height="48" loading="lazy" />
               <div class="test-author-info">
                 <strong>Valentina Silva</strong>
                 <span class="test-badge-city">AutoRepuestos Express · Barquisimeto</span>
