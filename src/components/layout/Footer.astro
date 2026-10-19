@@ -10,6 +10,7 @@ export interface Props {
 const { config = defaultStoreConfig } = Astro.props;
 const { business, contact, nav } = config;
 const currentYear = new Date().getFullYear();
+const isSaas = business.logoTextPrimary === 'VENTRINA' || business.logoTextPrimary === 'VENDLY' || business.name === 'Ventrina' || business.name === 'Vendly';
 ---
 
 <footer>
@@ -108,10 +109,11 @@ const currentYear = new Date().getFullYear();
     <div class="footer-bottom">
       <div class="footer-legal-col">
         <p class="footer-copyright">&copy; {currentYear} {business.name}. Todos los derechos reservados.</p>
-        <p class="footer-disclaimer">
-          Tecnología SaaS provista por Ventrina. Ventrina no es parte de la venta ni custodia fondos de compras minoristas.
-          <a href="/terminos" class="footer-terms-link" target="_blank" rel="noopener">Términos, Condiciones & Política Anti-Fraude</a>
-        </p>
+        {isSaas ? (
+          <p class="footer-disclaimer">Plataforma tecnológica para catálogos interactivos y gestión ágil de pedidos por WhatsApp. <a href="/terminos" class="footer-terms-link" target="_blank" rel="noopener">Términos, Condiciones & Política Anti-Fraude</a></p>
+        ) : (
+          <p class="footer-disclaimer">Tecnología SaaS provista por Ventrina. Ventrina no es parte de la venta ni custodia fondos de compras minoristas. <a href="/terminos" class="footer-terms-link" target="_blank" rel="noopener">Términos, Condiciones & Política Anti-Fraude</a></p>
+        )}
       </div>
     </div>
   </div>
@@ -295,6 +297,7 @@ a.footer-contact-link:hover {
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
+    width: 100%;
 }
 
 .footer-copyright {
@@ -307,7 +310,13 @@ a.footer-contact-link:hover {
     font-size: 0.76rem;
     color: rgba(255, 255, 255, 0.5);
     line-height: 1.5;
-    max-width: 650px;
+    max-width: 100%;
+}
+
+@media (min-width: 992px) {
+    .footer-disclaimer {
+        white-space: nowrap;
+    }
 }
 
 .footer-terms-link {
@@ -316,6 +325,7 @@ a.footer-contact-link:hover {
     margin-left: 0.35rem;
     transition: color 0.2s ease;
     font-weight: 500;
+    white-space: nowrap;
 }
 
 .footer-terms-link:hover {
