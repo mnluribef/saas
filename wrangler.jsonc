@@ -12,8 +12,8 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "vendly-db",
-      "database_id": "634b4025-e31a-43ad-8765-d59aa6b6c078",
+      "database_name": "ventrina-db",
+      "database_id": "6c3ffce2-5fa5-4821-9c63-52d01119b926",
       "migrations_dir": "migrations"
     }
   ]

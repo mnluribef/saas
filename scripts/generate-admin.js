@@ -53,11 +53,11 @@ async function main() {
   console.log('------------------------------------------------------');
   console.log('📌 COMANDO PARA APLICAR EN LOCAL (D1 Local):');
   console.log('------------------------------------------------------');
-  console.log(`\x1b[36mnpx wrangler d1 execute vendly-db --local --command="${sqlInsert}"\x1b[0m\n`);
+  console.log(`\x1b[36mnpx wrangler d1 execute ventrina-db --local --command="${sqlInsert}"\x1b[0m\n`);
   console.log('------------------------------------------------------');
   console.log('☁️  COMANDO PARA APLICAR EN CLOUDFLARE (D1 Producción):');
   console.log('------------------------------------------------------');
-  console.log(`\x1b[35mnpx wrangler d1 execute vendly-db --remote --command="${sqlInsert}"\x1b[0m\n`);
+  console.log(`\x1b[35mnpx wrangler d1 execute ventrina-db --remote --command="${sqlInsert}"\x1b[0m\n`);
   console.log('======================================================\n');
 }
 

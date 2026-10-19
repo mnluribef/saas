@@ -1,7 +1,7 @@
 -- =====================================================
 -- CARACTERÍSTICAS Y ATRIBUTOS DE PRODUCTOS POR PLANTILLA
 -- Ejecutar en D1 remoto y local:
--- wrangler d1 execute vendly-db --remote --file=seed_attributes.sql
+-- wrangler d1 execute ventrina-db --remote --file=seed_attributes.sql
 -- =====================================================
 
 DELETE FROM product_attributes;
