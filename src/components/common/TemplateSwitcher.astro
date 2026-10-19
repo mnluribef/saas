@@ -1,6 +1,6 @@
 ---
 // src/components/common/TemplateSwitcher.astro
-// Selector flotante para previsualizar las diferentes plantillas de Vendly SaaS
+// Selector flotante para previsualizar las diferentes plantillas de Ventrina SaaS
 import type { StoreTemplateType } from '../../types/store.types';
 
 export interface Props {
@@ -18,11 +18,11 @@ const templates = [
 ];
 ---
 
-<div class="vendly-template-bar" id="vendly-template-bar">
+<div class="ventrina-template-bar" id="ventrina-template-bar">
   <div class="template-bar-inner">
     <a href="/" class="template-bar-brand" style="text-decoration: none;">
       <span class="pulse-dot"></span>
-      <span class="brand-title">Vendly SaaS</span>
+      <span class="brand-title">Ventrina SaaS</span>
     </a>
 
     <div class="template-bar-pills">
@@ -45,7 +45,7 @@ const templates = [
 </div>
 
 <style>
-  .vendly-template-bar {
+  .ventrina-template-bar {
     position: fixed;
     bottom: 1.2rem;
     left: 50%;
@@ -166,7 +166,7 @@ const templates = [
   }
 
   @media (max-width: 768px) {
-    .vendly-template-bar {
+    .ventrina-template-bar {
       bottom: 4.8rem; /* Evita tapar el botón flotante de WhatsApp o carrito */
     }
     .template-bar-brand {

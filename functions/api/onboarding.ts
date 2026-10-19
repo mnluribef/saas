@@ -332,7 +332,7 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
         }
 
         const host = new URL(request.url).host;
-        const cookie = `vendly_session=${sessionToken}; Path=/; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Strict`;
+        const cookie = `ventrina_session=${sessionToken}; Path=/; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Strict`;
 
         return jsonResponse({
             success: true,

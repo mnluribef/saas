@@ -1,5 +1,5 @@
 -- Migración Fase 1: Conversión a SaaS Multi-Tenant
--- Vendly SaaS: Tabla de Tenants + tenant_id en todas las tablas de datos
+-- Ventrina SaaS: Tabla de Tenants + tenant_id en todas las tablas de datos
 -- NOTA: La migración 0001 ya fue aplicada. Esta aplica SOLO los cambios de multi-tenancy.
 
 -- 1. Tabla principal de tenants (clientes del SaaS)

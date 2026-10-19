@@ -1,5 +1,5 @@
 -- Migración Fase 3: Preparación para Producción
--- Vendly SaaS: Roles (RBAC), Almacenamiento R2 e Índices de Paginación
+-- Ventrina SaaS: Roles (RBAC), Almacenamiento R2 e Índices de Paginación
 
 -- 1. Agregar columna 'role' para control de acceso basado en roles
 ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'admin';

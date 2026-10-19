@@ -1,5 +1,5 @@
 -- Migración 0005: Desarticulación del monolito config_json en namespaces modulares
--- Vendly SaaS
+-- Ventrina SaaS
 
 -- 1. Tabla de Configuración por Namespaces (business, contact, payment, landing, labels)
 CREATE TABLE IF NOT EXISTS tenant_settings (

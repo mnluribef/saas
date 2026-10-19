@@ -1,5 +1,5 @@
 // functions/api/bcv.ts
-// Controlador de Tasa Oficial BCV - Vendly SaaS (Multi-Tenant)
+// Controlador de Tasa Oficial BCV - Ventrina SaaS (Multi-Tenant)
 import type { D1PreparedStatement } from '@cloudflare/workers-types';
 import { z } from "zod";
 import { verifySession, unauthorizedResponse } from "./_auth";
@@ -64,7 +64,7 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
                 const res = await fetch(EXTERNAL_API_URL, {
                     headers: { 
                         'Accept': 'application/json',
-                        'User-Agent': 'VendlySaaS/1.0'
+                        'User-Agent': 'VentrinaSaaS/1.0'
                     },
                     signal: controller.signal
                 });

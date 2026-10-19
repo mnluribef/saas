@@ -122,8 +122,11 @@ export const onRequest: PagesHandler<Env, 'store' | 'id'> = async (context) => {
             })
             .on('head', {
                 element(e: RewriterElement) {
+                    e.append(`<meta name="ventrina-tenant" content="${tenant.id}" />`, { html: true });
                     e.append(`<meta name="vendly-tenant" content="${tenant.id}" />`, { html: true });
+                    e.append(`<meta name="ventrina-product-id" content="${productId}" />`, { html: true });
                     e.append(`<meta name="vendly-product-id" content="${productId}" />`, { html: true });
+                    e.append(`<meta name="ventrina-business" content="${businessName}" />`, { html: true });
                     e.append(`<meta name="vendly-business" content="${businessName}" />`, { html: true });
                     if (product?.price) {
                         e.append(`<meta property="product:price:amount" content="${product.price}" />`, { html: true });

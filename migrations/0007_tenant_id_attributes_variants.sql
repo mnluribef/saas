@@ -1,5 +1,5 @@
 -- Migración 0007: Agregar tenant_id a product_attributes y product_variants para aislamiento multi-tenant
--- Vendly SaaS
+-- Ventrina SaaS
 
 ALTER TABLE product_attributes ADD COLUMN tenant_id TEXT NOT NULL DEFAULT 'demo';
 ALTER TABLE product_variants ADD COLUMN tenant_id TEXT NOT NULL DEFAULT 'demo';

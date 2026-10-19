@@ -4,6 +4,7 @@ import type { D1Database, R2Bucket, KVNamespace } from '@cloudflare/workers-type
 
 export interface Env {
     DB: D1Database;
+    ventrina?: D1Database;
     vendly?: D1Database;
     STORAGE?: R2Bucket;
     BUCKET?: R2Bucket;

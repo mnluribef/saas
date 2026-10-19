@@ -1,16 +1,16 @@
 // functions/api/_helpers.ts
-// Utilidades compartidas para todos los handlers de la API de Vendly SaaS
+// Utilidades compartidas para todos los handlers de la API de Ventrina SaaS
 import type { D1Database } from '@cloudflare/workers-types';
 import type { Env } from '../types';
 
 /**
  * Obtiene el binding de la base de datos D1.
- * Elimina la duplicación de `env.DB || env.vendly` en cada archivo.
+ * Elimina la duplicación de `env.DB || env.ventrina || env.vendly` en cada archivo.
  */
 export function getDB(env: Env): D1Database {
-    const db = env.DB || env.vendly;
+    const db = env.DB || env.ventrina || env.vendly;
     if (!db) {
-        throw new Error("No D1 Database binding found in environment (expected DB or vendly)");
+        throw new Error("No D1 Database binding found in environment (expected DB, ventrina, or vendly)");
     }
     return db;
 }

@@ -32,8 +32,8 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
             bank: env.PAYMENT_BANK || "Banesco",
             phone: env.PAYMENT_PHONE || "No disponible",
             id: env.PAYMENT_ID || "No disponible",
-            binancePay: env.PAYMENT_BINANCE || "pagos@vendly.app",
-            zelle: env.PAYMENT_ZELLE || "pagos@vendly.app",
+            binancePay: env.PAYMENT_BINANCE || "pagos@ventrina.app",
+            zelle: env.PAYMENT_ZELLE || "pagos@ventrina.app",
             monthlyPriceUsd: planDetails.monthlyPriceUsd
         };
 

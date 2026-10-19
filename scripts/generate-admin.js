@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // scripts/generate-admin.js
-// Generador de credenciales administrativas para Vendly SaaS
+// Generador de credenciales administrativas para Ventrina SaaS
 
 import crypto from 'node:crypto';
 
@@ -30,7 +30,7 @@ function generateSecurePassword(length = 16) {
 
 async function main() {
   const args = process.argv.slice(2);
-  const username = args[0] || 'admin_vendly';
+  const username = args[0] || 'admin_ventrina';
   const password = args[1] || generateSecurePassword(14);
 
   // 1. Generar salt aleatorio (128 bits / 16 bytes)
@@ -44,7 +44,7 @@ async function main() {
   const sqlInsert = `INSERT OR REPLACE INTO users (id, username, password_hash, password_salt, role) VALUES (1, '${username}', '${pbkdf2Hash}', '${saltHex}', '${role}');`;
 
   console.log('\n======================================================');
-  console.log('       🛡️  VENDLY SAAS — CREDENCIALES ADMIN');
+  console.log('       🛡️  VENTRINA SAAS — CREDENCIALES ADMIN');
   console.log('======================================================\n');
   console.log(`👤 Usuario:    \x1b[32m${username}\x1b[0m`);
   console.log(`🔑 Contraseña: \x1b[33m${password}\x1b[0m`);

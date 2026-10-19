@@ -1,5 +1,5 @@
 -- Migración 0004: Cupones de descuento y control de stock
--- Vendly SaaS
+-- Ventrina SaaS
 
 -- 1. Tabla de Cupones / Códigos de Descuento
 CREATE TABLE IF NOT EXISTS coupons (

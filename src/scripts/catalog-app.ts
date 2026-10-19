@@ -14,7 +14,7 @@ function resolveActiveTenantId(): string | undefined {
     const storeMetaEl = document.getElementById('catalog-store-meta');
     if (storeMetaEl?.dataset.tenant) return storeMetaEl.dataset.tenant;
 
-    const metaTag = document.querySelector('meta[name="vendly-tenant"]');
+    const metaTag = document.querySelector('meta[name="ventrina-tenant"], meta[name="vendly-tenant"]');
     const metaTenant = metaTag?.getAttribute('content');
     if (metaTenant) return metaTenant;
 
@@ -42,7 +42,7 @@ export function createStoreConfig(): StoreMetaConfig {
     return {
         whatsappNumber: storeMetaEl?.dataset.whatsapp || '584124756191',
         defaultCurrency: storeMetaEl?.dataset.currency || '$',
-        businessName: storeMetaEl?.dataset.businessName || 'Vendly Store',
+        businessName: storeMetaEl?.dataset.businessName || 'Ventrina Store',
         template: storeMetaEl?.dataset.template || 'restaurant',
         itemNounSingular: storeMetaEl?.dataset.itemNounSingular || 'Artículo',
         itemNounPlural: storeMetaEl?.dataset.itemNounPlural || 'Artículos',
@@ -60,7 +60,7 @@ export function createStoreConfig(): StoreMetaConfig {
 export function initCatalogApp(): void {
     const config = createStoreConfig();
     const storeKey = (config.tenantId || config.businessName).toLowerCase().replace(/[^a-z0-9]/g, '_') || 'default';
-    const storageKey = `vendly_cart_${config.template}_${storeKey}`;
+    const storageKey = `ventrina_cart_${config.template}_${storeKey}`;
 
     // Hidratación instantánea si fue inyectada por el servidor
     const injectedConfigEl = document.getElementById('injected-tenant-config');

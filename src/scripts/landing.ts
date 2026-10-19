@@ -1,5 +1,5 @@
 // src/scripts/landing.ts
-// Lógica de interacción para la Landing Page de Vendly (FAQ accordion, smooth scroll, etc.)
+// Lógica de interacción para la Landing Page de Ventrina (FAQ accordion, smooth scroll, etc.)
 
 document.addEventListener('DOMContentLoaded', () => {
     // 1. FAQ Accordion Interactivo

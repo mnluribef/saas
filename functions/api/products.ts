@@ -1,5 +1,5 @@
 // functions/api/products.ts
-// Controlador HTTP de Productos - Vendly SaaS (M-01: Capa Controller)
+// Controlador HTTP de Productos - Ventrina SaaS (M-01: Capa Controller)
 import { z } from "zod";
 import { verifySession, unauthorizedResponse, forbiddenResponse, validateCsrf } from "./_auth";
 import { resolveTenant } from "./_tenant";

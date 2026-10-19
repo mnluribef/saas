@@ -1,8 +1,8 @@
-# Vendly SaaS
+# Ventrina SaaS
 
 Plataforma SaaS multi-plantilla para creación de catálogos virtuales, control de ventas y pedidos directos a WhatsApp, construida para ser rápida y desplegada globalmente en el borde.
 
-Live Demo: https://vendly-20w.pages.dev
+Live Demo: https://ventrina.pages.dev
 
 ## 🛠️ Stack Tecnológico
 

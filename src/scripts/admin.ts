@@ -1,5 +1,5 @@
 // src/scripts/admin.ts
-// Panel Administrativo - Vendly SaaS
+// Panel Administrativo - Ventrina SaaS
 export {};
 
 declare const lucide: any;
@@ -3002,7 +3002,7 @@ function setupWebPushNotifications() {
     const handlePushToggle = async () => {
         if (Notification.permission === 'granted') {
             showToast('Las notificaciones Web Push ya están activadas.', 'info');
-            sendWebPushNotification('🔔 Vendly Notificaciones', 'Sistema de alertas de pedidos activo y funcionando.');
+            sendWebPushNotification('🔔 Ventrina Notificaciones', 'Sistema de alertas de pedidos activo y funcionando.');
             return;
         }
 
@@ -3036,7 +3036,7 @@ function sendWebPushNotification(title: string, body: string, orderId?: string) 
             body,
             icon: '/assets/favicon.svg',
             badge: '/assets/favicon.svg',
-            tag: orderId ? `order-${orderId}` : `vendly-${Date.now()}`
+            tag: orderId ? `order-${orderId}` : `ventrina-${Date.now()}`
         });
 
         notif.onclick = () => {
@@ -3138,7 +3138,7 @@ function updatePaginationUI(type: string, currentPage: number, totalPages: numbe
 // --- FACTURACIÓN: MEJORAR PLAN Y REPORTAR PAGO ---
 function handleUpgradePlan() {
     const domain = document.getElementById('billing-tenant-domain')?.textContent || 'mi tienda';
-    const msg = `¡Hola Vendly Soporte! Deseo mejorar mi plan para la tienda (${domain}). ¿Cuáles son los planes y opciones disponibles?`;
+    const msg = `¡Hola Ventrina Soporte! Deseo mejorar mi plan para la tienda (${domain}). ¿Cuáles son los planes y opciones disponibles?`;
     const supportPhone = document.getElementById('pay-phone')?.textContent?.replace(/[^\d]/g, '') || '584141234567';
     let cleanPhone = supportPhone.startsWith('0') ? '58' + supportPhone.slice(1) : supportPhone;
     window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
@@ -3147,7 +3147,7 @@ function handleUpgradePlan() {
 function handleReportPayment() {
     const domain = document.getElementById('billing-tenant-domain')?.textContent || 'mi tienda';
     const amount = document.getElementById('pay-amount')?.textContent || '15';
-    const msg = `¡Hola Vendly Soporte! Adjunto mi comprobante de pago de suscripción ($${amount} USD) para la tienda (${domain}).`;
+    const msg = `¡Hola Ventrina Soporte! Adjunto mi comprobante de pago de suscripción ($${amount} USD) para la tienda (${domain}).`;
     const supportPhone = document.getElementById('pay-phone')?.textContent?.replace(/[^\d]/g, '') || '584141234567';
     let cleanPhone = supportPhone.startsWith('0') ? '58' + supportPhone.slice(1) : supportPhone;
     window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
@@ -3422,7 +3422,7 @@ function exportOrdersToCSV() {
     ]);
     const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
     const dateStr = new Date().toISOString().split('T')[0];
-    downloadCSV(`pedidos_vendly_${dateStr}.csv`, csv);
+    downloadCSV(`pedidos_ventrina_${dateStr}.csv`, csv);
     showToast('Archivo CSV de pedidos generado.', 'success');
 }
 
@@ -3443,7 +3443,7 @@ function exportSalesToCSV() {
     ]);
     const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
     const dateStr = new Date().toISOString().split('T')[0];
-    downloadCSV(`ventas_vendly_${dateStr}.csv`, csv);
+    downloadCSV(`ventas_ventrina_${dateStr}.csv`, csv);
     showToast('Archivo CSV de ventas generado.', 'success');
 }
 

@@ -6,7 +6,7 @@ export const onRequestGet: PagesHandler<Env> = async () => {
     const html = `<!DOCTYPE html>
 <html lang="es">
 <head>
-    <title>Vendly API Docs</title>
+    <title>Ventrina API Docs</title>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />

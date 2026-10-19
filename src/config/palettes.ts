@@ -1,5 +1,5 @@
 // src/config/palettes.ts
-// Catálogo de paletas de colores armónicas y preconfiguradas para Vendly SaaS
+// Catálogo de paletas de colores armónicas y preconfiguradas para Ventrina SaaS
 // Permite personalizar la estética visual de cualquier tienda independientemente de la plantilla
 import type { StoreThemeConfig } from '../types/store.types';
 

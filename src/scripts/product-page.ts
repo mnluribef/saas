@@ -14,7 +14,7 @@ class ProductPageController {
     private tenantId: string | null = null;
     private template = 'restaurant';
     private whatsappNumber = '584124756191';
-    private businessName = 'Vendly Store';
+    private businessName = 'Ventrina Store';
 
     constructor() {
         this.toastService = new ToastService();
@@ -50,7 +50,7 @@ class ProductPageController {
         const url = new URL(window.location.href);
 
         // 1. Tenant
-        const metaTenant = document.querySelector('meta[name="vendly-tenant"]')?.getAttribute('content');
+        const metaTenant = document.querySelector('meta[name="ventrina-tenant"], meta[name="vendly-tenant"]')?.getAttribute('content');
         const qsTenant = url.searchParams.get('tenant') || url.searchParams.get('store');
         this.tenantId = metaTenant || qsTenant || null;
 
@@ -84,7 +84,7 @@ class ProductPageController {
         const url = new URL(window.location.href);
 
         // 1. Meta tag
-        const metaId = document.querySelector('meta[name="vendly-product-id"]')?.getAttribute('content');
+        const metaId = document.querySelector('meta[name="ventrina-product-id"], meta[name="vendly-product-id"]')?.getAttribute('content');
         if (metaId) return metaId;
 
         // 2. Query param

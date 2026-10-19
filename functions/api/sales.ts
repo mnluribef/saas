@@ -1,5 +1,5 @@
 // functions/api/sales.ts
-// Controlador de Registro de Ventas - Vendly SaaS
+// Controlador de Registro de Ventas - Ventrina SaaS
 import { verifySession, unauthorizedResponse } from "./_auth";
 import { getDB, jsonResponse } from "./_helpers";
 import type { Env, PagesHandler } from '../types';
@@ -81,7 +81,7 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
         const total = countRow?.total ?? 0;
 
         const dataQuery = `
-            SELECT s.*, COALESCE(o.client_name, 'Cliente Vendly') as client_name, COALESCE(o.client_phone, '') as client_phone 
+            SELECT s.*, COALESCE(o.client_name, 'Cliente Ventrina') as client_name, COALESCE(o.client_phone, '') as client_phone 
             FROM sales s 
             LEFT JOIN orders o ON s.order_id = o.id 
             ${whereClause}

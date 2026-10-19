@@ -3,6 +3,7 @@
 
 type D1DatabaseEnv = {
   DB: D1Database;
+  ventrina?: D1Database;
   vendly?: D1Database;
 };
 

@@ -1,17 +1,17 @@
 // functions/api/openapi.ts
-// Especificación OpenAPI 3.0.3 para la API de Vendly SaaS (U-03)
+// Especificación OpenAPI 3.0.3 para la API de Ventrina SaaS (U-03)
 import { jsonResponse } from "./_helpers";
 import type { Env, PagesHandler } from '../types';
 
 export const openApiSpec = {
     openapi: "3.0.3",
     info: {
-        title: "Vendly SaaS API",
+        title: "Ventrina SaaS API",
         version: "2.0.0",
-        description: "API Multi-Tenant para catálogo, pedidos, inventario, analíticas y gestión de tiendas Vendly SaaS.",
+        description: "API Multi-Tenant para catálogo, pedidos, inventario, analíticas y gestión de tiendas Ventrina SaaS.",
         contact: {
-            name: "Equipo de Ingeniería Vendly",
-            url: "https://vendly.app"
+            name: "Equipo de Ingeniería Ventrina",
+            url: "https://ventrina.app"
         }
     },
     servers: [

@@ -10,9 +10,9 @@ import { openApiSpec } from '../functions/api/openapi';
 describe('Phase 2 Improvements Unit Tests', () => {
     describe('S-01: CORS Allowlist (getAllowedOrigin)', () => {
         it('allows official production domains and subdomains', () => {
-            expect(getAllowedOrigin('https://vendly.app')).toBe('https://vendly.app');
-            expect(getAllowedOrigin('https://fogon.vendly.app')).toBe('https://fogon.vendly.app');
-            expect(getAllowedOrigin('https://demo.vendly.app')).toBe('https://demo.vendly.app');
+            expect(getAllowedOrigin('https://ventrina.app')).toBe('https://ventrina.app');
+            expect(getAllowedOrigin('https://fogon.ventrina.app')).toBe('https://fogon.ventrina.app');
+            expect(getAllowedOrigin('https://demo.ventrina.app')).toBe('https://demo.ventrina.app');
             expect(getAllowedOrigin('https://saas-demo.pages.dev')).toBe('https://saas-demo.pages.dev');
         });
 
@@ -24,14 +24,14 @@ describe('Phase 2 Improvements Unit Tests', () => {
 
         it('rejects unauthorized origins', () => {
             expect(getAllowedOrigin('https://malicious-site.com')).toBeNull();
-            expect(getAllowedOrigin('https://fake-vendly.app.evil.com')).toBeNull();
+            expect(getAllowedOrigin('https://fake-ventrina.app.evil.com')).toBeNull();
             expect(getAllowedOrigin(null)).toBeNull();
             expect(getAllowedOrigin('invalid-url')).toBeNull();
         });
 
         it('sets appropriate CORS credentials when origin is allowed', () => {
-            const headers = buildCorsHeaders('https://vendly.app');
-            expect(headers['Access-Control-Allow-Origin']).toBe('https://vendly.app');
+            const headers = buildCorsHeaders('https://ventrina.app');
+            expect(headers['Access-Control-Allow-Origin']).toBe('https://ventrina.app');
             expect(headers['Access-Control-Allow-Credentials']).toBe('true');
             expect(headers['Vary']).toBe('Origin');
             expect(headers['Access-Control-Expose-Headers']).toContain('X-Request-Id');
@@ -41,8 +41,8 @@ describe('Phase 2 Improvements Unit Tests', () => {
         it('injects X-Request-Id, X-Response-Time, and version headers in onRequest middleware (M-04, O-02)', async () => {
             const { onRequest } = await import('../functions/api/_middleware');
             const mockContext: any = {
-                request: new Request('https://vendly.app/api/products', {
-                    headers: { 'Origin': 'https://vendly.app' }
+                request: new Request('https://ventrina.app/api/products', {
+                    headers: { 'Origin': 'https://ventrina.app' }
                 }),
                 next: async () => new Response(JSON.stringify({ ok: true }), {
                     status: 200,
@@ -62,15 +62,15 @@ describe('Phase 2 Improvements Unit Tests', () => {
 
     describe('S-02: CSRF Origin Validation (validateCsrf)', () => {
         it('allows safe HTTP read methods unconditionally', () => {
-            const getReq = new Request('https://vendly.app/api/orders', { method: 'GET' });
+            const getReq = new Request('https://ventrina.app/api/orders', { method: 'GET' });
             expect(validateCsrf(getReq)).toBe(true);
 
-            const headReq = new Request('https://vendly.app/api/products', { method: 'HEAD' });
+            const headReq = new Request('https://ventrina.app/api/products', { method: 'HEAD' });
             expect(validateCsrf(headReq)).toBe(true);
         });
 
         it('allows mutating requests with custom X-Requested-With header', () => {
-            const postReq = new Request('https://vendly.app/api/orders', {
+            const postReq = new Request('https://ventrina.app/api/orders', {
                 method: 'POST',
                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
             });
@@ -78,9 +78,9 @@ describe('Phase 2 Improvements Unit Tests', () => {
         });
 
         it('allows mutating requests with same origin or trusted host', () => {
-            const postReq = new Request('https://fogon.vendly.app/api/orders', {
+            const postReq = new Request('https://fogon.ventrina.app/api/orders', {
                 method: 'POST',
-                headers: { 'Origin': 'https://fogon.vendly.app' }
+                headers: { 'Origin': 'https://fogon.ventrina.app' }
             });
             expect(validateCsrf(postReq)).toBe(true);
 
@@ -92,11 +92,11 @@ describe('Phase 2 Improvements Unit Tests', () => {
         });
 
         it('rejects cross-origin mutations from untrusted origins', () => {
-            const postReq = new Request('https://fogon.vendly.app/api/orders', {
+            const postReq = new Request('https://fogon.ventrina.app/api/orders', {
                 method: 'POST',
                 headers: { 'Origin': 'https://attacker.org' }
             });
-            expect(validateCsrf(postReq, 'fogon.vendly.app')).toBe(false);
+            expect(validateCsrf(postReq, 'fogon.ventrina.app')).toBe(false);
         });
     });
 
@@ -119,14 +119,14 @@ describe('Phase 2 Improvements Unit Tests', () => {
 
         it('accepts strong, compliant passwords', () => {
             expect(strongPasswordSchema.safeParse('SecureAdmin2026!#').success).toBe(true);
-            expect(strongPasswordSchema.safeParse('VendlyCloud$789').success).toBe(true);
+            expect(strongPasswordSchema.safeParse('VentrinaCloud$789').success).toBe(true);
         });
     });
 
     describe('U-01: RFC 7807 Problem Details (problemResponse)', async () => {
         it('generates structured problem JSON with content-type and status', async () => {
             const response = problemResponse({
-                type: 'https://vendly.app/errors/rate-limit-exceeded',
+                type: 'https://ventrina.app/errors/rate-limit-exceeded',
                 title: 'Límite de subida alcanzado',
                 status: 429,
                 detail: 'Máximo 10 comprobantes por hora.'
@@ -136,7 +136,7 @@ describe('Phase 2 Improvements Unit Tests', () => {
             expect(response.headers.get('Content-Type')).toBe('application/problem+json');
 
             const body = await response.json() as any;
-            expect(body.type).toBe('https://vendly.app/errors/rate-limit-exceeded');
+            expect(body.type).toBe('https://ventrina.app/errors/rate-limit-exceeded');
             expect(body.title).toBe('Límite de subida alcanzado');
             expect(body.status).toBe(429);
             expect(body.detail).toBe('Máximo 10 comprobantes por hora.');
@@ -147,7 +147,7 @@ describe('Phase 2 Improvements Unit Tests', () => {
     describe('U-03: OpenAPI 3.0.3 Specification Contract', () => {
         it('contains required OpenAPI top-level fields', () => {
             expect(openApiSpec.openapi).toBe('3.0.3');
-            expect(openApiSpec.info.title).toBe('Vendly SaaS API');
+            expect(openApiSpec.info.title).toBe('Ventrina SaaS API');
             expect(openApiSpec.info.version).toBe('2.0.0');
             expect(openApiSpec.servers.length).toBeGreaterThanOrEqual(1);
         });

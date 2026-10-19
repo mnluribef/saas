@@ -10,15 +10,15 @@ export const SYSTEM_SUBDOMAINS = new Set(['www', 'app', 'admin', 'demo', 'api'])
 /**
  * Resuelve el tenant_id desde:
  * 1. Header X-Tenant-Id (para testing/admin)
- * 2. Subdominio: fogon.vendly.app → 'fogon'
- * 3. Path-based: vendly.app/s/fogon → 'fogon'
+ * 2. Subdominio: fogon.ventrina.app → 'fogon'
+ * 3. Path-based: ventrina.app/s/fogon → 'fogon'
  * 4. Custom domain: fogon.com → lookup en DB por domain
  * 5. Fallback: 'demo'
  * Incorpora capa de caché Cloudflare KV con TTL de 60 segundos (P-01).
  */
 export async function resolveTenant(request: Request, db: D1Database, kv?: KVNamespace): Promise<TenantResolution> {
     const url = new URL(request.url);
-    const host = url.hostname; // e.g. 'fogon.vendly.app' or 'fogon.com'
+    const host = url.hostname; // e.g. 'fogon.ventrina.app' or 'fogon.com'
 
     // 0.1 Query Parameter RESTRINGIDO: solo permitido cuando se acompaña de la clave de super-admin.
     const qsTenant = url.searchParams.get('tenant');
@@ -39,7 +39,7 @@ export async function resolveTenant(request: Request, db: D1Database, kv?: KVNam
 
     // 0.3 Cookie de Sesión
     const cookies = parseCookies(request.headers.get('Cookie'));
-    const sessionToken = cookies['vendly_session'];
+    const sessionToken = cookies['ventrina_session'] || cookies['vendly_session'];
     if (sessionToken && db) {
         try {
             const now = Math.floor(Date.now() / 1000);
@@ -68,7 +68,7 @@ export async function resolveTenant(request: Request, db: D1Database, kv?: KVNam
         }
     }
 
-    // 2. Subdominio: fogon.vendly.app (excluir subdominios del sistema)
+    // 2. Subdominio: fogon.ventrina.app (excluir subdominios del sistema)
     const parts = host.split('.');
     if (parts.length >= 3) {
         const subdomain = parts[0].toLowerCase();
@@ -79,7 +79,7 @@ export async function resolveTenant(request: Request, db: D1Database, kv?: KVNam
     }
 
     // 3. Custom domain lookup
-    if (!host.includes('vendly') && !host.includes('localhost') && !host.includes('pages.dev')) {
+    if (!host.includes('ventrina') && !host.includes('vendly') && !host.includes('localhost') && !host.includes('pages.dev')) {
         const tenant = await getTenantByDomainCached(db, host, kv);
         if (tenant) return { id: tenant.id, tenant };
     }

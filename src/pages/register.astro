@@ -8,7 +8,7 @@ import { techTemplate } from '../config/templates/tech';
 const config = createStoreConfig('tech', {
     business: {
         ...techTemplate.business,
-        name: 'Vendly SaaS',
+        name: 'Ventrina SaaS',
         description: 'Crea tu tienda online en minutos.'
     },
     theme: {
@@ -21,7 +21,7 @@ const config = createStoreConfig('tech', {
 import '../styles/register.css';
 ---
 
-<Layout config={config} title="Registrar Negocio | Vendly SaaS">
+<Layout config={config} title="Registrar Negocio | Ventrina SaaS">
     <div class="register-container">
         <!-- Dynamic Background -->
         <div class="dynamic-bg" id="dynamic-bg"></div>
@@ -46,7 +46,7 @@ import '../styles/register.css';
                         <line x1="12" y1="12" x2="12" y2="21"></line>
                         <path d="M4 12h16"></path>
                     </svg>
-                    <h1>Vendly</h1>
+                    <h1>Ventrina</h1>
                 </div>
                 <h2>Crea tu Tienda Online</h2>
                 <p>Comienza a vender en minutos y lleva tu negocio al siguiente nivel.</p>
@@ -67,7 +67,7 @@ import '../styles/register.css';
                     <div class="form-group">
                         <label for="tenantSlug">Dirección Web de tu Tienda</label>
                         <div class="input-group">
-                            <span class="addon prefix" id="domain-prefix">vendly.app/</span>
+                            <span class="addon prefix" id="domain-prefix">ventrina.app/</span>
                             <input type="text" id="tenantSlug" name="tenantSlug" class="with-prefix" required placeholder="mitienda" pattern="^[a-z0-9\-]+$" title="Solo minúsculas, números y guiones">
                         </div>
                         <small>Esta será la URL directa de tu tienda. No podrás cambiarla luego.</small>
@@ -146,7 +146,7 @@ import '../styles/register.css';
                         <label class="terms-checkbox-label" for="acceptTerms">
                             <input type="checkbox" id="acceptTerms" name="acceptTerms" required class="terms-checkbox">
                             <span class="terms-text">
-                                He leído y acepto los <a href="/terminos" target="_blank" rel="noopener" class="terms-link">Términos y Condiciones de Servicio y Política Anti-Fraude</a> de Vendly.
+                                He leído y acepto los <a href="/terminos" target="_blank" rel="noopener" class="terms-link">Términos y Condiciones de Servicio y Política Anti-Fraude</a> de Ventrina.
                             </span>
                         </label>
                     </div>

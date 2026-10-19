@@ -1,16 +1,16 @@
 // functions/api/_errors.ts
-// Estandarización de errores y códigos legibles para toda la API de Vendly SaaS (U-04)
+// Estandarización de errores y códigos legibles para toda la API de Ventrina SaaS (U-04)
 
 export const ErrorTypes = {
-    UNAUTHORIZED: 'https://vendly.app/errors/unauthorized',
-    FORBIDDEN: 'https://vendly.app/errors/forbidden',
-    NOT_FOUND: 'https://vendly.app/errors/not-found',
-    VALIDATION_ERROR: 'https://vendly.app/errors/validation-error',
-    RATE_LIMIT_EXCEEDED: 'https://vendly.app/errors/rate-limit-exceeded',
-    CSRF_FAILED: 'https://vendly.app/errors/csrf-failed',
-    INTERNAL_ERROR: 'https://vendly.app/errors/internal-error',
-    STOCK_DEPLETED: 'https://vendly.app/errors/stock-depleted',
-    ORDER_LIMIT_REACHED: 'https://vendly.app/errors/order-limit-reached',
+    UNAUTHORIZED: 'https://ventrina.app/errors/unauthorized',
+    FORBIDDEN: 'https://ventrina.app/errors/forbidden',
+    NOT_FOUND: 'https://ventrina.app/errors/not-found',
+    VALIDATION_ERROR: 'https://ventrina.app/errors/validation-error',
+    RATE_LIMIT_EXCEEDED: 'https://ventrina.app/errors/rate-limit-exceeded',
+    CSRF_FAILED: 'https://ventrina.app/errors/csrf-failed',
+    INTERNAL_ERROR: 'https://ventrina.app/errors/internal-error',
+    STOCK_DEPLETED: 'https://ventrina.app/errors/stock-depleted',
+    ORDER_LIMIT_REACHED: 'https://ventrina.app/errors/order-limit-reached',
 } as const;
 
 export const ErrorMessages = {

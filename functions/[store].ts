@@ -1,5 +1,5 @@
 // functions/[store].ts
-// Enrutador dinámico de tiendas por ruta: vendly-20w.pages.dev/[store]
+// Enrutador dinámico de tiendas por ruta: ventrina.pages.dev/[store]
 import type { D1Database } from '@cloudflare/workers-types';
 import { getDB } from './api/_helpers';
 import type { Env, PagesHandler, TenantRow } from './types';
@@ -131,7 +131,9 @@ export const onRequest: PagesHandler<Env, 'store'> = async (context) => {
             })
             .on('head', {
                 element(e: RewriterElement) {
+                    e.append(`<meta name="ventrina-tenant" content="${tenant.id}" />`, { html: true });
                     e.append(`<meta name="vendly-tenant" content="${tenant.id}" />`, { html: true });
+                    e.append(`<meta name="ventrina-business" content="${businessName}" />`, { html: true });
                     e.append(`<meta name="vendly-business" content="${businessName}" />`, { html: true });
                     if (configJson && configJson !== '{}') {
                         e.append(`<script id="injected-tenant-config" type="application/json">${configJson}</script>`, { html: true });

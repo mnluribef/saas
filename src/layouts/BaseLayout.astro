@@ -17,7 +17,7 @@ const {
   ogImage = config.business.ogImage,
 } = Astro.props;
 
-const siteUrl = config.business.siteUrl || 'https://vendly.pages.dev';
+const siteUrl = config.business.siteUrl || 'https://ventrina.pages.dev';
 const canonicalUrl = new URL(Astro.url.pathname, siteUrl).toString();
 const fullOgImage = ogImage.startsWith('http') ? ogImage : new URL(ogImage, siteUrl).toString();
 
@@ -226,7 +226,7 @@ const themeCss = `
   <link rel="stylesheet" href="/style.css?v=10">
 
   <!-- Variables de Tema Dinámicas del Template Activo -->
-  <Fragment set:html={`<style id="vendly-theme-vars">\n${themeCss}\n</style>`} />
+  <Fragment set:html={`<style id="ventrina-theme-vars">\n${themeCss}\n</style>`} />
 </head>
 <body>
   <slot />

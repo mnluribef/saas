@@ -9,7 +9,7 @@
 --   pnpm run db:migrate:remote  (producción en Cloudflare D1)
 -- ==============================================================================
 
--- Esquema Canónico de Base de Datos - Vendly E-commerce SaaS
+-- Esquema Canónico de Base de Datos - Ventrina E-commerce SaaS
 -- Base de datos D1 estándar para arquitectura Multi-Tenant, catálogo, pedidos, inventario y facturación
 
 -- 1. Tabla de Clientes del SaaS (Tenants)
@@ -269,7 +269,7 @@ CREATE INDEX IF NOT EXISTS idx_tenant_settings_ns    ON tenant_settings(tenant_i
 
 -- Tenant Demo por Defecto
 INSERT OR IGNORE INTO tenants (id, name, plan, template, config_json)
-VALUES ('demo', 'Vendly Demo Store', 'pro', 'restaurant', '{}');
+VALUES ('demo', 'Ventrina Demo Store', 'pro', 'restaurant', '{}');
 
 -- Settings Iniciales para Demo
 INSERT OR IGNORE INTO settings (key, value, tenant_id) VALUES 

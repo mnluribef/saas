@@ -1,5 +1,5 @@
 // functions/api/categories.ts
-// Gestor Central de Categorías del Catálogo - Vendly SaaS
+// Gestor Central de Categorías del Catálogo - Ventrina SaaS
 import { z } from "zod";
 import { verifySession, unauthorizedResponse, forbiddenResponse, validateCsrf } from "./_auth";
 import { resolveTenant } from "./_tenant";

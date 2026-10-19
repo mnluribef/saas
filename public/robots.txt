@@ -1,13 +1,13 @@
 # ==============================================================================
-# robots.txt - Vendly SaaS (https://vendly.app)
+# robots.txt - Ventrina SaaS (https://ventrina.app)
 # Plataforma SaaS multi-plantilla para catálogos virtuales y pedidos por WhatsApp
 # ==============================================================================
 
 # LLM & AI Discovery Resources
 # Spec: https://llmstxt.org/
-# Manifest: https://vendly.app/ai-catalog.json
-# OpenAPI: https://vendly.app/api/openapi.json
-# Docs: https://vendly.app/api/docs
+# Manifest: https://ventrina.app/ai-catalog.json
+# OpenAPI: https://ventrina.app/api/openapi.json
+# Docs: https://ventrina.app/api/docs
 
 # ------------------------------------------------------------------------------
 # 1. Reglas Generales para Rastreadores Web (Googlebot, Bingbot, etc.)
@@ -61,4 +61,4 @@ Disallow: /api/
 # ------------------------------------------------------------------------------
 # 3. Mapa del Sitio
 # ------------------------------------------------------------------------------
-Sitemap: https://vendly.app/sitemap.xml
+Sitemap: https://ventrina.app/sitemap.xml

@@ -3,6 +3,8 @@
 import type { PagesContext } from '../types';
 
 const ALLOWED_ORIGIN_PATTERNS = [
+    /^https:\/\/ventrina\.app$/,
+    /^https:\/\/[a-z0-9-]+\.ventrina\.app$/,
     /^https:\/\/vendly\.app$/,
     /^https:\/\/[a-z0-9-]+\.vendly\.app$/,
     /^https:\/\/[a-z0-9-]+\.pages\.dev$/,
@@ -11,7 +13,7 @@ const ALLOWED_ORIGIN_PATTERNS = [
 ];
 
 /**
- * Valida si un origen HTTP está autorizado para acceder a la API de Vendly (S-01)
+ * Valida si un origen HTTP está autorizado para acceder a la API de Ventrina (S-01)
  */
 export function getAllowedOrigin(origin: string | null): string | null {
     if (!origin) return null;

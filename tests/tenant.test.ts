@@ -14,7 +14,7 @@ describe('Tenant Resolution Logic (_tenant.ts)', () => {
     } as unknown as D1Database;
 
     it('resolves tenant via X-Tenant-Id header', async () => {
-        const req = new Request('https://vendly.app/api/products', {
+        const req = new Request('https://ventrina.app/api/products', {
             headers: { 'X-Tenant-Id': 'fogon' }
         });
         const result = await resolveTenant(req, mockDb);
@@ -23,9 +23,9 @@ describe('Tenant Resolution Logic (_tenant.ts)', () => {
     });
 
     it('ignores Referer header to prevent tenant spoofing (Fix #3)', async () => {
-        const req = new Request('https://vendly.app/api/orders', {
+        const req = new Request('https://ventrina.app/api/orders', {
             headers: {
-                'Referer': 'https://vendly.app/s/spoofed-tenant'
+                'Referer': 'https://ventrina.app/s/spoofed-tenant'
             }
         });
         const result = await resolveTenant(req, mockDb);
@@ -58,7 +58,7 @@ describe('Tenant Resolution Logic (_tenant.ts)', () => {
             })
         } as unknown as D1Database;
 
-        const req = new Request('https://vendly.app/api/orders');
+        const req = new Request('https://ventrina.app/api/orders');
         const result = await resolveTenant(req, emptyDb);
         expect(result.id).toBe('demo');
     });

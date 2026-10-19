@@ -9,7 +9,7 @@ import type { Env, PagesHandler } from '../types';
 
 export const COMMON_PASSWORDS = new Set([
     '12345678', 'password', 'qwerty123', 'admin123', '123456789', '1234567890',
-    'password123', 'vendly123', 'contraseña', 'welcome1', 'admin1234', '11111111',
+    'password123', 'ventrina123', 'vendly123', 'contraseña', 'welcome1', 'admin1234', '11111111',
     'abc12345', 'pass1234'
 ]);
 
@@ -261,7 +261,7 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
             .bind(sessionToken, user.username, expiresAt, effectiveTenantId, clientIp, uaHash)
             .run();
 
-        const cookie = `vendly_session=${sessionToken}; Path=/; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Strict`;
+        const cookie = `ventrina_session=${sessionToken}; Path=/; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Strict`;
         
         return jsonResponse(
             { success: true, username: user.username, role: user.role, tenantId: effectiveTenantId, tenant: effectiveTenantId },
@@ -361,7 +361,8 @@ export const onRequestDelete: PagesHandler<Env> = async (context) => {
     const { request, env } = context;
     const db = getDB(env);
 
-    const token = parseCookies(request.headers.get("Cookie"))["vendly_session"] || null;
+    const cookies = parseCookies(request.headers.get("Cookie"));
+    const token = cookies["ventrina_session"] || cookies["vendly_session"] || null;
 
     if (token) {
         try {
@@ -371,11 +372,13 @@ export const onRequestDelete: PagesHandler<Env> = async (context) => {
         }
     }
 
+    const clearVentrinaCookie = `ventrina_session=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Strict`;
     const clearVendlyCookie = `vendly_session=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Strict`;
 
     const headers = new Headers({
         "Content-Type": "application/json"
     });
+    headers.append("Set-Cookie", clearVentrinaCookie);
     headers.append("Set-Cookie", clearVendlyCookie);
 
     return new Response(JSON.stringify({ success: true }), { headers });

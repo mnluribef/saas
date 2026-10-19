@@ -1,45 +1,45 @@
-# Vendly
+# Ventrina
 
-> Vendly es una plataforma SaaS multi-inquilino (multi-tenant) diseñada para crear catálogos virtuales interactivos y tiendas digitales ultrarrápidas con ventas y pedidos directos a través de WhatsApp.
+> Ventrina es una plataforma SaaS multi-inquilino (multi-tenant) diseñada para crear catálogos virtuales interactivos y tiendas digitales ultrarrápidas con ventas y pedidos directos a través de WhatsApp.
 
-Vendly permite a comerciantes, pymes y emprendedores en América Latina configurar su catálogo comercial digital en cuestión de minutos. La plataforma ofrece sincronización en tiempo real, múltiples plantillas especializadas por vertical de negocio, conversión automática de divisas con la tasa oficial del Banco Central de Venezuela (BCV), múltiples métodos de pago (transferencias bancarias, Pago Móvil, Binance Pay, Zelle) y conversión fluida del carrito de compras en pedidos directos enviados a WhatsApp sin intermediarios ni comisiones abusivas.
+Ventrina permite a comerciantes, pymes y emprendedores en América Latina configurar su catálogo comercial digital en cuestión de minutos. La plataforma ofrece sincronización en tiempo real, múltiples plantillas especializadas por vertical de negocio, conversión automática de divisas con la tasa oficial del Banco Central de Venezuela (BCV), múltiples métodos de pago (transferencias bancarias, Pago Móvil, Binance Pay, Zelle) y conversión fluida del carrito de compras en pedidos directos enviados a WhatsApp sin intermediarios ni comisiones abusivas.
 
 El sistema está construido para correr en el Edge sobre la infraestructura global de Cloudflare (Pages, Workers, D1 SQLite y R2 Storage), complementado por un frontend estático optimizado con Astro y TailwindCSS.
 
 ## Páginas Principales y Portales
 
-- [Página de Inicio](https://vendly.app/): Información general de Vendly, características destacadas, beneficios del producto y propuesta comercial.
-- [Precios y Planes](https://vendly.app/precios): Estructura detallada de planes de suscripción (Básico, Pro y Enterprise), límites de productos y funcionalidades incluidas.
-- [Registro de Tienda](https://vendly.app/register): Portal de registro y alta para que nuevos comercios creen su catálogo digital.
-- [Página de Producto](https://vendly.app/producto): Vista detallada de productos con selector de variantes, atributos, control de cantidad y botón de pedido a WhatsApp.
-- [Términos y Condiciones](https://vendly.app/terminos): Términos legales de servicio, políticas de uso y correo de contacto legal (`legal@vendly.app`).
+- [Página de Inicio](https://ventrina.app/): Información general de Ventrina, características destacadas, beneficios del producto y propuesta comercial.
+- [Precios y Planes](https://ventrina.app/precios): Estructura detallada de planes de suscripción (Básico, Pro y Enterprise), límites de productos y funcionalidades incluidas.
+- [Registro de Tienda](https://ventrina.app/register): Portal de registro y alta para que nuevos comercios creen su catálogo digital.
+- [Página de Producto](https://ventrina.app/producto): Vista detallada de productos con selector de variantes, atributos, control de cantidad y botón de pedido a WhatsApp.
+- [Términos y Condiciones](https://ventrina.app/terminos): Términos legales de servicio, políticas de uso y correo de contacto legal (`legal@ventrina.app`).
 
 ## Plantillas Verticales y Demos
 
-Vendly implementa motores de plantillas altamente especializados para diversas industrias comerciales:
+Ventrina implementa motores de plantillas altamente especializados para diversas industrias comerciales:
 
-- [Demo Plantilla Restaurante](https://vendly.app/demo/restaurant): Diseñada para gastronomía, comida rápida, cafeterías y servicios de delivery. Incluye personalización de salsas, bebidas, acompañamientos y tipo de entrega.
-- [Demo Plantilla Ferretería](https://vendly.app/demo/hardware): Diseñada para ferreterías, herramientas y materiales de construcción, con soporte para unidades de medida, especificaciones técnicas y búsqueda rápida.
-- [Demo Plantilla Moda y Ropa](https://vendly.app/demo/fashion): Diseñada para boutiques, calzado y accesorios con selección de tallas, colores y variantes visuales.
-- [Demo Plantilla Tecnología](https://vendly.app/demo/tech): Diseñada para electrónica, informática, telefonía y gadgets, destacando marcas, modelos y especificaciones técnicas.
-- [Demo Plantilla Repuestos y Autopartes](https://vendly.app/demo/autoparts): Diseñada para talleres mecánicos y venta de repuestos automotrices, con compatibilidad por marca/modelo de vehículo y códigos SKU.
+- [Demo Plantilla Restaurante](https://ventrina.app/demo/restaurant): Diseñada para gastronomía, comida rápida, cafeterías y servicios de delivery. Incluye personalización de salsas, bebidas, acompañamientos y tipo de entrega.
+- [Demo Plantilla Ferretería](https://ventrina.app/demo/hardware): Diseñada para ferreterías, herramientas y materiales de construcción, con soporte para unidades de medida, especificaciones técnicas y búsqueda rápida.
+- [Demo Plantilla Moda y Ropa](https://ventrina.app/demo/fashion): Diseñada para boutiques, calzado y accesorios con selección de tallas, colores y variantes visuales.
+- [Demo Plantilla Tecnología](https://ventrina.app/demo/tech): Diseñada para electrónica, informática, telefonía y gadgets, destacando marcas, modelos y especificaciones técnicas.
+- [Demo Plantilla Repuestos y Autopartes](https://ventrina.app/demo/autoparts): Diseñada para talleres mecánicos y venta de repuestos automotrices, con compatibilidad por marca/modelo de vehículo y códigos SKU.
 
 ## Recursos de API y Especificaciones para IA
 
-- [AI Catalog Manifest](https://vendly.app/ai-catalog.json): Especificación JSON estandarizada para agentes de IA con definiciones de herramientas, esquemas de datos y capacidades transaccionales.
-- [Documentación Interactiva de API](https://vendly.app/api/docs): Documentación interactiva basada en Redoc para explorar todos los endpoints de la API de Vendly.
-- [Especificación OpenAPI 3.0](https://vendly.app/api/openapi.json): Especificación canónica en formato JSON (OpenAPI 3.0.3) ideal para Function Calling y Tool Calling en modelos LLM.
+- [AI Catalog Manifest](https://ventrina.app/ai-catalog.json): Especificación JSON estandarizada para agentes de IA con definiciones de herramientas, esquemas de datos y capacidades transaccionales.
+- [Documentación Interactiva de API](https://ventrina.app/api/docs): Documentación interactiva basada en Redoc para explorar todos los endpoints de la API de Ventrina.
+- [Especificación OpenAPI 3.0](https://ventrina.app/api/openapi.json): Especificación canónica en formato JSON (OpenAPI 3.0.3) ideal para Function Calling y Tool Calling en modelos LLM.
 
 ## Instrucciones y Convenciones para Agentes Inteligentes
 
-Al interactuar con tiendas de Vendly o asistir a clientes en la plataforma:
+Al interactuar con tiendas de Ventrina o asistir a clientes en la plataforma:
 
-1. **Resolución de Inquilinos (Tenants)**: Cada tienda posee un identificador único (`tenant_id`). Las tiendas públicas se consultan mediante la ruta `https://vendly.app/[tenant_id]` o a través del encabezado HTTP `X-Tenant-Id`.
+1. **Resolución de Inquilinos (Tenants)**: Cada tienda posee un identificador único (`tenant_id`). Las tiendas públicas se consultan mediante la ruta `https://ventrina.app/[tenant_id]` o a través del encabezado HTTP `X-Tenant-Id`.
 2. **Moneda y Tasa de Cambio**: Los precios base están establecidos en dólares americanos (USD). Para el mercado venezolano, la tasa oficial se obtiene del endpoint `/api/bcv` y los precios en Bolívares (VES) se calculan multiplicando el valor USD por la tasa vigente.
 3. **Generación de Pedidos**: Los pedidos del storefront se envían a `/api/orders` y generan un enlace de WhatsApp con un mensaje preformateado que incluye los artículos, cantidades, tipo de entrega (delivery o pickup), método de pago y datos del cliente.
 4. **Métodos de Pago Admitidos**: Pago Móvil, transferencia bancaria, Binance Pay y Zelle, con capacidad para adjuntar comprobante de pago vía `/api/upload`.
 
 ## Optional
 
-- [Health Check del Sistema](https://vendly.app/api/health): Endpoint para monitorear el estado operativo de la base de datos D1 y almacenamiento R2.
-- [Tasa Oficial BCV](https://vendly.app/api/bcv): Consulta pública de la tasa cambiaria del día según el Banco Central de Venezuela.
+- [Health Check del Sistema](https://ventrina.app/api/health): Endpoint para monitorear el estado operativo de la base de datos D1 y almacenamiento R2.
+- [Tasa Oficial BCV](https://ventrina.app/api/bcv): Consulta pública de la tasa cambiaria del día según el Banco Central de Venezuela.

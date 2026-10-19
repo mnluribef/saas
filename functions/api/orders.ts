@@ -1,5 +1,5 @@
 // functions/api/orders.ts
-// Controlador HTTP de Pedidos - Vendly SaaS (M-01: Capa Controller)
+// Controlador HTTP de Pedidos - Ventrina SaaS (M-01: Capa Controller)
 import { z } from "zod";
 import { verifySession, unauthorizedResponse, forbiddenResponse, validateCsrf } from "./_auth";
 import { resolveTenant } from "./_tenant";
@@ -153,7 +153,7 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
         // Disparo asíncrono de webhook si está configurado (Fix #19)
         if (env.WEBHOOK_URL) {
             try {
-                const webhookSecret = env.JWT_SECRET || env.SUPERADMIN_KEY || 'vendly-webhook-key';
+                const webhookSecret = env.JWT_SECRET || env.SUPERADMIN_KEY || 'ventrina-webhook-key';
                 const webhookPayload = JSON.stringify({
                     event: 'new_order_created',
                     orderId: orderData.orderId,
@@ -172,6 +172,7 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
+                            'X-Ventrina-Signature': `sha256=${signature}`,
                             'X-Vendly-Signature': `sha256=${signature}`
                         },
                         body: webhookPayload
@@ -245,7 +246,7 @@ export const onRequestPut: PagesHandler<Env> = async (context) => {
         // Webhook de cambio de estado
         if (env.WEBHOOK_URL) {
             try {
-                const webhookSecret = env.JWT_SECRET || env.SUPERADMIN_KEY || 'vendly-webhook-key';
+                const webhookSecret = env.JWT_SECRET || env.SUPERADMIN_KEY || 'ventrina-webhook-key';
                 const webhookPayload = JSON.stringify({
                     event: 'order_status_updated',
                     orderId: id,
@@ -260,6 +261,7 @@ export const onRequestPut: PagesHandler<Env> = async (context) => {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
+                            'X-Ventrina-Signature': `sha256=${signature}`,
                             'X-Vendly-Signature': `sha256=${signature}`
                         },
                         body: webhookPayload

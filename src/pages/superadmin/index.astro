@@ -3,12 +3,12 @@ import Layout from '../../layouts/BaseLayout.astro';
 import defaultStoreConfig from '../../config/store.config';
 import '../../styles/superadmin.css';
 ---
-<Layout config={{...defaultStoreConfig, template: "restaurant"}} title="Super Admin | Vendly">
+<Layout config={{...defaultStoreConfig, template: "restaurant"}} title="Super Admin | Ventrina">
     <div class="superadmin-container">
         <!-- Login Step -->
         <div id="sa-login-step" class="sa-card">
             <h2 class="sa-title">Acceso Restringido</h2>
-            <p class="sa-subtitle">Solo para fundadores y administradores maestros de Vendly.</p>
+            <p class="sa-subtitle">Solo para fundadores y administradores maestros de Ventrina.</p>
             <div class="sa-form">
                 <input type="password" id="sa-password" placeholder="Contraseña Maestra..." class="sa-input">
                 <button id="sa-login-btn" class="sa-btn-primary">Ingresar al Backoffice</button>

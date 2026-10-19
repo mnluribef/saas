@@ -1,7 +1,7 @@
 {
-  "name": "vendly",
+  "name": "ventrina",
   "version": "1.0.0",
-  "description": "Vendly — Plataforma SaaS multi-plantilla para catálogos y comercio digital ágil",
+  "description": "Ventrina — Plataforma SaaS multi-plantilla para catálogos y comercio digital ágil",
   "type": "module",
   "scripts": {
     "dev": "astro dev",

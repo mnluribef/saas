@@ -1,26 +1,26 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "name": "Vendly AI Commerce Catalog",
+    "name": "Ventrina AI Commerce Catalog",
     "version": "1.0.0",
-    "description": "Especificación canónica y manifiesto de integración para agentes de inteligencia artificial (LLM Shopping Agents / Autonomous Commerce Agents) en la plataforma Vendly SaaS.",
-    "homepage": "https://vendly.app",
+    "description": "Especificación canónica y manifiesto de integración para agentes de inteligencia artificial (LLM Shopping Agents / Autonomous Commerce Agents) en la plataforma Ventrina SaaS.",
+    "homepage": "https://ventrina.app",
     "provider": {
-        "name": "Vendly",
-        "url": "https://vendly.app",
-        "support_email": "soporte@vendly.app",
-        "legal_email": "legal@vendly.app"
+        "name": "Ventrina",
+        "url": "https://ventrina.app",
+        "support_email": "soporte@ventrina.app",
+        "legal_email": "legal@ventrina.app"
     },
     "protocols": {
-        "llms_txt": "https://vendly.app/llms.txt",
-        "openapi_spec": "https://vendly.app/api/openapi.json",
-        "api_docs": "https://vendly.app/api/docs",
-        "api_base": "https://vendly.app/api"
+        "llms_txt": "https://ventrina.app/llms.txt",
+        "openapi_spec": "https://ventrina.app/api/openapi.json",
+        "api_docs": "https://ventrina.app/api/docs",
+        "api_base": "https://ventrina.app/api"
     },
     "architecture": {
         "multi_tenant": true,
         "tenant_resolution": {
-            "path_pattern": "https://vendly.app/{tenant_id}",
-            "subdomain_pattern": "https://{tenant_id}.vendly.app",
+            "path_pattern": "https://ventrina.app/{tenant_id}",
+            "subdomain_pattern": "https://{tenant_id}.ventrina.app",
             "header_parameter": "X-Tenant-Id"
         },
         "runtime": "Cloudflare Pages & Workers Edge Runtime",
@@ -32,7 +32,7 @@
             "id": "restaurant",
             "name": "Restaurante y Gastronomía",
             "description": "Plantilla orientada a locales de comida rápida, restaurantes y delivery de alimentos y bebidas.",
-            "demo_url": "https://vendly.app/demo/restaurant",
+            "demo_url": "https://ventrina.app/demo/restaurant",
             "features": [
                 "Personalización de salsas",
                 "Selección de acompañamientos",
@@ -44,7 +44,7 @@
             "id": "hardware",
             "name": "Ferretería y Construcción",
             "description": "Plantilla optimizada para herramientas, materiales de construcción y ferretería en general.",
-            "demo_url": "https://vendly.app/demo/hardware",
+            "demo_url": "https://ventrina.app/demo/hardware",
             "features": [
                 "Unidades de medida",
                 "Búsqueda por especificación técnica",
@@ -56,7 +56,7 @@
             "id": "fashion",
             "name": "Moda, Ropa y Calzado",
             "description": "Plantilla visual orientada a boutiques, vestimenta, calzado y accesorios de moda.",
-            "demo_url": "https://vendly.app/demo/fashion",
+            "demo_url": "https://ventrina.app/demo/fashion",
             "features": [
                 "Matriz de tallas y colores",
                 "Galería de imágenes por variante",
@@ -68,7 +68,7 @@
             "id": "tech",
             "name": "Tecnología y Electrónica",
             "description": "Plantilla para productos electrónicos, smartphones, periféricos y accesorios informáticos.",
-            "demo_url": "https://vendly.app/demo/tech",
+            "demo_url": "https://ventrina.app/demo/tech",
             "features": [
                 "Fichas técnicas detalladas",
                 "Filtro por marcas y modelos",
@@ -79,7 +79,7 @@
             "id": "autoparts",
             "name": "Repuestos y Autopartes",
             "description": "Plantilla para repuestos de vehículos, talleres y distribución automotriz.",
-            "demo_url": "https://vendly.app/demo/autoparts",
+            "demo_url": "https://ventrina.app/demo/autoparts",
             "features": [
                 "Compatibilidad por marca, modelo y año",
                 "Búsqueda por código SKU/OEM",
@@ -282,6 +282,6 @@
         }
     },
     "whatsapp_integration": {
-        "format_summary": "Al confirmar un pedido, Vendly genera un enlace con codificación URI hacia wa.me/{whatsapp_number} estructurado de la siguiente forma:\n\n*Nuevo Pedido #{order_id}*\n*Cliente:* {client_name}\n*Teléfono:* {client_phone}\n*Entrega:* {delivery_type} ({delivery_address})\n*Método de Pago:* {payment_method}\n\n*Productos:*\n- {quantity}x {product_name} (${unit_price})\n\n*Subtotal:* ${subtotal}\n*Descuento:* -${discount}\n*Total:* ${total_usd} / Bs. {total_bs}\n*Tasa BCV:* Bs. {bcv_rate}\n\nGenerado vía Vendly SaaS (https://vendly.app)"
+        "format_summary": "Al confirmar un pedido, Ventrina genera un enlace con codificación URI hacia wa.me/{whatsapp_number} estructurado de la siguiente forma:\n\n*Nuevo Pedido #{order_id}*\n*Cliente:* {client_name}\n*Teléfono:* {client_phone}\n*Entrega:* {delivery_type} ({delivery_address})\n*Método de Pago:* {payment_method}\n\n*Productos:*\n- {quantity}x {product_name} (${unit_price})\n\n*Subtotal:* ${subtotal}\n*Descuento:* -${discount}\n*Total:* ${total_usd} / Bs. {total_bs}\n*Tasa BCV:* Bs. {bcv_rate}\n\nGenerado vía Ventrina SaaS (https://ventrina.app)"
     }
 }
