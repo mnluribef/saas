@@ -1,16 +1,15 @@
 // functions/api/settings.ts
-// Controlador de Configuración de la Tienda (Modular por Namespaces - Opción A)
-import type { D1Database, D1PreparedStatement } from '@cloudflare/workers-types';
+// Controlador HTTP de Configuración de la Tienda (M-01: Capa Controller)
 import { z } from "zod";
 import { verifySession, unauthorizedResponse, forbiddenResponse, validateCsrf } from "./_auth";
-import { resolveTenant, invalidateTenantCache } from "./_tenant";
+import { resolveTenant } from "./_tenant";
 import { getDB, jsonResponse } from "./_helpers";
-import type { Env, PagesHandler, TenantRow } from '../types';
+import { SettingsService } from "./_services/settings.service";
+import type { Env, PagesHandler } from '../types';
 
 // Validador estricto para evitar inflar SQLite D1 con DataURLs Base64 gigantes
 const safeImageString = z.string().max(2000000).refine((val) => {
     if (val && val.startsWith("data:image/")) {
-        // Enforce max ~120KB para Base64 inline; imágenes pesadas deben usar /api/upload (R2)
         return val.length <= 150000;
     }
     return true;
@@ -168,103 +167,28 @@ export type TestimonialItem = z.infer<typeof testimonialItemSchema>;
 export type FaqItem = z.infer<typeof faqItemSchema>;
 export type StoreSettings = z.infer<typeof storeSettingsSchema>;
 
-interface TenantSettingRow {
-    namespace: string;
-    data_json: string;
-}
-
 /**
- * Helper para reconstruir la configuración desde la tabla modular tenant_settings (P-02)
- * Si se especifica namespace, optimiza la consulta filtrando por columna namespace
- */
-async function loadTenantSettings(
-    db: D1Database,
-    tenantId: string,
-    fallbackJson?: string | null,
-    namespace?: string | null
-): Promise<Record<string, any>> {
-    try {
-        let query = "SELECT namespace, data_json FROM tenant_settings WHERE tenant_id = ?";
-        const params: string[] = [tenantId];
-
-        if (namespace) {
-            query += " AND namespace = ?";
-            params.push(namespace);
-        }
-
-        const { results: rows } = await db.prepare(query).bind(...params).all<TenantSettingRow>();
-
-        if (rows && rows.length > 0) {
-            const config: Record<string, any> = {};
-            for (const row of rows) {
-                try {
-                    config[row.namespace] = JSON.parse(row.data_json);
-                } catch {
-                    config[row.namespace] = {};
-                }
-            }
-            return config;
-        }
-    } catch {
-        // En caso de que la tabla aún no exista antes de correr la migración
-    }
-
-    if (fallbackJson) {
-        try {
-            const parsed = JSON.parse(fallbackJson);
-            if (namespace) {
-                return { [namespace]: parsed[namespace] || {} };
-            }
-            return parsed;
-        } catch {
-            return {};
-        }
-    }
-
-    return {};
-}
-
-/**
- * GET /api/settings - Obtiene la configuración del tenant actual
- * Admite filtro opcional ?namespace=payment|contact|business|landing|labels
+ * GET /api/settings - Obtiene la configuración del tenant actual (global o por namespace)
  */
 export const onRequestGet: PagesHandler<Env> = async (context) => {
     const { request, env } = context;
     const db = getDB(env);
-    const { id: tenantId, tenant } = await resolveTenant(request, db);
+    const { id: tenantId, tenant } = await resolveTenant(request, db, env.KV);
 
     try {
-        let tenantData = tenant;
-        if (!tenantData) {
-            tenantData = await db.prepare("SELECT * FROM tenants WHERE id = ?").bind(tenantId).first<TenantRow>();
-        }
-
         const url = new URL(request.url);
         const requestedNamespace = url.searchParams.get("namespace");
 
-        // P-02: Consulta optimizada de settings filtrando por namespace si fue especificado
-        const configJson = await loadTenantSettings(db, tenantId, tenantData?.config_json, requestedNamespace);
+        const settingsService = new SettingsService(db);
+        const res = await settingsService.getTenantSettingsResponse(tenantId, tenant, requestedNamespace);
 
-        if (requestedNamespace && typeof requestedNamespace === "string") {
-            return jsonResponse({
-                success: true,
-                tenantId,
-                namespace: requestedNamespace,
-                data: configJson[requestedNamespace] || {}
-            }, 200, { "Cache-Control": "no-store, no-cache, must-revalidate" });
+        if (!res.ok) {
+            return jsonResponse({ error: res.error }, res.code || 500);
         }
 
-        return jsonResponse({
-            success: true,
-            tenant: {
-                id: tenantId,
-                name: tenantData?.name || "Tienda",
-                template: tenantData?.template || "restaurant",
-                domain: tenantData?.domain || null,
-                whatsapp: tenantData?.whatsapp || null,
-                config: configJson
-            }
-        }, 200, { "Cache-Control": "no-store, no-cache, must-revalidate" });
+        return jsonResponse(res.data, 200, {
+            "Cache-Control": "no-store, no-cache, must-revalidate"
+        });
     } catch (err) {
         console.error("Error en GET /api/settings:", err);
         return jsonResponse({ error: "Error interno al obtener configuración." }, 500);
@@ -272,15 +196,13 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
 };
 
 /**
- * PUT /api/settings - Actualiza la configuración de la tienda (Admin Only)
- * Guarda modularmente por namespace en tenant_settings y actualiza el snapshot en tenants
+ * PUT /api/settings - Actualiza la configuración de la tienda por namespaces (Admin Only)
  */
 export const onRequestPut: PagesHandler<Env> = async (context) => {
     const { request, env } = context;
     const db = getDB(env);
-    const { id: tenantId, tenant } = await resolveTenant(request, db);
+    const { id: tenantId, tenant } = await resolveTenant(request, db, env.KV);
 
-    // S-02: Protección CSRF en mutaciones desde el navegador
     if (!validateCsrf(request, tenant?.domain)) {
         return forbiddenResponse("Verificación de seguridad CSRF fallida.");
     }
@@ -300,136 +222,22 @@ export const onRequestPut: PagesHandler<Env> = async (context) => {
             }, 400);
         }
 
-        const updates = parsed.data;
-
-        // Cargar estado actual
-        const tenantRow = await db.prepare(
-            "SELECT config_json, name, template, whatsapp FROM tenants WHERE id = ?"
-        ).bind(tenantId).first<TenantRow>();
-
-        const currentConfig = await loadTenantSettings(db, tenantId, tenantRow?.config_json);
-
-        // 1. Merge modular por cada Namespace
-        const mergedBusiness = {
-            ...(currentConfig.business || {}),
-            ...(updates.business || {})
-        };
-
-        const mergedContact = {
-            ...(currentConfig.contact || {}),
-            ...(updates.contact || {})
-        };
-
-        const currentLanding = currentConfig.landing || {};
-        const updateLanding = updates.landing || {};
-        const mergedLanding = {
-            ...currentLanding,
-            hero: {
-                ...(currentLanding.hero || {}),
-                ...(updateLanding.hero || {}),
-                slides: updateLanding.hero?.slides !== undefined ? updateLanding.hero.slides : (currentLanding.hero?.slides || []),
-                stats: updateLanding.hero?.stats !== undefined ? updateLanding.hero.stats : (currentLanding.hero?.stats || []),
-            },
-            catalog: {
-                ...(currentLanding.catalog || {}),
-                ...(updateLanding.catalog || {})
-            },
-            benefits: {
-                ...(currentLanding.benefits || {}),
-                ...(updateLanding.benefits || {}),
-                items: updateLanding.benefits?.items !== undefined ? updateLanding.benefits.items : (currentLanding.benefits?.items || []),
-            },
-            process: {
-                ...(currentLanding.process || {}),
-                ...(updateLanding.process || {}),
-                steps: updateLanding.process?.steps !== undefined ? updateLanding.process.steps : (currentLanding.process?.steps || []),
-            },
-            testimonials: {
-                ...(currentLanding.testimonials || {}),
-                ...(updateLanding.testimonials || {}),
-                items: updateLanding.testimonials?.items !== undefined ? updateLanding.testimonials.items : (currentLanding.testimonials?.items || []),
-            },
-            faq: {
-                ...(currentLanding.faq || {}),
-                ...(updateLanding.faq || {}),
-                items: updateLanding.faq?.items !== undefined ? updateLanding.faq.items : (currentLanding.faq?.items || []),
-            },
-        };
-
-        const mergedPayment = {
-            ...(currentConfig.payment || {}),
-            ...(updates.payment || {}),
-            pagoMovil: {
-                ...((currentConfig.payment && currentConfig.payment.pagoMovil) || {}),
-                ...((updates.payment && updates.payment.pagoMovil) || {})
-            },
-            zelle: {
-                ...((currentConfig.payment && currentConfig.payment.zelle) || {}),
-                ...((updates.payment && updates.payment.zelle) || {})
-            }
-        };
-
-        const mergedLabels = {
-            ...(currentConfig.labels || {}),
-            ...(updates.labels || {})
-        };
-
-        const storePrefix = updates.storePrefix || currentConfig.storePrefix || tenantRow?.name?.slice(0, 3).toUpperCase() || 'VEN';
-
-        const namespacesToPersist: [string, Record<string, any>][] = [
-            ['business', mergedBusiness],
-            ['contact', mergedContact],
-            ['landing', mergedLanding],
-            ['payment', mergedPayment],
-            ['labels', mergedLabels]
-        ];
-
-        const statements: D1PreparedStatement[] = [];
-
-        // Inserción/Actualización en tenant_settings (Opción A: Namespaces independientes)
-        for (const [namespace, data] of namespacesToPersist) {
-            statements.push(
-                db.prepare(`
-                    INSERT INTO tenant_settings (tenant_id, namespace, data_json, updated_at)
-                    VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-                    ON CONFLICT(tenant_id, namespace) DO UPDATE SET
-                        data_json = excluded.data_json,
-                        updated_at = CURRENT_TIMESTAMP
-                `).bind(tenantId, namespace, JSON.stringify(data))
-            );
-        }
-
-        // Construir snapshot consolidado para mantener compatibilidad total con SSR y storefront
-        const fullConsolidatedConfig = {
-            business: mergedBusiness,
-            contact: mergedContact,
-            landing: mergedLanding,
-            payment: mergedPayment,
-            labels: mergedLabels,
-            storePrefix
-        };
-
-        const newName = updates.business?.name || tenantRow?.name || 'Tienda';
-        const newTemplate = updates.template || tenantRow?.template || 'restaurant';
-        const newWhatsapp = updates.contact?.whatsapp || tenantRow?.whatsapp || null;
-
-        statements.push(
-            db.prepare(`
-                UPDATE tenants 
-                SET name = ?, template = ?, whatsapp = ?, config_json = ?, updated_at = CURRENT_TIMESTAMP
-                WHERE id = ?
-            `).bind(newName, newTemplate, newWhatsapp, JSON.stringify(fullConsolidatedConfig), tenantId)
+        const settingsService = new SettingsService(db);
+        const saveRes = await settingsService.updateStoreSettings(
+            tenantId,
+            parsed.data,
+            tenant?.domain,
+            env.KV
         );
 
-        await db.batch(statements);
-
-        // P-01: Invalidar caché del tenant en Cloudflare KV
-        context.waitUntil(invalidateTenantCache(env.KV, tenantId, tenant?.domain));
+        if (!saveRes.ok) {
+            return jsonResponse({ error: saveRes.error }, saveRes.code || 500);
+        }
 
         return jsonResponse({
             success: true,
-            message: "Configuración de la tienda actualizada con éxito.",
-            config: fullConsolidatedConfig
+            message: saveRes.data.message,
+            config: saveRes.data.config
         });
     } catch (err) {
         console.error("Error en PUT /api/settings:", err);
