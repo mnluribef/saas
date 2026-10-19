@@ -2,8 +2,8 @@
 // Controlador de Configuración de la Tienda (Modular por Namespaces - Opción A)
 import type { D1Database, D1PreparedStatement } from '@cloudflare/workers-types';
 import { z } from "zod";
-import { verifySession, unauthorizedResponse } from "./_auth";
-import { resolveTenant } from "./_tenant";
+import { verifySession, unauthorizedResponse, forbiddenResponse, validateCsrf } from "./_auth";
+import { resolveTenant, invalidateTenantCache } from "./_tenant";
 import { getDB, jsonResponse } from "./_helpers";
 import type { Env, PagesHandler, TenantRow } from '../types';
 
@@ -174,13 +174,25 @@ interface TenantSettingRow {
 }
 
 /**
- * Helper para reconstruir la configuración completa desde la tabla modular tenant_settings
+ * Helper para reconstruir la configuración desde la tabla modular tenant_settings (P-02)
+ * Si se especifica namespace, optimiza la consulta filtrando por columna namespace
  */
-async function loadTenantSettings(db: D1Database, tenantId: string, fallbackJson?: string | null): Promise<Record<string, any>> {
+async function loadTenantSettings(
+    db: D1Database,
+    tenantId: string,
+    fallbackJson?: string | null,
+    namespace?: string | null
+): Promise<Record<string, any>> {
     try {
-        const { results: rows } = await db.prepare(
-            "SELECT namespace, data_json FROM tenant_settings WHERE tenant_id = ?"
-        ).bind(tenantId).all<TenantSettingRow>();
+        let query = "SELECT namespace, data_json FROM tenant_settings WHERE tenant_id = ?";
+        const params: string[] = [tenantId];
+
+        if (namespace) {
+            query += " AND namespace = ?";
+            params.push(namespace);
+        }
+
+        const { results: rows } = await db.prepare(query).bind(...params).all<TenantSettingRow>();
 
         if (rows && rows.length > 0) {
             const config: Record<string, any> = {};
@@ -199,7 +211,11 @@ async function loadTenantSettings(db: D1Database, tenantId: string, fallbackJson
 
     if (fallbackJson) {
         try {
-            return JSON.parse(fallbackJson);
+            const parsed = JSON.parse(fallbackJson);
+            if (namespace) {
+                return { [namespace]: parsed[namespace] || {} };
+            }
+            return parsed;
         } catch {
             return {};
         }
@@ -223,10 +239,11 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
             tenantData = await db.prepare("SELECT * FROM tenants WHERE id = ?").bind(tenantId).first<TenantRow>();
         }
 
-        const configJson = await loadTenantSettings(db, tenantId, tenantData?.config_json);
-
         const url = new URL(request.url);
         const requestedNamespace = url.searchParams.get("namespace");
+
+        // P-02: Consulta optimizada de settings filtrando por namespace si fue especificado
+        const configJson = await loadTenantSettings(db, tenantId, tenantData?.config_json, requestedNamespace);
 
         if (requestedNamespace && typeof requestedNamespace === "string") {
             return jsonResponse({
@@ -261,10 +278,16 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
 export const onRequestPut: PagesHandler<Env> = async (context) => {
     const { request, env } = context;
     const db = getDB(env);
-    const { id: tenantId } = await resolveTenant(request, db);
+    const { id: tenantId, tenant } = await resolveTenant(request, db);
+
+    // S-02: Protección CSRF en mutaciones desde el navegador
+    if (!validateCsrf(request, tenant?.domain)) {
+        return forbiddenResponse("Verificación de seguridad CSRF fallida.");
+    }
 
     const user = await verifySession(context, tenantId);
     if (!user) return unauthorizedResponse();
+    if (user.role !== 'admin') return forbiddenResponse();
 
     try {
         const body = await request.json();
@@ -399,6 +422,9 @@ export const onRequestPut: PagesHandler<Env> = async (context) => {
         );
 
         await db.batch(statements);
+
+        // P-01: Invalidar caché del tenant en Cloudflare KV
+        context.waitUntil(invalidateTenantCache(env.KV, tenantId, tenant?.domain));
 
         return jsonResponse({
             success: true,

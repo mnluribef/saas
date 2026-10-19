@@ -43,3 +43,72 @@ export function jsonResponse(body: unknown, status = 200, extraHeaders: Record<s
         },
     });
 }
+
+export interface ProblemDetailsOptions {
+    type?: string;
+    title: string;
+    status: number;
+    detail?: string;
+    instance?: string;
+    invalidParams?: Record<string, unknown> | unknown[];
+}
+
+/**
+ * Genera una respuesta estructurada de error bajo el estándar RFC 7807 (Problem Details) (U-01)
+ * Mantiene la propiedad `error` para compatibilidad retroactiva total con clientes existentes.
+ */
+export function problemResponse(opts: ProblemDetailsOptions, extraHeaders: Record<string, string> = {}): Response {
+    const payload = {
+        type: opts.type || 'about:blank',
+        title: opts.title,
+        status: opts.status,
+        ...(opts.detail ? { detail: opts.detail } : {}),
+        ...(opts.instance ? { instance: opts.instance } : {}),
+        ...(opts.invalidParams ? { invalidParams: opts.invalidParams } : {}),
+        error: opts.detail || opts.title
+    };
+
+    return new Response(JSON.stringify(payload), {
+        status: opts.status,
+        headers: {
+            'Content-Type': 'application/problem+json',
+            ...extraHeaders
+        }
+    });
+}
+
+/**
+ * Genera una respuesta JSON comprimida con Gzip (P-04)
+ * Utiliza CompressionStream disponible en Cloudflare Workers para payloads superiores a 2KB.
+ */
+export function compressedJsonResponse(
+    body: unknown,
+    status = 200,
+    extraHeaders: Record<string, string> = {}
+): Response {
+    const json = JSON.stringify(body);
+
+    // Para payloads pequeños (< 2KB) o si no hay soporte de stream, responder JSON estándar
+    if (json.length < 2048 || typeof CompressionStream === 'undefined') {
+        return jsonResponse(body, status, extraHeaders);
+    }
+
+    try {
+        const stream = new CompressionStream('gzip');
+        const writer = stream.writable.getWriter();
+        writer.write(new TextEncoder().encode(json));
+        writer.close();
+
+        return new Response(stream.readable as any, {
+            status,
+            headers: {
+                'Content-Type': 'application/json',
+                'Content-Encoding': 'gzip',
+                'Vary': 'Accept-Encoding',
+                ...extraHeaders,
+            },
+        });
+    } catch {
+        return jsonResponse(body, status, extraHeaders);
+    }
+}

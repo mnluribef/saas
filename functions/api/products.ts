@@ -1,10 +1,10 @@
 // functions/api/products.ts
 // Controlador de Catálogo de Productos - Vendly SaaS (Multi-Tenant)
 import { z } from "zod";
-import { verifySession, unauthorizedResponse, forbiddenResponse } from "./_auth";
+import { verifySession, unauthorizedResponse, forbiddenResponse, validateCsrf } from "./_auth";
 import { resolveTenant } from "./_tenant";
 import { checkProductLimit } from "./_plans";
-import { getDB, jsonResponse } from "./_helpers";
+import { getDB, jsonResponse, compressedJsonResponse } from "./_helpers";
 import type { Env, PagesHandler } from '../types';
 
 function normalizeImageUrl(url: string | null | undefined): string {
@@ -162,6 +162,14 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
             params.push(templateFilter);
         }
 
+        // F-07: Búsqueda flexible por nombre, descripción, sku o marca
+        const searchQuery = (url.searchParams.get("q") || url.searchParams.get("search") || "").trim();
+        if (searchQuery) {
+            conditions.push("(name LIKE ? OR description LIKE ? OR sku LIKE ? OR brand LIKE ?)");
+            const term = `%${searchQuery}%`;
+            params.push(term, term, term, term);
+        }
+
         const whereClause = "WHERE " + conditions.join(" AND ");
         const countQuery = `SELECT COUNT(*) as total FROM products ${whereClause}`;
         const dataQuery = `SELECT * FROM products ${whereClause} ORDER BY created_at ${isAdminMode ? 'DESC' : 'ASC'} LIMIT ? OFFSET ?`;
@@ -225,7 +233,7 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
             ? "no-store, no-cache, must-revalidate"
             : "public, max-age=60, s-maxage=3600, stale-while-revalidate=86400";
 
-        return jsonResponse({
+        return compressedJsonResponse({
             data: products,
             meta: { total, page, limit, totalPages: Math.ceil(total / limit) }
         }, 200, {
@@ -245,6 +253,11 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
     const { env, request } = context;
     const db = getDB(env);
     const { id: tenantId, tenant } = await resolveTenant(request, db);
+
+    // S-02: Protección CSRF en mutaciones desde el navegador
+    if (!validateCsrf(request, tenant?.domain)) {
+        return forbiddenResponse("Verificación de seguridad CSRF fallida.");
+    }
 
     const user = await verifySession(context, tenantId);
     if (!user) return unauthorizedResponse();
@@ -303,7 +316,12 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
 export const onRequestPut: PagesHandler<Env> = async (context) => {
     const { env, request } = context;
     const db = getDB(env);
-    const { id: tenantId } = await resolveTenant(request, db);
+    const { id: tenantId, tenant } = await resolveTenant(request, db);
+
+    // S-02: Protección CSRF en mutaciones desde el navegador
+    if (!validateCsrf(request, tenant?.domain)) {
+        return forbiddenResponse("Verificación de seguridad CSRF fallida.");
+    }
 
     const user = await verifySession(context, tenantId);
     if (!user) return unauthorizedResponse();
@@ -353,7 +371,12 @@ export const onRequestPut: PagesHandler<Env> = async (context) => {
 export const onRequestDelete: PagesHandler<Env> = async (context) => {
     const { env, request } = context;
     const db = getDB(env);
-    const { id: tenantId } = await resolveTenant(request, db);
+    const { id: tenantId, tenant } = await resolveTenant(request, db);
+
+    // S-02: Protección CSRF en mutaciones desde el navegador
+    if (!validateCsrf(request, tenant?.domain)) {
+        return forbiddenResponse("Verificación de seguridad CSRF fallida.");
+    }
 
     const user = await verifySession(context, tenantId);
     if (!user) return unauthorizedResponse();
@@ -363,28 +386,46 @@ export const onRequestDelete: PagesHandler<Env> = async (context) => {
         const url = new URL(request.url);
         const id = url.searchParams.get("id");
         const idsParam = url.searchParams.get("ids");
+        const isPermanent = url.searchParams.get("permanent") === "true";
 
-        // Soporte para eliminación en masa
+        // Soporte para eliminación o archivado en masa
         if (idsParam) {
             const ids = idsParam.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
             if (ids.length === 0) {
-                return jsonResponse({ error: "IDs requeridos para eliminación masiva." }, 400);
+                return jsonResponse({ error: "IDs requeridos para operación masiva." }, 400);
             }
             const placeholders = ids.map(() => '?').join(',');
+
+            if (!isPermanent) {
+                // F-08: Soft-delete por defecto para preservar histórico
+                await db.prepare(`UPDATE products SET active = 0, updated_at = CURRENT_TIMESTAMP WHERE id IN (${placeholders}) AND tenant_id = ?`).bind(...ids, tenantId).run();
+                return jsonResponse({ success: true, message: `${ids.length} productos archivados (desactivados).` });
+            }
+
             await db.prepare(`DELETE FROM product_attributes WHERE tenant_id = ? AND product_id IN (${placeholders})`).bind(tenantId, ...ids).run();
             await db.prepare(`DELETE FROM product_variants WHERE tenant_id = ? AND product_id IN (${placeholders})`).bind(tenantId, ...ids).run();
             await db.prepare(`DELETE FROM products WHERE id IN (${placeholders}) AND tenant_id = ?`).bind(...ids, tenantId).run();
-            return jsonResponse({ success: true, message: `${ids.length} productos eliminados con éxito.` });
+            return jsonResponse({ success: true, message: `${ids.length} productos eliminados definitivamente con éxito.` });
         }
 
         if (!id) {
             return jsonResponse({ error: "ID de producto requerido." }, 400);
         }
 
-        // Verificar que el producto pertenece al tenant antes de eliminar
+        // Verificar que el producto pertenece al tenant
         const existing = await db.prepare("SELECT id FROM products WHERE id = ? AND tenant_id = ?").bind(id, tenantId).first();
         if (!existing) {
             return jsonResponse({ error: "Producto no encontrado en esta tienda." }, 404);
+        }
+
+        // F-08: Soft-delete si no es permanente o si tiene referencias históricas en pedidos
+        const orderRef = await db.prepare("SELECT 1 FROM order_items WHERE product_id = ? LIMIT 1").bind(id).first();
+        if (!isPermanent || orderRef) {
+            await db.prepare("UPDATE products SET active = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND tenant_id = ?").bind(id, tenantId).run();
+            const message = orderRef
+                ? "El producto tiene pedidos históricos asociados. Fue archivado (desactivado) para proteger la integridad del historial."
+                : "Producto archivado (desactivado) exitosamente.";
+            return jsonResponse({ success: true, message });
         }
 
         await db.batch([
@@ -393,9 +434,47 @@ export const onRequestDelete: PagesHandler<Env> = async (context) => {
             db.prepare("DELETE FROM products WHERE id = ? AND tenant_id = ?").bind(id, tenantId)
         ]);
 
-        return jsonResponse({ success: true, message: "Producto eliminado." });
+        return jsonResponse({ success: true, message: "Producto eliminado definitivamente." });
     } catch (err) {
         console.error("Error en DELETE /api/products:", err);
         return jsonResponse({ error: "Error al eliminar producto." }, 500);
     }
+};
+
+/**
+ * PATCH /api/products - Archivar o reactivar producto (F-08)
+ */
+export const onRequestPatch: PagesHandler<Env> = async (context) => {
+    const { env, request } = context;
+    const db = getDB(env);
+    const { id: tenantId, tenant } = await resolveTenant(request, db);
+
+    // S-02: Protección CSRF en mutaciones desde el navegador
+    if (!validateCsrf(request, tenant?.domain)) {
+        return forbiddenResponse("Verificación de seguridad CSRF fallida.");
+    }
+
+    const user = await verifySession(context, tenantId);
+    if (!user) return unauthorizedResponse();
+    if (user.role !== 'admin') return forbiddenResponse();
+
+    const url = new URL(request.url);
+    const id = url.searchParams.get("id");
+    const action = url.searchParams.get("action") || "archive"; // 'archive' o 'restore'
+
+    if (!id) return jsonResponse({ error: "ID de producto requerido." }, 400);
+
+    const newActive = action === "restore" ? 1 : 0;
+    const res = await db.prepare(
+        "UPDATE products SET active = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND tenant_id = ?"
+    ).bind(newActive, id, tenantId).run();
+
+    if (!res || res.meta.changes === 0) {
+        return jsonResponse({ error: "Producto no encontrado." }, 404);
+    }
+
+    return jsonResponse({
+        success: true,
+        message: action === "restore" ? "Producto reactivado exitosamente." : "Producto archivado exitosamente."
+    });
 };

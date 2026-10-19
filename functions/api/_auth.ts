@@ -22,6 +22,50 @@ interface SessionRow {
     username: string;
     role: string;
     tenant_id: string;
+    ip?: string | null;
+    ua_hash?: string | null;
+    expires_at?: number;
+}
+
+/**
+ * Valida la autenticidad del origen de las peticiones mutantes para mitigar CSRF (S-02)
+ */
+export function validateCsrf(request: Request, tenantDomain?: string | null): boolean {
+    const method = request.method.toUpperCase();
+    if (['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+        return true;
+    }
+
+    // Cabecera custom explícita enviada por clientes SPA
+    const requestedWith = request.headers.get('X-Requested-With');
+    if (requestedWith) return true;
+
+    const origin = request.headers.get('Origin');
+    const referer = request.headers.get('Referer');
+    const source = origin || referer;
+
+    // Si no hay cabecera Origin ni Referer (ej: backend-to-backend con Bearer token),
+    // validar si tiene Authorization header
+    if (!source) {
+        const authHeader = request.headers.get('Authorization');
+        return Boolean(authHeader && authHeader.startsWith('Bearer '));
+    }
+
+    try {
+        const sourceUrl = new URL(source);
+        const sourceHost = sourceUrl.hostname.toLowerCase();
+        const requestHost = new URL(request.url).hostname.toLowerCase();
+
+        if (sourceHost === requestHost) return true;
+        if (sourceHost === 'localhost' || sourceHost === '127.0.0.1') return true;
+        if (sourceHost === 'vendly.app' || sourceHost.endsWith('.vendly.app')) return true;
+        if (sourceHost.endsWith('.pages.dev')) return true;
+        if (tenantDomain && (sourceHost === tenantDomain.toLowerCase() || sourceHost.endsWith(`.${tenantDomain.toLowerCase()}`))) return true;
+
+        return false;
+    } catch {
+        return false;
+    }
 }
 
 /**
@@ -39,7 +83,7 @@ export async function verifySession(
 
     try {
         const now = Math.floor(Date.now() / 1000);
-        let query = `SELECT s.username, s.tenant_id, u.role 
+        let query = `SELECT s.username, s.tenant_id, s.ip, s.ua_hash, s.expires_at, u.role 
              FROM sessions s
              JOIN users u ON s.username = u.username AND s.tenant_id = u.tenant_id
              WHERE s.token = ? AND s.expires_at > ?`;
@@ -53,6 +97,25 @@ export async function verifySession(
         const session = await db.prepare(query).bind(...bindings).first<SessionRow>();
 
         if (session) {
+            // S-03: Mitigar secuestro de sesión mediante comparación de hash de User-Agent
+            if (session.ua_hash) {
+                const clientUa = request.headers.get('User-Agent') || 'unknown';
+                const currentUaHash = (await hashSHA256(clientUa)).slice(0, 32);
+                if (session.ua_hash !== currentUaHash) {
+                    console.warn(`[Security] Posible secuestro de sesión detectado para usuario ${session.username}`);
+                    return null;
+                }
+            }
+
+            // S-03: Sliding expiration - Extender expiración si restan menos de 12 horas
+            if (session.expires_at && (session.expires_at - now < 43200)) {
+                const extendedExpiresAt = now + (7 * 24 * 60 * 60);
+                db.prepare('UPDATE sessions SET expires_at = ? WHERE token = ?')
+                    .bind(extendedExpiresAt, token)
+                    .run()
+                    .catch(() => {});
+            }
+
             return {
                 username: session.username,
                 role: session.role,

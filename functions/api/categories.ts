@@ -1,7 +1,7 @@
 // functions/api/categories.ts
 // Gestor Central de Categorías del Catálogo - Vendly SaaS
 import { z } from "zod";
-import { verifySession, unauthorizedResponse, forbiddenResponse } from "./_auth";
+import { verifySession, unauthorizedResponse, forbiddenResponse, validateCsrf } from "./_auth";
 import { resolveTenant } from "./_tenant";
 import { getDB, jsonResponse } from "./_helpers";
 import type { Env, PagesHandler } from '../types';
@@ -152,11 +152,17 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
             return a.name.localeCompare(b.name);
         });
 
+        // F-05: Caché pública en CDN y navegador para storefront (120s), evitando queries recurrentes a D1
+        const authUser = await verifySession(context, tenantId);
+        const cacheControl = authUser
+            ? "no-store, no-cache, must-revalidate"
+            : "public, max-age=120, stale-while-revalidate=60";
+
         return jsonResponse({
             success: true,
             tenantId,
             categories
-        }, 200, { "Cache-Control": "no-store, no-cache, must-revalidate" });
+        }, 200, { "Cache-Control": cacheControl });
 
     } catch (err: any) {
         console.error("Error en GET /api/categories:", err);
@@ -172,6 +178,11 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
     const { request, env } = context;
     const db = getDB(env);
     const { id: tenantId, tenant } = await resolveTenant(request, db);
+
+    // S-02: Protección CSRF en mutaciones desde el navegador
+    if (!validateCsrf(request, tenant?.domain)) {
+        return forbiddenResponse("Verificación de seguridad CSRF fallida.");
+    }
 
     const user = await verifySession(context, tenantId);
     if (!user) return unauthorizedResponse();
@@ -227,6 +238,11 @@ export const onRequestPut: PagesHandler<Env> = async (context) => {
     const { request, env } = context;
     const db = getDB(env);
     const { id: tenantId, tenant } = await resolveTenant(request, db);
+
+    // S-02: Protección CSRF en mutaciones desde el navegador
+    if (!validateCsrf(request, tenant?.domain)) {
+        return forbiddenResponse("Verificación de seguridad CSRF fallida.");
+    }
 
     const user = await verifySession(context, tenantId);
     if (!user) return unauthorizedResponse();
@@ -302,6 +318,11 @@ export const onRequestDelete: PagesHandler<Env> = async (context) => {
     const { request, env } = context;
     const db = getDB(env);
     const { id: tenantId, tenant } = await resolveTenant(request, db);
+
+    // S-02: Protección CSRF en mutaciones desde el navegador
+    if (!validateCsrf(request, tenant?.domain)) {
+        return forbiddenResponse("Verificación de seguridad CSRF fallida.");
+    }
 
     const user = await verifySession(context, tenantId);
     if (!user) return unauthorizedResponse();

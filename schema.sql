@@ -119,6 +119,8 @@ CREATE TABLE IF NOT EXISTS orders (
     status TEXT NOT NULL DEFAULT 'pendiente',
     total_items INTEGER NOT NULL DEFAULT 0,
     total_price REAL NOT NULL DEFAULT 0.0,
+    coupon_code TEXT,
+    discount_amount REAL DEFAULT 0.0,
     template TEXT DEFAULT 'restaurant',
     tenant_id TEXT NOT NULL DEFAULT 'demo',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -166,6 +168,8 @@ CREATE TABLE IF NOT EXISTS sessions (
     token TEXT PRIMARY KEY,
     username TEXT NOT NULL,
     tenant_id TEXT NOT NULL DEFAULT 'demo',
+    ip TEXT,
+    ua_hash TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     expires_at INTEGER NOT NULL
 );
@@ -197,6 +201,47 @@ CREATE TABLE IF NOT EXISTS tenant_settings (
     FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
 );
 
+-- 15. Tabla de Auditoría e Historial de Pedidos (Order Events)
+CREATE TABLE IF NOT EXISTS order_events (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    order_id    TEXT NOT NULL,
+    tenant_id   TEXT NOT NULL,
+    from_status TEXT,
+    to_status   TEXT NOT NULL,
+    actor       TEXT,
+    note        TEXT,
+    created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+);
+
+-- 16. Tabla Virtual de Búsqueda Full-Text (FTS5) para Productos
+CREATE VIRTUAL TABLE IF NOT EXISTS products_fts USING fts5(
+    name,
+    description,
+    sku,
+    brand,
+    content='products',
+    content_rowid='rowid'
+);
+
+-- Disparadores para mantener products_fts sincronizado
+CREATE TRIGGER IF NOT EXISTS trg_products_fts_ai AFTER INSERT ON products BEGIN
+    INSERT INTO products_fts(rowid, name, description, sku, brand)
+    VALUES (new.rowid, new.name, new.description, new.sku, new.brand);
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_products_fts_ad AFTER DELETE ON products BEGIN
+    INSERT INTO products_fts(products_fts, rowid, name, description, sku, brand)
+    VALUES ('delete', old.rowid, old.name, old.description, old.sku, old.brand);
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_products_fts_au AFTER UPDATE ON products BEGIN
+    INSERT INTO products_fts(products_fts, rowid, name, description, sku, brand)
+    VALUES ('delete', old.rowid, old.name, old.description, old.sku, old.brand);
+    INSERT INTO products_fts(rowid, name, description, sku, brand)
+    VALUES (new.rowid, new.name, new.description, new.sku, new.brand);
+END;
+
 -- ============================================================
 -- ÍNDICES PARA OPTIMIZACIÓN MULTI-TENANT
 -- ============================================================
@@ -206,6 +251,8 @@ CREATE INDEX IF NOT EXISTS idx_product_attributes_tenant_prod ON product_attribu
 CREATE INDEX IF NOT EXISTS idx_product_variants_tenant_prod   ON product_variants(tenant_id, product_id);
 CREATE INDEX IF NOT EXISTS idx_orders_tenant         ON orders(tenant_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_orders_status         ON orders(tenant_id, status);
+CREATE INDEX IF NOT EXISTS idx_order_events_order    ON order_events(order_id);
+CREATE INDEX IF NOT EXISTS idx_order_events_tenant   ON order_events(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_order_items_order     ON order_items(order_id);
 CREATE INDEX IF NOT EXISTS idx_order_items_product   ON order_items(product_id);
 CREATE INDEX IF NOT EXISTS idx_sales_tenant          ON sales(tenant_id, fecha DESC);

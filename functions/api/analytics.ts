@@ -120,26 +120,28 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
             });
         }
 
-        // Modo predeterminado (mes actual vs mes anterior) ejecutado en paralelo
+        // Modo predeterminado (mes actual vs mes anterior) optimizado en una sola query agregada (P-03)
         const [
-            revThisMonthRow,
-            revLastMonthRow,
+            salesComparisonRow,
             topProductsResult,
             statusCountsResult,
             paymentMethodsResult,
             deliveryTypesResult
         ] = await Promise.all([
             db.prepare(`
-                SELECT COALESCE(SUM(monto), 0) as total, COUNT(*) as count 
+                SELECT 
+                    COALESCE(SUM(CASE WHEN strftime('%Y-%m', fecha) = strftime('%Y-%m', 'now') THEN monto ELSE 0 END), 0) as total_this_month,
+                    COUNT(CASE WHEN strftime('%Y-%m', fecha) = strftime('%Y-%m', 'now') THEN 1 END) as count_this_month,
+                    COALESCE(SUM(CASE WHEN strftime('%Y-%m', fecha) = strftime('%Y-%m', 'now', '-1 month') THEN monto ELSE 0 END), 0) as total_last_month,
+                    COUNT(CASE WHEN strftime('%Y-%m', fecha) = strftime('%Y-%m', 'now', '-1 month') THEN 1 END) as count_last_month
                 FROM sales 
-                WHERE tenant_id = ? AND strftime('%Y-%m', fecha) = strftime('%Y-%m', 'now')
-            `).bind(tenantId).first<{ total: number; count: number }>(),
-
-            db.prepare(`
-                SELECT COALESCE(SUM(monto), 0) as total, COUNT(*) as count 
-                FROM sales 
-                WHERE tenant_id = ? AND strftime('%Y-%m', fecha) = strftime('%Y-%m', 'now', '-1 month')
-            `).bind(tenantId).first<{ total: number; count: number }>(),
+                WHERE tenant_id = ?
+            `).bind(tenantId).first<{
+                total_this_month: number;
+                count_this_month: number;
+                total_last_month: number;
+                count_last_month: number;
+            }>(),
 
             db.prepare(`
                 SELECT oi.product_name, SUM(oi.quantity) as total_qty, SUM(oi.quantity * oi.unit_price) as total_revenue
@@ -173,9 +175,9 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
             `).bind(tenantId).all<DeliveryBreakdownRow>()
         ]);
 
-        const revThisMonth = revThisMonthRow?.total ?? 0;
-        const revLastMonth = revLastMonthRow?.total ?? 0;
-        const salesCountThisMonth = revThisMonthRow?.count ?? 0;
+        const revThisMonth = salesComparisonRow?.total_this_month ?? 0;
+        const revLastMonth = salesComparisonRow?.total_last_month ?? 0;
+        const salesCountThisMonth = salesComparisonRow?.count_this_month ?? 0;
 
         let growthPercentage = 0;
         if (revLastMonth > 0) {

@@ -2,10 +2,10 @@
 // Controlador de Pedidos y Ventas - Vendly SaaS (Multi-Tenant)
 import type { D1PreparedStatement } from '@cloudflare/workers-types';
 import { z } from "zod";
-import { verifySession, unauthorizedResponse, forbiddenResponse } from "./_auth";
+import { verifySession, unauthorizedResponse, forbiddenResponse, validateCsrf } from "./_auth";
 import { resolveTenant } from "./_tenant";
 import { checkOrderLimit } from "./_plans";
-import { getDB, jsonResponse } from "./_helpers";
+import { getDB, jsonResponse, compressedJsonResponse } from "./_helpers";
 import {
     generateOrderId,
     verifyTurnstile,
@@ -15,7 +15,7 @@ import {
 } from "./_order-service";
 import { applyCoupon } from "./_coupon-service";
 import { buildOrderStatusWhatsAppUrl } from "./_whatsapp";
-import type { Env, PagesHandler } from '../types';
+import type { Env, PagesHandler, OrderEventRow } from '../types';
 
 export const orderItemSchema = z.object({
     id: z.string().optional(),
@@ -54,7 +54,8 @@ export const updateOrderStatusSchema = z.object({
     id: z.string().min(1),
     status: z.enum(['pendiente', 'en_produccion', 'listo_entrega', 'completado', 'cancelado']),
     paymentMethod: z.string().optional(),
-    paymentAmount: z.number().min(0).or(z.string().transform(v => parseFloat(v))).optional()
+    paymentAmount: z.number().min(0).or(z.string().transform(v => parseFloat(v))).optional(),
+    note: z.string().max(500).optional()
 });
 
 export type UpdateOrderStatusInput = z.infer<typeof updateOrderStatusSchema>;
@@ -74,6 +75,8 @@ export interface OrderRow {
     status: string;
     total_items: number;
     total_price: number;
+    coupon_code?: string | null;
+    discount_amount?: number;
     template: string;
     tenant_id: string;
     created_at: string;
@@ -123,13 +126,18 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
             const { results: items } = await db.prepare(
                 "SELECT * FROM order_items WHERE order_id = ?"
             ).bind(orderId).all<OrderItemRow>();
-            return jsonResponse({ ...order, items });
+
+            // F-03: Incluir auditoría de eventos de cambio de estado
+            const { results: events } = await db.prepare(
+                "SELECT * FROM order_events WHERE order_id = ? ORDER BY created_at ASC"
+            ).bind(orderId).all<OrderEventRow>();
+
+            return jsonResponse({ ...order, items, events: events || [] });
         }
 
-        // Listado paginado
-        const page = Math.max(1, parseInt(url.searchParams.get("page") || "1"));
+        // F-01: Soporte para paginación cursor-based (?after=order_id) y offset-based tradicional
+        const after = url.searchParams.get("after");
         const limit = Math.max(1, Math.min(100, parseInt(url.searchParams.get("limit") || "50")));
-        const offset = (page - 1) * limit;
         const statusFilter = url.searchParams.get("status");
 
         const conditions: string[] = ["tenant_id = ?"];
@@ -140,6 +148,30 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
             params.push(statusFilter);
         }
 
+        if (after) {
+            // Paginación por cursor: más rápida y eficiente en SQLite/D1
+            conditions.push("created_at < (SELECT created_at FROM orders WHERE id = ?)");
+            params.push(after);
+
+            const whereClause = "WHERE " + conditions.join(" AND ");
+            const { results: rawOrders } = await db.prepare(
+                `SELECT * FROM orders ${whereClause} ORDER BY created_at DESC LIMIT ?`
+            ).bind(...params, limit + 1).all<OrderRow>();
+
+            const hasMore = Boolean(rawOrders && rawOrders.length > limit);
+            const orders = hasMore ? rawOrders.slice(0, limit) : (rawOrders || []);
+            const nextCursor = (hasMore && orders.length > 0) ? orders[orders.length - 1].id : null;
+
+            return compressedJsonResponse({
+                data: orders,
+                meta: { limit, hasMore, nextCursor }
+            });
+        }
+
+        // Paginación por página/offset (compatibilidad retroactiva)
+        const page = Math.max(1, parseInt(url.searchParams.get("page") || "1"));
+        const offset = (page - 1) * limit;
+
         const whereClause = "WHERE " + conditions.join(" AND ");
         const countRow = await db.prepare(`SELECT COUNT(*) as total FROM orders ${whereClause}`).bind(...params).first<{ total: number }>();
         const total = countRow?.total ?? 0;
@@ -148,7 +180,7 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
             `SELECT * FROM orders ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`
         ).bind(...params, limit, offset).all<OrderRow>();
 
-        return jsonResponse({
+        return compressedJsonResponse({
             data: orders || [],
             meta: { total, page, limit, totalPages: Math.ceil(total / limit) }
         });
@@ -338,12 +370,18 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
             }
         } catch {}
 
-        // 9. Cálculo exacto de totales monetarios
+        // 9. Cálculo exacto de totales monetarios y persistencia de cupón (F-02)
         const totals = calculateOrderTotals(itemsTotal, discountAmount, data.deliveryType, deliveryPrice, finalBcvRate);
 
         statements.push(
-            db.prepare("UPDATE orders SET total_items = ?, total_price = ?, total_bs = ? WHERE id = ?")
-            .bind(totalItems, totals.finalTotalPrice, totals.totalBs, orderId)
+            db.prepare("UPDATE orders SET total_items = ?, total_price = ?, total_bs = ?, coupon_code = ?, discount_amount = ? WHERE id = ?")
+            .bind(totalItems, totals.finalTotalPrice, totals.totalBs, appliedCouponCode, discountAmount, orderId)
+        );
+
+        // F-03: Registrar evento inicial de creación de la orden
+        statements.push(
+            db.prepare("INSERT INTO order_events (order_id, tenant_id, from_status, to_status, actor, note) VALUES (?, ?, NULL, 'pendiente', 'cliente', 'Pedido creado en storefront')")
+            .bind(orderId, tenantId)
         );
 
         // 10. Ejecución del lote DB y verificación atómica de stock (Fix #2: Race Condition Protection)
@@ -425,11 +463,17 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
 export const onRequestPut: PagesHandler<Env> = async (context) => {
     const { env, request } = context;
     const db = getDB(env);
-    const { id: tenantId } = await resolveTenant(request, db);
+    const { id: tenantId, tenant } = await resolveTenant(request, db);
+
+    // S-02: Protección CSRF en mutaciones desde el navegador
+    if (!validateCsrf(request, tenant?.domain)) {
+        return forbiddenResponse("Verificación de seguridad CSRF fallida.");
+    }
 
     const user = await verifySession(context, tenantId);
     if (!user) return unauthorizedResponse();
-    if (user.role !== 'admin') return forbiddenResponse();
+    // F-04: Soporte para rol staff y admin en gestión de pedidos
+    if (!['admin', 'staff'].includes(user.role)) return forbiddenResponse();
 
     try {
         const bodyJson = await request.json();
@@ -438,7 +482,7 @@ export const onRequestPut: PagesHandler<Env> = async (context) => {
             return jsonResponse({ error: "Datos de estado inválidos", details: parseResult.error.issues }, 400);
         }
 
-        const { id, status, paymentMethod, paymentAmount } = parseResult.data;
+        const { id, status, paymentMethod, paymentAmount, note } = parseResult.data;
 
         const order = await db.prepare("SELECT * FROM orders WHERE id = ? AND tenant_id = ?").bind(id, tenantId).first<OrderRow>();
         if (!order) return jsonResponse({ error: "Pedido no encontrado." }, 404);
@@ -446,6 +490,13 @@ export const onRequestPut: PagesHandler<Env> = async (context) => {
         const statements: D1PreparedStatement[] = [
             db.prepare("UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND tenant_id = ?").bind(status, id, tenantId)
         ];
+
+        // F-03: Auditoría y trazabilidad histórica de cambios de estado en order_events
+        statements.push(
+            db.prepare(
+                "INSERT INTO order_events (order_id, tenant_id, from_status, to_status, actor, note) VALUES (?, ?, ?, ?, ?, ?)"
+            ).bind(id, tenantId, order.status, status, user.username, note || `Cambio de estado a ${status}`)
+        );
 
         if (status === "completado") {
             const existingSale = await db.prepare("SELECT id FROM sales WHERE order_id = ?").bind(id).first();
@@ -518,12 +569,22 @@ export const onRequestPut: PagesHandler<Env> = async (context) => {
 };
 
 /**
+ * PATCH /api/orders - Alias para actualizar estado de pedidos (F-03)
+ */
+export const onRequestPatch: PagesHandler<Env> = onRequestPut;
+
+/**
  * DELETE /api/orders - Admin only, scoped por tenant
  */
 export const onRequestDelete: PagesHandler<Env> = async (context) => {
     const { env, request } = context;
     const db = getDB(env);
-    const { id: tenantId } = await resolveTenant(request, db);
+    const { id: tenantId, tenant } = await resolveTenant(request, db);
+
+    // S-02: Protección CSRF en mutaciones desde el navegador
+    if (!validateCsrf(request, tenant?.domain)) {
+        return forbiddenResponse("Verificación de seguridad CSRF fallida.");
+    }
 
     const user = await verifySession(context, tenantId);
     if (!user) return unauthorizedResponse();

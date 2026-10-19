@@ -1,6 +1,6 @@
 // functions/api/_tenant.ts
 // Middleware multi-tenant: resuelve el tenant desde la request y lo inyecta en context.tenant
-import type { D1Database } from '@cloudflare/workers-types';
+import type { D1Database, KVNamespace } from '@cloudflare/workers-types';
 import { parseCookies } from './_helpers';
 import type { TenantResolution, TenantRow } from '../types';
 
@@ -14,8 +14,9 @@ export const SYSTEM_SUBDOMAINS = new Set(['www', 'app', 'admin', 'demo', 'api'])
  * 3. Path-based: vendly.app/s/fogon → 'fogon'
  * 4. Custom domain: fogon.com → lookup en DB por domain
  * 5. Fallback: 'demo'
+ * Incorpora capa de caché Cloudflare KV con TTL de 60 segundos (P-01).
  */
-export async function resolveTenant(request: Request, db: D1Database): Promise<TenantResolution> {
+export async function resolveTenant(request: Request, db: D1Database, kv?: KVNamespace): Promise<TenantResolution> {
     const url = new URL(request.url);
     const host = url.hostname; // e.g. 'fogon.vendly.app' or 'fogon.com'
 
@@ -24,7 +25,7 @@ export async function resolveTenant(request: Request, db: D1Database): Promise<T
     if (qsTenant) {
         const superadminKey = request.headers.get('X-Superadmin-Key');
         if (superadminKey) {
-            const tenant = await getTenantById(db, qsTenant);
+            const tenant = await getTenantByIdCached(db, qsTenant, kv);
             if (tenant) return { id: qsTenant, tenant };
         }
     }
@@ -32,7 +33,7 @@ export async function resolveTenant(request: Request, db: D1Database): Promise<T
     // 0.2 Header explícito (development, testing y super-admin)
     const headerTenantId = request.headers.get('X-Tenant-Id');
     if (headerTenantId) {
-        const tenant = await getTenantById(db, headerTenantId);
+        const tenant = await getTenantByIdCached(db, headerTenantId, kv);
         if (tenant) return { id: headerTenantId, tenant };
     }
 
@@ -46,7 +47,7 @@ export async function resolveTenant(request: Request, db: D1Database): Promise<T
                 'SELECT tenant_id FROM sessions WHERE token = ? AND expires_at > ?'
             ).bind(sessionToken, now).first<{ tenant_id: string }>();
             if (sessionRow && sessionRow.tenant_id) {
-                const tenant = await getTenantById(db, sessionRow.tenant_id);
+                const tenant = await getTenantByIdCached(db, sessionRow.tenant_id, kv);
                 if (tenant) return { id: sessionRow.tenant_id, tenant };
             }
         } catch {
@@ -62,7 +63,7 @@ export async function resolveTenant(request: Request, db: D1Database): Promise<T
             candidate = pathParts[1].toLowerCase();
         }
         if (candidate && !SYSTEM_PATHS.has(candidate) && !candidate.includes('.')) {
-            const tenant = await getTenantById(db, candidate);
+            const tenant = await getTenantByIdCached(db, candidate, kv);
             if (tenant) return { id: candidate, tenant };
         }
     }
@@ -72,14 +73,14 @@ export async function resolveTenant(request: Request, db: D1Database): Promise<T
     if (parts.length >= 3) {
         const subdomain = parts[0].toLowerCase();
         if (!SYSTEM_SUBDOMAINS.has(subdomain)) {
-            const tenant = await getTenantById(db, subdomain);
+            const tenant = await getTenantByIdCached(db, subdomain, kv);
             if (tenant) return { id: subdomain, tenant };
         }
     }
 
     // 3. Custom domain lookup
     if (!host.includes('vendly') && !host.includes('localhost') && !host.includes('pages.dev')) {
-        const tenant = await getTenantByDomain(db, host);
+        const tenant = await getTenantByDomainCached(db, host, kv);
         if (tenant) return { id: tenant.id, tenant };
     }
 
@@ -101,6 +102,27 @@ async function getTenantById(db: D1Database, tenantId: string): Promise<TenantRo
 }
 
 /**
+ * Obtiene un tenant de la BD o de Cloudflare KV por su ID con TTL de 60s (P-01)
+ */
+export async function getTenantByIdCached(db: D1Database, tenantId: string, kv?: KVNamespace): Promise<TenantRow | null> {
+    const cacheKey = `tenant:${tenantId}`;
+    if (kv) {
+        try {
+            const cached = await kv.get(cacheKey, 'json');
+            if (cached) return cached as TenantRow;
+        } catch {}
+    }
+
+    const tenant = await getTenantById(db, tenantId);
+    if (tenant && kv) {
+        try {
+            await kv.put(cacheKey, JSON.stringify(tenant), { expirationTtl: 60 });
+        } catch {}
+    }
+    return tenant;
+}
+
+/**
  * Obtiene un tenant de la BD por su dominio custom
  */
 async function getTenantByDomain(db: D1Database, domain: string): Promise<TenantRow | null> {
@@ -111,6 +133,40 @@ async function getTenantByDomain(db: D1Database, domain: string): Promise<Tenant
     } catch {
         return null;
     }
+}
+
+/**
+ * Obtiene un tenant por dominio con caché Cloudflare KV con TTL de 60s (P-01)
+ */
+export async function getTenantByDomainCached(db: D1Database, domain: string, kv?: KVNamespace): Promise<TenantRow | null> {
+    const cacheKey = `domain:${domain}`;
+    if (kv) {
+        try {
+            const cached = await kv.get(cacheKey, 'json');
+            if (cached) return cached as TenantRow;
+        } catch {}
+    }
+
+    const tenant = await getTenantByDomain(db, domain);
+    if (tenant && kv) {
+        try {
+            await kv.put(cacheKey, JSON.stringify(tenant), { expirationTtl: 60 });
+        } catch {}
+    }
+    return tenant;
+}
+
+/**
+ * Invalida la caché de un tenant en Cloudflare KV tras actualizar configuración
+ */
+export async function invalidateTenantCache(kv: KVNamespace | undefined, tenantId: string, domain?: string | null): Promise<void> {
+    if (!kv) return;
+    try {
+        await kv.delete(`tenant:${tenantId}`);
+        if (domain) {
+            await kv.delete(`domain:${domain}`);
+        }
+    } catch {}
 }
 
 /**

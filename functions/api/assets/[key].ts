@@ -26,8 +26,12 @@ export const onRequestGet: PagesHandler<Env, 'key'> = async (context) => {
         object.writeHttpMetadata(headers as any);
         if (object.httpEtag) {
             headers.set("etag", object.httpEtag);
+            // P-05: Validación condicional de ETag para ahorrar transferencia en cliente/CDN
+            if (context.request.headers.get("if-none-match") === object.httpEtag) {
+                return new Response(null, { status: 304, headers });
+            }
         }
-        // Cache de 1 año en navegador/CDN para nombres de archivo con timestamp
+        // P-05: Cache de 1 año en navegador/CDN para nombres de archivo inmutables
         headers.set("Cache-Control", "public, max-age=31536000, immutable");
 
         return new Response(object.body as any, {

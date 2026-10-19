@@ -1,12 +1,13 @@
 // functions/types.ts
 // Tipos unificados para Cloudflare Pages Functions y bindings del backend
-import type { D1Database, R2Bucket } from '@cloudflare/workers-types';
+import type { D1Database, R2Bucket, KVNamespace } from '@cloudflare/workers-types';
 
 export interface Env {
     DB: D1Database;
     vendly?: D1Database;
     STORAGE?: R2Bucket;
     BUCKET?: R2Bucket;
+    KV?: KVNamespace;
     SUPERADMIN_KEY?: string;
     TURNSTILE_SECRET_KEY?: string;
     WEBHOOK_URL?: string;
@@ -58,4 +59,38 @@ export interface UserSession {
 export interface TenantResolution {
     id: string;
     tenant: TenantRow | null;
+}
+
+export interface OrderEventRow {
+    id?: number;
+    order_id: string;
+    tenant_id: string;
+    from_status: string | null;
+    to_status: string;
+    actor: string | null;
+    note: string | null;
+    created_at?: string;
+}
+
+export interface OrderRow {
+    id: string;
+    client_name: string;
+    client_phone: string;
+    delivery_type: string;
+    delivery_address: string | null;
+    delivery_notes: string | null;
+    payment_method: string | null;
+    payment_reference: string | null;
+    payment_receipt_url: string | null;
+    bcv_rate: number;
+    total_bs: number;
+    status: string;
+    total_items: number;
+    total_price: number;
+    coupon_code?: string | null;
+    discount_amount?: number;
+    template: string;
+    tenant_id: string;
+    created_at: string;
+    updated_at: string;
 }

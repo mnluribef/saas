@@ -2,10 +2,20 @@
 // Endpoints de autenticación, sesión y cambio de contraseña
 import type { D1Database } from '@cloudflare/workers-types';
 import { z } from "zod";
-import { verifySession, unauthorizedResponse, generateSalt, hashPasswordPBKDF2, hashSHA256 } from "./_auth";
+import { verifySession, unauthorizedResponse, forbiddenResponse, validateCsrf, generateSalt, hashPasswordPBKDF2, hashSHA256 } from "./_auth";
 import { resolveTenant } from "./_tenant";
 import { getDB, parseCookies, jsonResponse } from "./_helpers";
 import type { Env, PagesHandler } from '../types';
+
+export const COMMON_PASSWORDS = new Set([
+    '12345678', 'password', 'qwerty123', 'admin123', '123456789', '1234567890',
+    'password123', 'vendly123', 'contraseña', 'welcome1', 'admin1234', '11111111',
+    'abc12345', 'pass1234'
+]);
+
+export const strongPasswordSchema = z.string()
+    .min(8, "La contraseña debe tener al menos 8 caracteres")
+    .refine(p => !COMMON_PASSWORDS.has(p.toLowerCase()), "La contraseña es demasiado común o predecible");
 
 export const loginSchema = z.object({
     username: z.string().min(1, "Usuario requerido"),
@@ -18,7 +28,7 @@ export type LoginInput = z.infer<typeof loginSchema>;
 
 export const changePasswordSchema = z.object({
     currentPassword: z.string().min(1, "Contraseña actual requerida"),
-    newPassword: z.string().min(1, "Nueva contraseña requerida"),
+    newPassword: strongPasswordSchema,
 });
 
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
@@ -243,9 +253,12 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
         const maxAge = 7 * 24 * 60 * 60; // 7 días en segundos
         const expiresAt = Math.floor(Date.now() / 1000) + maxAge;
 
-        // Registrar la sesión en la base de datos (con tenant_id)
-        await db.prepare("INSERT INTO sessions (token, username, expires_at, tenant_id) VALUES (?, ?, ?, ?)")
-            .bind(sessionToken, user.username, expiresAt, effectiveTenantId)
+        // S-03: Registrar la sesión en la base de datos con IP y hash de User-Agent
+        const clientUa = request.headers.get("User-Agent") || "unknown";
+        const uaHash = (await hashSHA256(clientUa)).slice(0, 32);
+
+        await db.prepare("INSERT INTO sessions (token, username, expires_at, tenant_id, ip, ua_hash) VALUES (?, ?, ?, ?, ?, ?)")
+            .bind(sessionToken, user.username, expiresAt, effectiveTenantId, clientIp, uaHash)
             .run();
 
         const cookie = `vendly_session=${sessionToken}; Path=/; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Strict`;
@@ -265,10 +278,12 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
  * PUT /api/auth - Cambiar contraseña del administrador (Aislado por Tenant)
  */
 export const onRequestPut: PagesHandler<Env> = async (context) => {
+    const { request, env } = context;
+    if (!validateCsrf(request)) return forbiddenResponse("Verificación de seguridad CSRF fallida.");
+
     const sessionUser = await verifySession(context);
     if (!sessionUser) return unauthorizedResponse();
 
-    const { request, env } = context;
     const db = getDB(env);
     const clientIp = request.headers.get("CF-Connecting-IP") || request.headers.get("x-real-ip") || "unknown";
 

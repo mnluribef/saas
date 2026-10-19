@@ -3,6 +3,7 @@
 import type { D1Database } from '@cloudflare/workers-types';
 import { z } from "zod";
 import { generateSalt, hashPasswordPBKDF2 } from "./_auth";
+import { strongPasswordSchema } from "./auth";
 import { getDB, jsonResponse } from "./_helpers";
 import type { Env, PagesHandler } from '../types';
 
@@ -11,8 +12,8 @@ export const onboardingSchema = z.object({
     tenantSlug: z.string().min(3).max(60).regex(/^[a-z0-9-]+$/, "El slug solo puede contener minúsculas, números y guiones."),
     template: z.enum(['restaurant', 'hardware', 'fashion', 'tech', 'autoparts']).default('restaurant'),
     username: z.string().min(4, "El usuario debe tener al menos 4 caracteres").max(50),
-    password: z.string().min(1, "La contraseña es requerida"),
-    email: z.email().optional().nullable(),
+    password: strongPasswordSchema,
+    email: z.email("Formato de correo electrónico inválido").optional().nullable(),
     whatsapp: z.string().max(30).optional().nullable(),
     acceptTerms: z.boolean().optional(),
 });
