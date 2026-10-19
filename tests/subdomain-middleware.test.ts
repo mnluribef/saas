@@ -132,8 +132,8 @@ describe('Root Pages Middleware (_middleware.ts): Subdomains & Routing', () => {
         expect(html).toContain('https://fogon.ventrina.app/p/burger-123');
     });
 
-    it('redirects /admin on subdomain to https://ventrina.app/admin?tenant=fogon', async () => {
-        const next = vi.fn();
+    it('serves /admin directly on subdomain without redirecting', async () => {
+        const next = vi.fn().mockResolvedValue(new Response('admin html'));
         const context = {
             request: new Request('https://fogon.ventrina.app/admin'),
             env: createMockEnv(),
@@ -144,8 +144,24 @@ describe('Root Pages Middleware (_middleware.ts): Subdomains & Routing', () => {
         } as unknown as PagesContext<Env>;
 
         const res = await onRequest(context);
-        expect(res.status).toBe(302);
-        expect(res.headers.get('Location')).toBe('https://ventrina.app/admin?tenant=fogon');
+        expect(next).toHaveBeenCalled();
+        expect(res.status).toBe(200);
+    });
+
+    it('serves /login directly on subdomain without redirecting', async () => {
+        const next = vi.fn().mockResolvedValue(new Response('login html'));
+        const context = {
+            request: new Request('https://fogon.ventrina.app/login'),
+            env: createMockEnv(),
+            next,
+            params: {},
+            data: {},
+            waitUntil: vi.fn()
+        } as unknown as PagesContext<Env>;
+
+        const res = await onRequest(context);
+        expect(next).toHaveBeenCalled();
+        expect(res.status).toBe(200);
     });
 
     it('redirects legacy path-based store URLs (ventrina.app/fogon) to https://fogon.ventrina.app/', async () => {

@@ -59,24 +59,15 @@ export const onRequest = async (context: PagesContext<Env>): Promise<Response> =
             return renderStoreNotFound(tenantSubdomain);
         }
 
-        // Acceso administrativo o auth desde subdominio -> redirigir a dominio raíz
+        // Acceso administrativo o login en el subdominio: servir directamente sin redirigir al dominio raíz
+        if (pathname === '/admin' || pathname.startsWith('/admin/') || pathname === '/login') {
+            return next();
+        }
+
+        // Registro de nuevas tiendas se redirige a la plataforma principal
         const isLocal = host.includes('localhost');
         const mainDomain = isLocal ? `localhost:${url.port || '8788'}` : 'ventrina.app';
         const protocol = url.protocol;
-
-        if (pathname === '/admin' || pathname.startsWith('/admin/')) {
-            const adminUrl = new URL(pathname, `${protocol}//${mainDomain}`);
-            adminUrl.search = url.search;
-            adminUrl.searchParams.set('tenant', tenant.id);
-            return Response.redirect(adminUrl.toString(), 302);
-        }
-
-        if (pathname === '/login') {
-            const loginUrl = new URL('/login', `${protocol}//${mainDomain}`);
-            loginUrl.search = url.search;
-            loginUrl.searchParams.set('tenant', tenant.id);
-            return Response.redirect(loginUrl.toString(), 302);
-        }
 
         if (pathname === '/register') {
             return Response.redirect(`${protocol}//${mainDomain}/register`, 302);
