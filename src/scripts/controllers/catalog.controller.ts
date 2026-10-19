@@ -121,6 +121,13 @@ export class CatalogController {
     }
 
     public getProductUrl(productId: string): string {
+        const hostname = window.location.hostname.toLowerCase();
+        const isSubdomain = hostname.endsWith('.ventrina.app') || 
+                            hostname.endsWith('.localhost') || 
+                            (this.config.tenantId && hostname.startsWith(`${this.config.tenantId.toLowerCase()}.`));
+        if (isSubdomain) {
+            return `/p/${encodeURIComponent(productId)}`;
+        }
         if (this.config.tenantId) {
             return `/${this.config.tenantId}/p/${encodeURIComponent(productId)}`;
         }

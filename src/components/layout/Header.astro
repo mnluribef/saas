@@ -11,7 +11,7 @@ const { config = defaultStoreConfig } = Astro.props;
 const { business, nav } = config;
 
 // Separar enlaces de contenido y enlaces de acción (login / registro)
-const isSaas = business.logoTextPrimary === 'VENTRINA' || business.logoTextPrimary === 'VENDLY' || business.name === 'Ventrina' || business.name === 'Vendly';
+const isSaas = business.logoTextPrimary === 'VENTRINA' || business.name === 'Ventrina';
 const mainLinks = nav.links.filter(l => l.href !== '/login' && l.href !== '/register');
 const loginLink = nav.links.find(l => l.href === '/login') || (isSaas ? { label: 'Iniciar Sesión', href: '/login' } : null);
 const ctaLink = nav.links.find(l => l.href === '/register') || (isSaas ? { label: 'Crear Tienda', href: '/register' } : null);

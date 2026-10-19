@@ -9,9 +9,14 @@
         const tenantNameInput = document.getElementById('tenantName') as HTMLInputElement;
         const tenantSlugInput = document.getElementById('tenantSlug') as HTMLInputElement;
         const dynamicBg = document.getElementById('dynamic-bg') as HTMLElement;
-        const domainPrefixEl = document.getElementById('domain-prefix');
-        if (domainPrefixEl) {
-            domainPrefixEl.textContent = `${window.location.host}/`;
+        const domainSuffixEl = document.getElementById('domain-suffix');
+        if (domainSuffixEl) {
+            const host = window.location.host;
+            if (host.includes('localhost')) {
+                domainSuffixEl.textContent = `.localhost${window.location.port ? ':' + window.location.port : ''}`;
+            } else {
+                domainSuffixEl.textContent = '.ventrina.app';
+            }
         }
         
         // Cambio dinámico de fondo
@@ -135,10 +140,13 @@
                     successState.classList.remove('hidden');
                     
                     const protocol = window.location.protocol;
-                    const baseDomain = window.location.host;
+                    let storeUrl = `https://${data.tenantId}.ventrina.app`;
+                    if (window.location.hostname === 'localhost' || window.location.hostname.endsWith('.localhost')) {
+                        const port = window.location.port ? `:${window.location.port}` : '';
+                        storeUrl = `${protocol}//${data.tenantId}.localhost${port}`;
+                    }
                     
-                    const storeUrl = `${protocol}//${baseDomain}/${data.tenantId}`;
-                    const adminUrl = `${protocol}//${baseDomain}/admin?tenant=${data.tenantId}`;
+                    const adminUrl = `${protocol}//${window.location.host}/admin?tenant=${data.tenantId}`;
                     (document.getElementById('store-url') as HTMLAnchorElement).href = storeUrl;
                     (document.getElementById('admin-url') as HTMLAnchorElement).href = adminUrl;
                 } else {

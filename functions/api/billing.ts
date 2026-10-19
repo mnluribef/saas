@@ -43,7 +43,7 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
                 name: tenant.name,
                 plan: planDetails.name,
                 status: tenant.active === 1 ? 'Activo' : 'Suspendido',
-                domain: tenant.domain || `${new URL(request.url).host}/${tenant.id}`
+                domain: tenant.domain || `${tenant.id}.ventrina.app`
             },
             usage: {
                 products: {

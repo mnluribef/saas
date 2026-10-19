@@ -163,6 +163,16 @@ function showToast(message: string, type: string = 'success') {
     }, 4000);
 }
 
+function getStoreUrl(tenantId: string, customDomain?: string | null): string {
+    if (customDomain) return `https://${customDomain}`;
+    const hostname = window.location.hostname;
+    if (hostname === 'localhost' || hostname.endsWith('.localhost')) {
+        const port = window.location.port ? `:${window.location.port}` : '';
+        return `${window.location.protocol}//${tenantId}.localhost${port}`;
+    }
+    return `https://${tenantId}.ventrina.app`;
+}
+
 // --- VERIFICACIÓN DE SESIÓN INICIAL ---
 async function checkSession() {
     try {
@@ -181,10 +191,11 @@ async function checkSession() {
             currentAdmin = data.username;
             window.currentUserRole = data.role || 'viewer';
             if (data.tenantId && data.tenantId !== 'demo') {
+                const storeUrl = getStoreUrl(data.tenantId);
                 const headerBtn = document.getElementById('btn-header-view-store') as HTMLAnchorElement | null;
-                if (headerBtn) headerBtn.href = `/${data.tenantId}`;
+                if (headerBtn) headerBtn.href = storeUrl;
                 const previewBtn = document.getElementById('btn-preview-store') as HTMLAnchorElement | null;
-                if (previewBtn) previewBtn.href = `/${data.tenantId}`;
+                if (previewBtn) previewBtn.href = storeUrl;
             }
             showDashboard();
         } else {
@@ -4194,7 +4205,7 @@ function updateStoreUrls(tenant: any) {
     if (tenant?.domain) {
         url = `https://${tenant.domain}`;
     } else if (tenantId && tenantId !== 'demo') {
-        url = `/${tenantId}`;
+        url = getStoreUrl(tenantId, tenant?.domain);
     }
 
     const previewBtn = document.getElementById('btn-preview-store') as HTMLAnchorElement | null;

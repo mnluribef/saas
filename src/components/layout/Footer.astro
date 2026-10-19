@@ -10,7 +10,7 @@ export interface Props {
 const { config = defaultStoreConfig } = Astro.props;
 const { business, contact, nav } = config;
 const currentYear = new Date().getFullYear();
-const isSaas = business.logoTextPrimary === 'VENTRINA' || business.logoTextPrimary === 'VENDLY' || business.name === 'Ventrina' || business.name === 'Vendly';
+const isSaas = business.logoTextPrimary === 'VENTRINA' || business.name === 'Ventrina';
 ---
 
 <footer>

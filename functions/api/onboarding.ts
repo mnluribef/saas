@@ -92,7 +92,7 @@ function getStarterProducts(tenantId: string, template: string) {
             return [
                 {
                     id: `${tenantId}-burger-especial`,
-                    name: 'Hamburguesa Especial Vendly',
+                    name: 'Hamburguesa Especial Ventrina',
                     description: 'Carne 100% res 180g, queso cheddar fundido, tocineta crujiente, lechuga y salsa especial de la casa.',
                     price: 8.50,
                     category: 'principales',
@@ -331,12 +331,18 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
             }
         }
 
-        const host = new URL(request.url).host;
-        const cookie = `ventrina_session=${sessionToken}; Path=/; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Strict`;
+        const url = new URL(request.url);
+        const isVentrinaApp = url.hostname.endsWith('ventrina.app');
+        const domainAttr = isVentrinaApp ? '; Domain=.ventrina.app' : '';
+        const cookie = `ventrina_session=${sessionToken}; Path=/${domainAttr}; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Lax`;
+
+        const storeHost = isVentrinaApp 
+            ? `${tenantSlug}.ventrina.app` 
+            : (url.hostname.includes('localhost') ? `${tenantSlug}.localhost:${url.port || '8788'}` : `${tenantSlug}.${url.host}`);
 
         return jsonResponse({
             success: true,
-            message: `¡Registro exitoso! Tu tienda está disponible en ${host}/${tenantSlug}`,
+            message: `¡Registro exitoso! Tu tienda está disponible en https://${storeHost}`,
             tenantId: tenantSlug
         }, 201, { "Set-Cookie": cookie });
 

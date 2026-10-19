@@ -5,7 +5,6 @@ import type { D1Database, R2Bucket, KVNamespace } from '@cloudflare/workers-type
 export interface Env {
     DB: D1Database;
     ventrina?: D1Database;
-    vendly?: D1Database;
     STORAGE?: R2Bucket;
     BUCKET?: R2Bucket;
     KV?: KVNamespace;
@@ -20,6 +19,7 @@ export interface Env {
     PAYMENT_ID?: string;
     PAYMENT_BINANCE?: string;
     PAYMENT_ZELLE?: string;
+    ASSETS?: { fetch: typeof fetch };
 }
 
 export interface PagesContext<E = Env, P extends string = string> {

@@ -14,7 +14,7 @@ function resolveActiveTenantId(): string | undefined {
     const storeMetaEl = document.getElementById('catalog-store-meta');
     if (storeMetaEl?.dataset.tenant) return storeMetaEl.dataset.tenant;
 
-    const metaTag = document.querySelector('meta[name="ventrina-tenant"], meta[name="vendly-tenant"]');
+    const metaTag = document.querySelector('meta[name="ventrina-tenant"]');
     const metaTenant = metaTag?.getAttribute('content');
     if (metaTenant) return metaTenant;
 

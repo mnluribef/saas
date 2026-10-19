@@ -13,9 +13,9 @@ function getTokenFromRequest(request: Request): string | null {
         return authHeader.substring(7);
     }
 
-    // 2. Intentar desde las Cookies: ventrina_session=<token> (o vendly_session)
+    // 2. Intentar desde las Cookies: ventrina_session=<token>
     const cookies = parseCookies(request.headers.get("Cookie"));
-    return cookies["ventrina_session"] || cookies["vendly_session"] || null;
+    return cookies["ventrina_session"] || null;
 }
 
 interface SessionRow {
@@ -58,7 +58,7 @@ export function validateCsrf(request: Request, tenantDomain?: string | null): bo
 
         if (sourceHost === requestHost) return true;
         if (sourceHost === 'localhost' || sourceHost === '127.0.0.1') return true;
-        if (sourceHost === 'ventrina.app' || sourceHost.endsWith('.ventrina.app') || sourceHost === 'vendly.app' || sourceHost.endsWith('.vendly.app')) return true;
+        if (sourceHost === 'ventrina.app' || sourceHost.endsWith('.ventrina.app')) return true;
         if (sourceHost.endsWith('.pages.dev')) return true;
         if (tenantDomain && (sourceHost === tenantDomain.toLowerCase() || sourceHost.endsWith(`.${tenantDomain.toLowerCase()}`))) return true;
 

@@ -67,10 +67,11 @@ import '../styles/register.css';
                     <div class="form-group">
                         <label for="tenantSlug">Dirección Web de tu Tienda</label>
                         <div class="input-group">
-                            <span class="addon prefix" id="domain-prefix">ventrina.app/</span>
-                            <input type="text" id="tenantSlug" name="tenantSlug" class="with-prefix" required placeholder="mitienda" pattern="^[a-z0-9\-]+$" title="Solo minúsculas, números y guiones">
+                            <span class="addon prefix" id="domain-prefix">https://</span>
+                            <input type="text" id="tenantSlug" name="tenantSlug" class="with-prefix with-suffix" required placeholder="mitienda" pattern="^[a-z0-9\-]+$" title="Solo minúsculas, números y guiones">
+                            <span class="addon suffix" id="domain-suffix">.ventrina.app</span>
                         </div>
-                        <small>Esta será la URL directa de tu tienda. No podrás cambiarla luego.</small>
+                        <small>Esta será la URL directa de tu tienda (ej: mitienda.ventrina.app). No podrás cambiarla luego.</small>
                     </div>
 
                     <div class="form-group">

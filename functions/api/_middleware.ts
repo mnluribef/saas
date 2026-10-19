@@ -5,10 +5,9 @@ import type { PagesContext } from '../types';
 const ALLOWED_ORIGIN_PATTERNS = [
     /^https:\/\/ventrina\.app$/,
     /^https:\/\/[a-z0-9-]+\.ventrina\.app$/,
-    /^https:\/\/vendly\.app$/,
-    /^https:\/\/[a-z0-9-]+\.vendly\.app$/,
     /^https:\/\/[a-z0-9-]+\.pages\.dev$/,
     /^http:\/\/localhost(:\d+)?$/,
+    /^http:\/\/[a-z0-9-]+\.localhost(:\d+)?$/,
     /^http:\/\/127\.0\.0\.1(:\d+)?$/
 ];
 

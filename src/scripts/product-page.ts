@@ -50,7 +50,7 @@ class ProductPageController {
         const url = new URL(window.location.href);
 
         // 1. Tenant
-        const metaTenant = document.querySelector('meta[name="ventrina-tenant"], meta[name="vendly-tenant"]')?.getAttribute('content');
+        const metaTenant = document.querySelector('meta[name="ventrina-tenant"]')?.getAttribute('content');
         const qsTenant = url.searchParams.get('tenant') || url.searchParams.get('store');
         this.tenantId = metaTenant || qsTenant || null;
 
@@ -58,6 +58,19 @@ class ProductPageController {
         const pathParts = url.pathname.split('/').filter(Boolean);
         if (pathParts.length >= 3 && pathParts[1] === 'p') {
             this.tenantId = pathParts[0];
+        }
+
+        const hostname = url.hostname.toLowerCase();
+        if (hostname.endsWith('.ventrina.app')) {
+            const sub = hostname.replace('.ventrina.app', '').split('.').pop();
+            if (sub && sub !== 'www' && sub !== 'admin' && sub !== 'api') {
+                this.tenantId = this.tenantId || sub;
+            }
+        } else if (hostname.endsWith('.localhost')) {
+            const sub = hostname.replace('.localhost', '').split('.').pop();
+            if (sub && sub !== 'www') {
+                this.tenantId = this.tenantId || sub;
+            }
         }
 
         // 2. Config meta
@@ -84,7 +97,7 @@ class ProductPageController {
         const url = new URL(window.location.href);
 
         // 1. Meta tag
-        const metaId = document.querySelector('meta[name="ventrina-product-id"], meta[name="vendly-product-id"]')?.getAttribute('content');
+        const metaId = document.querySelector('meta[name="ventrina-product-id"]')?.getAttribute('content');
         if (metaId) return metaId;
 
         // 2. Query param
@@ -124,7 +137,8 @@ class ProductPageController {
         const backText = document.getElementById('pdp-back-text');
         const errBackBtn = document.getElementById('pdp-error-back-btn') as HTMLAnchorElement | null;
 
-        const storeUrl = this.tenantId ? `/${this.tenantId}` : `/demo/${this.template}`;
+        const isSubdomain = window.location.hostname.endsWith('.ventrina.app') || window.location.hostname.endsWith('.localhost');
+        const storeUrl = isSubdomain ? '/' : (this.tenantId ? `/${this.tenantId}` : `/demo/${this.template}`);
         const storeLabel = this.businessName ? `Volver a ${this.businessName}` : 'Volver a la Tienda';
 
         if (backLink) {
@@ -500,7 +514,10 @@ class ProductPageController {
                     : '/assets/favicon.svg';
                 const price = p.price > 0 ? `$${parseFloat(String(p.price)).toFixed(2)}` : 'A consultar';
                 const bcvPrice = p.price > 0 ? `(~Bs. ${(p.price * currentRate).toFixed(2)})` : '';
-                const pUrl = this.tenantId ? `/${this.tenantId}/p/${encodeURIComponent(p.id)}` : `/producto?id=${encodeURIComponent(p.id)}&template=${this.template}`;
+                const isSubdomain = window.location.hostname.endsWith('.ventrina.app') || window.location.hostname.endsWith('.localhost');
+                const pUrl = isSubdomain
+                    ? `/p/${encodeURIComponent(p.id)}`
+                    : (this.tenantId ? `/${this.tenantId}/p/${encodeURIComponent(p.id)}` : `/producto?id=${encodeURIComponent(p.id)}&template=${this.template}`);
 
                 return `
                     <div class="product-card">

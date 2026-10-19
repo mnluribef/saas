@@ -111,7 +111,7 @@ let masterToken = sessionStorage.getItem('sa_token') || '';
 
             return `
                 <tr>
-                    <td><a href="/${t.id}" target="_blank">/${t.id}</a></td>
+                    <td><a href="https://${t.id}.ventrina.app" target="_blank">${t.id}.ventrina.app</a></td>
                     <td>${t.name} <br><small class="text-muted">${t.template}</small></td>
                     <td>
                         <select class="action-select" data-action="change-plan" data-tenant-id="${t.id}">

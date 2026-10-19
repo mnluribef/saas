@@ -4,17 +4,83 @@ import type { D1Database, KVNamespace } from '@cloudflare/workers-types';
 import { parseCookies } from './_helpers';
 import type { TenantResolution, TenantRow } from '../types';
 
-export const SYSTEM_PATHS = new Set(['api', 'admin', 'login', 'register', 'precios', 'superadmin', 'demo', 'assets', '_astro']);
+export const SYSTEM_PATHS = new Set([
+    '',
+    'api',
+    'admin',
+    'login',
+    'register',
+    'precios',
+    'superadmin',
+    'demo',
+    'assets',
+    '_astro',
+    'p',
+    's',
+    'producto',
+    'robots.txt',
+    'sitemap.xml',
+    'llms.txt',
+    'ai-catalog.json',
+    'favicon.ico',
+    'favicon.svg',
+    '.well-known'
+]);
 export const SYSTEM_SUBDOMAINS = new Set(['www', 'app', 'admin', 'demo', 'api']);
+
+/**
+ * Extrae el subdominio de un hostname, ignorando subdominios de sistema y dominios raíz
+ */
+export function extractSubdomain(host: string): string | null {
+    const cleanHost = host.split(':')[0].toLowerCase();
+
+    // 1. *.ventrina.app -> parts: [subdomain, 'ventrina', 'app']
+    if (cleanHost.endsWith('.ventrina.app')) {
+        const prefix = cleanHost.slice(0, -'.ventrina.app'.length);
+        const parts = prefix.split('.');
+        const sub = parts[parts.length - 1];
+        return sub && !SYSTEM_SUBDOMAINS.has(sub) ? sub : null;
+    }
+
+    // 2. *.localhost -> parts: [subdomain, 'localhost']
+    if (cleanHost.endsWith('.localhost')) {
+        const prefix = cleanHost.slice(0, -'.localhost'.length);
+        const parts = prefix.split('.');
+        const sub = parts[parts.length - 1];
+        return sub && !SYSTEM_SUBDOMAINS.has(sub) ? sub : null;
+    }
+
+    // 3. *.pages.dev (ej: mitienda.ventrina.pages.dev)
+    if (cleanHost.endsWith('.pages.dev')) {
+        const prefix = cleanHost.slice(0, -'.pages.dev'.length);
+        const parts = prefix.split('.');
+        if (parts.length >= 2) {
+            const sub = parts[0];
+            return sub && !SYSTEM_SUBDOMAINS.has(sub) ? sub : null;
+        }
+        return null;
+    }
+
+    // 4. Fallback genérico para otros dominios con 3 o más partes
+    const parts = cleanHost.split('.');
+    if (parts.length >= 3) {
+        const sub = parts[0];
+        if (!SYSTEM_SUBDOMAINS.has(sub)) {
+            return sub;
+        }
+    }
+
+    return null;
+}
 
 /**
  * Resuelve el tenant_id desde:
  * 1. Header X-Tenant-Id (para testing/admin)
  * 2. Subdominio: fogon.ventrina.app → 'fogon'
- * 3. Path-based: ventrina.app/s/fogon → 'fogon'
- * 4. Custom domain: fogon.com → lookup en DB por domain
+ * 3. Custom domain: fogon.com → lookup en DB por domain
+ * 4. Path-based: ventrina.app/s/fogon o ventrina.app/fogon → 'fogon'
  * 5. Fallback: 'demo'
- * Incorpora capa de caché Cloudflare KV con TTL de 60 segundos (P-01).
+ * Incorpora capa de caché Cloudflare KV con TTL progresivo por plan (P-01).
  */
 export async function resolveTenant(request: Request, db: D1Database, kv?: KVNamespace): Promise<TenantResolution> {
     const url = new URL(request.url);
@@ -39,7 +105,7 @@ export async function resolveTenant(request: Request, db: D1Database, kv?: KVNam
 
     // 0.3 Cookie de Sesión
     const cookies = parseCookies(request.headers.get('Cookie'));
-    const sessionToken = cookies['ventrina_session'] || cookies['vendly_session'];
+    const sessionToken = cookies['ventrina_session'];
     if (sessionToken && db) {
         try {
             const now = Math.floor(Date.now() / 1000);
@@ -55,7 +121,20 @@ export async function resolveTenant(request: Request, db: D1Database, kv?: KVNam
         }
     }
 
-    // 1. Path-based directo en URL de la request: /s/{tenant_id} o /{tenant_id}
+    // 1. Subdominio: fogon.ventrina.app (o en local fogon.localhost)
+    const subdomain = extractSubdomain(host);
+    if (subdomain) {
+        const tenant = await getTenantByIdCached(db, subdomain, kv);
+        if (tenant) return { id: subdomain, tenant };
+    }
+
+    // 2. Custom domain lookup
+    if (!host.includes('ventrina') && !host.includes('localhost') && !host.includes('pages.dev')) {
+        const tenant = await getTenantByDomainCached(db, host, kv);
+        if (tenant) return { id: tenant.id, tenant };
+    }
+
+    // 3. Path-based directo en URL de la request (retrocompatibilidad): /s/{tenant_id} o /{tenant_id}
     const pathParts = url.pathname.split('/').filter(Boolean);
     if (pathParts.length > 0) {
         let candidate = pathParts[0].toLowerCase();
@@ -66,22 +145,6 @@ export async function resolveTenant(request: Request, db: D1Database, kv?: KVNam
             const tenant = await getTenantByIdCached(db, candidate, kv);
             if (tenant) return { id: candidate, tenant };
         }
-    }
-
-    // 2. Subdominio: fogon.ventrina.app (excluir subdominios del sistema)
-    const parts = host.split('.');
-    if (parts.length >= 3) {
-        const subdomain = parts[0].toLowerCase();
-        if (!SYSTEM_SUBDOMAINS.has(subdomain)) {
-            const tenant = await getTenantByIdCached(db, subdomain, kv);
-            if (tenant) return { id: subdomain, tenant };
-        }
-    }
-
-    // 3. Custom domain lookup
-    if (!host.includes('ventrina') && !host.includes('vendly') && !host.includes('localhost') && !host.includes('pages.dev')) {
-        const tenant = await getTenantByDomainCached(db, host, kv);
-        if (tenant) return { id: tenant.id, tenant };
     }
 
     // 4. Fallback al tenant demo

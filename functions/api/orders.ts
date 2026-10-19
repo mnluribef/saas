@@ -172,8 +172,7 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'X-Ventrina-Signature': `sha256=${signature}`,
-                            'X-Vendly-Signature': `sha256=${signature}`
+                            'X-Ventrina-Signature': `sha256=${signature}`
                         },
                         body: webhookPayload
                     }).catch(e => console.error("Error en webhook de nuevo pedido:", e))
@@ -261,8 +260,7 @@ export const onRequestPut: PagesHandler<Env> = async (context) => {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'X-Ventrina-Signature': `sha256=${signature}`,
-                            'X-Vendly-Signature': `sha256=${signature}`
+                            'X-Ventrina-Signature': `sha256=${signature}`
                         },
                         body: webhookPayload
                     }).catch(e => console.error("Error en webhook de cambio de estado:", e))

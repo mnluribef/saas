@@ -49,6 +49,34 @@ describe('Tenant Resolution Logic (_tenant.ts)', () => {
         expect(SYSTEM_SUBDOMAINS.has('fogon')).toBe(false);
     });
 
+    it('extracts subdomains correctly from various host formats', async () => {
+        const { extractSubdomain } = await import('../functions/api/_tenant');
+        expect(extractSubdomain('mitienda.ventrina.app')).toBe('mitienda');
+        expect(extractSubdomain('fogon.ventrina.app:443')).toBe('fogon');
+        expect(extractSubdomain('ventrina.app')).toBeNull();
+        expect(extractSubdomain('www.ventrina.app')).toBeNull();
+        expect(extractSubdomain('admin.ventrina.app')).toBeNull();
+        expect(extractSubdomain('api.ventrina.app')).toBeNull();
+        expect(extractSubdomain('mitienda.localhost:8788')).toBe('mitienda');
+        expect(extractSubdomain('localhost:8788')).toBeNull();
+        expect(extractSubdomain('mitienda.ventrina.pages.dev')).toBe('mitienda');
+        expect(extractSubdomain('ventrina.pages.dev')).toBeNull();
+    });
+
+    it('resolves tenant via subdomain', async () => {
+        const req = new Request('https://fogon.ventrina.app/api/products');
+        const result = await resolveTenant(req, mockDb);
+        expect(result.id).toBe('fogon');
+        expect(result.tenant).toBeDefined();
+    });
+
+    it('resolves tenant via localhost subdomain', async () => {
+        const req = new Request('http://fogon.localhost:8788/api/products');
+        const result = await resolveTenant(req, mockDb);
+        expect(result.id).toBe('fogon');
+        expect(result.tenant).toBeDefined();
+    });
+
     it('falls back to demo when no tenant information is found', async () => {
         const emptyDb = {
             prepare: vi.fn().mockReturnValue({
