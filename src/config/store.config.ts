@@ -2,6 +2,7 @@
 // Configuración centralizada de la tienda (Single Source of Truth)
 
 import type { StoreConfig, StoreTemplateType } from '../types/store.types';
+import { getPalette } from './palettes';
 import { restaurantTemplate } from './templates/restaurant';
 import { hardwareTemplate } from './templates/hardware';
 import { autopartsTemplate } from './templates/autoparts';
@@ -37,12 +38,17 @@ export function createStoreConfig(
   const base = storeTemplates[templateType] || storeTemplates.restaurant;
   if (!customOverrides) return base;
 
+  const paletteId = customOverrides.palette || customOverrides.theme?.palette;
+  const paletteDef = getPalette(paletteId);
+  const paletteTheme = paletteDef?.theme || {};
+
   return {
     ...base,
     ...customOverrides,
+    palette: paletteId || base.palette,
     business: { ...base.business, ...(customOverrides.business || {}) },
     contact: { ...base.contact, ...(customOverrides.contact || {}) },
-    theme: { ...base.theme, ...(customOverrides.theme || {}) },
+    theme: { ...base.theme, ...paletteTheme, ...(customOverrides.theme || {}) },
     landing: {
       ...base.landing,
       ...(customOverrides.landing || {}),

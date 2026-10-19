@@ -17,8 +17,93 @@ const ICON_SVGS: Record<string, string> = {
 
 const STAR_SVG = '<svg viewBox="0 0 24 24" class="star-svg"><path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z"/></svg>';
 
+import { getPalette } from '../../config/palettes';
+
+export function applyPalette(paletteId?: string | null): void {
+    if (!paletteId || paletteId === 'default') return;
+    const pal = getPalette(paletteId);
+    if (!pal || !pal.theme) return;
+
+    const t = pal.theme;
+    const root = document.documentElement;
+
+    if (t.primaryColor) {
+        root.style.setProperty('--theme-primary', t.primaryColor);
+        root.style.setProperty('--rose', t.primaryColor);
+    }
+    if (t.primaryHover) {
+        root.style.setProperty('--theme-primary-hover', t.primaryHover);
+        root.style.setProperty('--rose-deep', t.primaryHover);
+    }
+    if (t.primaryDeep) {
+        root.style.setProperty('--theme-primary-deep', t.primaryDeep);
+        root.style.setProperty('--rose-dark', t.primaryDeep);
+    }
+    if (t.primaryLight) {
+        root.style.setProperty('--theme-primary-light', t.primaryLight);
+        root.style.setProperty('--rose-light', t.primaryLight);
+    }
+    if (t.primaryPale) {
+        root.style.setProperty('--theme-primary-pale', t.primaryPale);
+        root.style.setProperty('--rose-pale', t.primaryPale);
+    }
+
+    if (t.accentColor) {
+        root.style.setProperty('--theme-accent', t.accentColor);
+        root.style.setProperty('--gold', t.accentColor);
+    }
+    if (t.accentHover) {
+        root.style.setProperty('--theme-accent-hover', t.accentHover);
+        root.style.setProperty('--gold-deep', t.accentHover);
+    }
+    if (t.accentLight) {
+        root.style.setProperty('--theme-accent-light', t.accentLight);
+        root.style.setProperty('--gold-light', t.accentLight);
+    }
+    if (t.accentPale) {
+        root.style.setProperty('--theme-accent-pale', t.accentPale);
+        root.style.setProperty('--gold-pale', t.accentPale);
+    }
+
+    if (t.bgPage) {
+        root.style.setProperty('--theme-bg-page', t.bgPage);
+        root.style.setProperty('--cream', t.bgPage);
+    }
+    if (t.bgSection) {
+        root.style.setProperty('--theme-bg-section', t.bgSection);
+        root.style.setProperty('--blush', t.bgSection);
+    }
+    if (t.bgCard) root.style.setProperty('--theme-bg-card', t.bgCard);
+
+    if (t.borderSubtle) root.style.setProperty('--theme-border-subtle', t.borderSubtle);
+    if (t.borderFocus) root.style.setProperty('--theme-border-focus', t.borderFocus);
+
+    if (t.textHeading) {
+        root.style.setProperty('--theme-text-heading', t.textHeading);
+        root.style.setProperty('--brown-dark', t.textHeading);
+    }
+    if (t.textBody) {
+        root.style.setProperty('--theme-text-body', t.textBody);
+        root.style.setProperty('--brown-body', t.textBody);
+    }
+    if (t.textMuted) {
+        root.style.setProperty('--theme-text-muted', t.textMuted);
+        root.style.setProperty('--brown-light', t.textMuted);
+    }
+    if (t.textLight) root.style.setProperty('--theme-text-light', t.textLight);
+
+    if (t.shadowColor) root.style.setProperty('--theme-shadow', `0 12px 36px ${t.shadowColor}`);
+    if (t.badgeBg) root.style.setProperty('--theme-badge-bg', t.badgeBg);
+    if (t.badgeBorder) root.style.setProperty('--theme-badge-border', t.badgeBorder);
+    if (t.badgeText) root.style.setProperty('--theme-badge-text', t.badgeText);
+}
+
 export function syncStoreWithSettings(cfg: any): void {
     if (!cfg) return;
+
+    if (cfg.palette || cfg.theme?.palette) {
+        applyPalette(cfg.palette || cfg.theme?.palette);
+    }
 
     const b = cfg.business || {};
     const c = cfg.contact || {};

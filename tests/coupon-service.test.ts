@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
-import { applyCoupon } from '../functions/api/_coupon-service';
+import { applyCoupon } from '../functions/api/_services/coupon.service';
 import type { D1Database } from '@cloudflare/workers-types';
 
-describe('Coupon Service (_coupon-service.ts)', () => {
+describe('Coupon Service (coupon.service.ts)', () => {
     it('returns empty result when code is empty', async () => {
         const dummyDb = {} as D1Database;
         const result = await applyCoupon(dummyDb, 'demo', '', 50);

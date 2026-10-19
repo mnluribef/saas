@@ -733,5 +733,198 @@
     color: var(--success);
 }
 
+/* ==========================================================================
+   PALETAS DE COLORES PRECONFIGURADAS
+   ========================================================================== */
+
+.settings-palette-section {
+    margin-top: 1.5rem;
+}
+
+.palette-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+    gap: 1.25rem;
+    margin-top: 1.25rem;
+}
+
+.palette-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 2px solid var(--border-color);
+    border-radius: 14px;
+    padding: 1.25rem;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    font-family: inherit;
+    color: inherit;
+}
+
+.palette-card:hover {
+    border-color: rgba(249, 115, 22, 0.4);
+    background: rgba(255, 255, 255, 0.05);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.palette-card:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+.palette-card.active {
+    border-color: var(--primary);
+    background: rgba(249, 115, 22, 0.07);
+    box-shadow: 0 0 0 1px var(--primary), 0 8px 24px rgba(249, 115, 22, 0.15);
+}
+
+.palette-card-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.palette-name {
+    font-family: "Outfit", sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--white);
+    line-height: 1.3;
+}
+
+.palette-category-badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 0.2rem 0.55rem;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.palette-card.active .palette-category-badge {
+    background: rgba(249, 115, 22, 0.2);
+    color: var(--primary);
+}
+
+.palette-swatches-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.4rem;
+    height: 48px;
+    border-radius: 8px;
+    overflow: hidden;
+    padding: 3px;
+    background: rgba(0, 0, 0, 0.25);
+}
+
+.palette-swatch-box {
+    border-radius: 6px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 0.25rem;
+    position: relative;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.swatch-label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    opacity: 0.85;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.palette-description {
+    font-size: 0.8rem;
+    line-height: 1.45;
+    color: var(--text-secondary);
+    margin: 0;
+    flex-grow: 1;
+}
+
+.palette-selected-indicator {
+    display: none;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.palette-selected-indicator svg {
+    width: 14px;
+    height: 14px;
+    stroke-width: 3;
+}
+
+.palette-card.active .palette-selected-indicator {
+    display: inline-flex;
+}
+
+/* Colores de Swatches por cada Paleta */
+/* 1. Default */
+.palette-card[data-palette-id="default"] .swatch-primary { background-color: #E25822; color: #ffffff; }
+.palette-card[data-palette-id="default"] .swatch-accent { background-color: #D4AF37; color: #1C0A00; }
+.palette-card[data-palette-id="default"] .swatch-bg { background-color: #FFFDF9; color: #1C0A00; }
+.palette-card[data-palette-id="default"] .swatch-text { background-color: #1C0A00; color: #ffffff; }
+
+/* 2. Amber Gold */
+.palette-card[data-palette-id="amber-gold"] .swatch-primary { background-color: #D97706; color: #ffffff; }
+.palette-card[data-palette-id="amber-gold"] .swatch-accent { background-color: #F59E0B; color: #451A03; }
+.palette-card[data-palette-id="amber-gold"] .swatch-bg { background-color: #FFFDF7; color: #451A03; }
+.palette-card[data-palette-id="amber-gold"] .swatch-text { background-color: #451A03; color: #ffffff; }
+
+/* 3. Emerald Mint */
+.palette-card[data-palette-id="emerald-mint"] .swatch-primary { background-color: #059669; color: #ffffff; }
+.palette-card[data-palette-id="emerald-mint"] .swatch-accent { background-color: #10B981; color: #064E3B; }
+.palette-card[data-palette-id="emerald-mint"] .swatch-bg { background-color: #FBFDFB; color: #064E3B; }
+.palette-card[data-palette-id="emerald-mint"] .swatch-text { background-color: #064E3B; color: #ffffff; }
+
+/* 4. Sapphire Ocean */
+.palette-card[data-palette-id="sapphire-ocean"] .swatch-primary { background-color: #2563EB; color: #ffffff; }
+.palette-card[data-palette-id="sapphire-ocean"] .swatch-accent { background-color: #06B6D4; color: #0F172A; }
+.palette-card[data-palette-id="sapphire-ocean"] .swatch-bg { background-color: #F8FAFC; color: #0F172A; }
+.palette-card[data-palette-id="sapphire-ocean"] .swatch-text { background-color: #0F172A; color: #ffffff; }
+
+/* 5. Cyber Violet */
+.palette-card[data-palette-id="cyber-violet"] .swatch-primary { background-color: #7C3AED; color: #ffffff; }
+.palette-card[data-palette-id="cyber-violet"] .swatch-accent { background-color: #EC4899; color: #ffffff; }
+.palette-card[data-palette-id="cyber-violet"] .swatch-bg { background-color: #FAFAFE; color: #2E1065; }
+.palette-card[data-palette-id="cyber-violet"] .swatch-text { background-color: #2E1065; color: #ffffff; }
+
+/* 6. Crimson Ruby */
+.palette-card[data-palette-id="crimson-ruby"] .swatch-primary { background-color: #DC2626; color: #ffffff; }
+.palette-card[data-palette-id="crimson-ruby"] .swatch-accent { background-color: #EA580C; color: #ffffff; }
+.palette-card[data-palette-id="crimson-ruby"] .swatch-bg { background-color: #FFFBFB; color: #450A0A; }
+.palette-card[data-palette-id="crimson-ruby"] .swatch-text { background-color: #450A0A; color: #ffffff; }
+
+/* 7. Rose Boutique */
+.palette-card[data-palette-id="rose-boutique"] .swatch-primary { background-color: #E11D48; color: #ffffff; }
+.palette-card[data-palette-id="rose-boutique"] .swatch-accent { background-color: #D97706; color: #ffffff; }
+.palette-card[data-palette-id="rose-boutique"] .swatch-bg { background-color: #FFFDFD; color: #4C0519; }
+.palette-card[data-palette-id="rose-boutique"] .swatch-text { background-color: #4C0519; color: #ffffff; }
+
+/* 8. Obsidian Slate */
+.palette-card[data-palette-id="obsidian-slate"] .swatch-primary { background-color: #0F172A; color: #ffffff; }
+.palette-card[data-palette-id="obsidian-slate"] .swatch-accent { background-color: #3B82F6; color: #ffffff; }
+.palette-card[data-palette-id="obsidian-slate"] .swatch-bg { background-color: #F8FAFC; color: #020617; }
+.palette-card[data-palette-id="obsidian-slate"] .swatch-text { background-color: #020617; color: #ffffff; }
+
+/* 9. Terracotta Sunset */
+.palette-card[data-palette-id="terracotta-sunset"] .swatch-primary { background-color: #C2410C; color: #ffffff; }
+.palette-card[data-palette-id="terracotta-sunset"] .swatch-accent { background-color: #D97706; color: #ffffff; }
+.palette-card[data-palette-id="terracotta-sunset"] .swatch-bg { background-color: #FFFCF9; color: #431407; }
+.palette-card[data-palette-id="terracotta-sunset"] .swatch-text { background-color: #431407; color: #ffffff; }
+
 
 

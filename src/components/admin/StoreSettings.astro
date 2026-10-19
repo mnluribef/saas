@@ -1,6 +1,8 @@
 ---
 // src/components/admin/StoreSettings.astro
 // Panel de Personalización y Edición Integral de la Tienda (Textos, Imágenes y Contenido)
+import { getAllPalettes } from '../../config/palettes';
+const palettes = getAllPalettes();
 ---
 <div id="section-settings" class="dashboard-section">
     <div class="content-card settings-container">
@@ -153,6 +155,58 @@
                                 <span class="hint">Vista previa mostrada al compartir el enlace en WhatsApp o redes</span>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Sección de Paletas de Colores Preconfiguradas -->
+                <div class="settings-card settings-palette-section">
+                    <div class="settings-card-header">
+                        <div>
+                            <h3 class="settings-card-title">
+                                <i data-lucide="palette"></i> Paleta de Colores de la Tienda
+                            </h3>
+                            <p class="settings-card-subtitle">
+                                Personaliza la armonía cromática de tu tienda seleccionando una paleta preconfigurada. Aplica independientemente de la plantilla comercial seleccionada.
+                            </p>
+                        </div>
+                    </div>
+
+                    <input type="hidden" id="cfg-store-palette" value="default" />
+
+                    <div class="palette-picker-grid" id="palette-picker-grid" role="radiogroup" aria-label="Paletas de colores de la tienda">
+                        {palettes.map((pal) => (
+                            <button
+                                type="button"
+                                class={`palette-card ${pal.id === 'default' ? 'active' : ''}`}
+                                data-palette-id={pal.id}
+                                role="radio"
+                                aria-checked={pal.id === 'default' ? "true" : "false"}
+                            >
+                                <div class="palette-card-header-row">
+                                    <span class="palette-name">{pal.name}</span>
+                                    <span class="palette-category-badge">{pal.category}</span>
+                                </div>
+                                <div class="palette-swatches-strip" aria-hidden="true">
+                                    <div class="palette-swatch-box swatch-primary">
+                                        <span class="swatch-label">Principal</span>
+                                    </div>
+                                    <div class="palette-swatch-box swatch-accent">
+                                        <span class="swatch-label">Acento</span>
+                                    </div>
+                                    <div class="palette-swatch-box swatch-bg">
+                                        <span class="swatch-label">Fondo</span>
+                                    </div>
+                                    <div class="palette-swatch-box swatch-text">
+                                        <span class="swatch-label">Texto</span>
+                                    </div>
+                                </div>
+                                <p class="palette-description">{pal.description}</p>
+                                <div class="palette-selected-indicator">
+                                    <i data-lucide="check"></i>
+                                    <span>Seleccionada</span>
+                                </div>
+                            </button>
+                        ))}
                     </div>
                 </div>
             </div>

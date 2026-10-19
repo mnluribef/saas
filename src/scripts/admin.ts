@@ -4216,6 +4216,9 @@ function updateStoreUrls(tenant: any) {
         setVal('cfg-logo-secondary', b.logoTextSecondary || '');
         setVal('cfg-store-prefix', cfg.storePrefix || '');
 
+        const activePalette = cfg.palette || cfg.theme?.palette || 'default';
+        selectPalette(activePalette);
+
         setVal('cfg-logo-image', b.logoImage || '');
         setPreviewImage(document.getElementById('preview-logo-img'), document.getElementById('placeholder-logo'), b.logoImage);
 
@@ -4329,8 +4332,36 @@ function updateStoreUrls(tenant: any) {
 
 // Inicialización de escuchadores de eventos
 initSettingsTabs();
+initPalettePicker();
 setupSingleImageUploader('btn-upload-logo', 'file-logo-image', 'cfg-logo-image', 'preview-logo-img', 'placeholder-logo');
 setupSingleImageUploader('btn-upload-og', 'file-og-image', 'cfg-og-image', 'preview-og-img', 'placeholder-og');
+
+// Selector de Paletas de Colores Preconfiguradas
+function selectPalette(paletteId: string) {
+    const input = document.getElementById('cfg-store-palette') as HTMLInputElement | null;
+    if (input) input.value = paletteId;
+
+    const cards = document.querySelectorAll('.palette-card');
+    cards.forEach(card => {
+        const id = card.getAttribute('data-palette-id');
+        const isActive = id === paletteId;
+        card.classList.toggle('active', isActive);
+        card.setAttribute('aria-checked', isActive ? 'true' : 'false');
+    });
+}
+
+function initPalettePicker() {
+    const grid = document.getElementById('palette-picker-grid');
+    if (!grid) return;
+
+    grid.addEventListener('click', (e) => {
+        const card = (e.target as HTMLElement).closest('.palette-card') as HTMLElement | null;
+        if (!card) return;
+
+        const paletteId = card.getAttribute('data-palette-id') || 'default';
+        selectPalette(paletteId);
+    });
+}
 
 // Botones de agregar elementos dinámicos
 const btnAddSlide = document.getElementById('btn-add-hero-slide');
@@ -4573,6 +4604,7 @@ if (storeSettingsForm) {
                 emptyCartEmoji: $val('cfg-empty-cart-emoji') || undefined,
             },
             template: ($val('cfg-store-template') as any) || undefined,
+            palette: $val('cfg-store-palette') || 'default',
             storePrefix: $val('cfg-store-prefix').toUpperCase() || undefined
         };
 

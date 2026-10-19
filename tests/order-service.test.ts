@@ -4,9 +4,9 @@ import {
     calculateOrderTotals,
     generateWebhookSignature,
     verifyTurnstile
-} from '../functions/api/_order-service';
+} from '../functions/api/_services/order.service';
 
-describe('Order Service Logic (_order-service.ts)', () => {
+describe('Order Service Logic (order.service.ts)', () => {
     it('generates order IDs with expected format and prefix', () => {
         const id1 = generateOrderId('VEN');
         const id2 = generateOrderId('FOG');

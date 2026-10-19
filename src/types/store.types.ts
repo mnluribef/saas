@@ -112,6 +112,9 @@ export interface StoreThemeConfig {
   badgeBorder?: string;
   badgeText?: string;
 
+  // Paleta de colores preconfigurada seleccionada
+  palette?: string;
+
   // Fuentes
   fontHeading: string;
   fontBody: string;
@@ -237,5 +240,6 @@ export interface StoreConfig {
   payment?: StorePaymentConfig;
   labels?: StoreLabelsConfig;
   categories?: CategoryDefinition[];
+  palette?: string;
 }
 

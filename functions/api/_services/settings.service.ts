@@ -184,6 +184,7 @@ export class SettingsService {
             ...(updates.labels || {})
         };
 
+        const palette = updates.palette !== undefined ? (updates.palette || 'default') : (currentConfig.palette || 'default');
         const storePrefix = updates.storePrefix || currentConfig.storePrefix || tenantRow?.name?.slice(0, 3).toUpperCase() || 'VEN';
 
         const namespaceUpdates: Array<{ namespace: string; dataJson: string }> = [
@@ -191,7 +192,8 @@ export class SettingsService {
             { namespace: 'contact', dataJson: JSON.stringify(mergedContact) },
             { namespace: 'landing', dataJson: JSON.stringify(mergedLanding) },
             { namespace: 'payment', dataJson: JSON.stringify(mergedPayment) },
-            { namespace: 'labels', dataJson: JSON.stringify(mergedLabels) }
+            { namespace: 'labels', dataJson: JSON.stringify(mergedLabels) },
+            { namespace: 'theme', dataJson: JSON.stringify({ palette }) }
         ];
 
         const fullConsolidatedConfig = {
@@ -200,6 +202,7 @@ export class SettingsService {
             landing: mergedLanding,
             payment: mergedPayment,
             labels: mergedLabels,
+            palette,
             storePrefix
         };
 

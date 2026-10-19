@@ -156,6 +156,7 @@ export const storeSettingsSchema = z.object({
     payment: paymentSettingsSchema.optional(),
     labels: labelsSettingsSchema.optional(),
     template: z.enum(['restaurant', 'hardware', 'fashion', 'tech', 'autoparts']).optional(),
+    palette: z.string().max(50).optional().nullable(),
     storePrefix: z.string().min(2).max(6).regex(/^[A-Z0-9]+$/).optional(),
 });
 
