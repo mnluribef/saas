@@ -15,14 +15,14 @@ export default {
             return fetch(request);
         }
 
-        // 2. Cambiar destino hacia el dominio principal activo en Cloudflare Pages
-        url.hostname = 'ventrina.app';
+        // 2. Destino real de Cloudflare Pages
+        url.hostname = 'vendly-20w.pages.dev';
 
-        // 3. Clonar y preparar cabeceras para preservar la identidad del subdominio
+        // 3. Clonar y preparar cabeceras para que el middleware identifique la tienda
         const newHeaders = new Headers(request.headers);
         newHeaders.set('X-Forwarded-Host', originalHost);
         newHeaders.set('X-Forwarded-Proto', url.protocol.replace(':', '') || 'https');
-        newHeaders.set('Host', 'ventrina.app');
+        newHeaders.set('Host', 'vendly-20w.pages.dev');
 
         // 4. Construir la petición modificada preservando método y body (excepto GET/HEAD)
         const hasBody = request.method !== 'GET' && request.method !== 'HEAD';
