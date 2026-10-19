@@ -14,9 +14,9 @@ export const restaurantTemplate: StoreConfig = {
     ogImage: '/assets/og_image.webp',
   },
   contact: {
-    whatsapp: '584124756191',
-    whatsappDisplay: '+58 412-4756191',
-    phone: '+58 412-4756191',
+    whatsapp: '584241230046',
+    whatsappDisplay: '+58 424-1230046',
+    phone: '+58 424-1230046',
     email: 'contacto@fogon.ve',
     instagram: 'https://www.instagram.com/fogon.ve/',
     instagramHandle: '@fogon.ve',
@@ -85,7 +85,7 @@ export const restaurantTemplate: StoreConfig = {
       ctaPrimaryText: 'Ver Menú',
       ctaPrimaryLink: '#menu',
       ctaSecondaryText: 'Hacer Pedido',
-      ctaSecondaryLink: 'https://wa.me/584124756191',
+      ctaSecondaryLink: 'https://wa.me/584241230046',
       slides: [
         { image: '/assets/hero_main.webp', alt: 'Pabellón Criollo FOGÓN' },
         { image: '/assets/hero_grill.webp', alt: 'Parrilla y Carnes al Fogón' },

@@ -14,9 +14,9 @@ export const hardwareTemplate: StoreConfig = {
     ogImage: '/assets/og_image_hardware.webp',
   },
   contact: {
-    whatsapp: '584124756191',
-    whatsappDisplay: '+58 412-4756191',
-    phone: '+58 412-4756191',
+    whatsapp: '584241230046',
+    whatsappDisplay: '+58 424-1230046',
+    phone: '+58 424-1230046',
     email: 'ventas@ferromax.com',
     instagram: 'https://www.instagram.com/ferromax.ve/',
     instagramHandle: '@ferromax.ve',
@@ -85,7 +85,7 @@ export const hardwareTemplate: StoreConfig = {
       ctaPrimaryText: 'Ver Catálogo',
       ctaPrimaryLink: '#menu',
       ctaSecondaryText: 'Cotizar por WhatsApp',
-      ctaSecondaryLink: 'https://wa.me/584124756191',
+      ctaSecondaryLink: 'https://wa.me/584241230046',
       slides: [
         { image: '/assets/product_taladro.webp', alt: 'Herramientas eléctricas y manuales' },
         { image: '/assets/product_esmeril.webp', alt: 'Materiales para construcción y herrería' },

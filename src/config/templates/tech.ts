@@ -14,9 +14,9 @@ export const techTemplate: StoreConfig = {
     ogImage: '/assets/og_image_tech.webp',
   },
   contact: {
-    whatsapp: '584124756191',
-    whatsappDisplay: '+58 412-4756191',
-    phone: '+58 412-4756191',
+    whatsapp: '584241230046',
+    whatsappDisplay: '+58 424-1230046',
+    phone: '+58 424-1230046',
     email: 'soporte@nexustech.com',
     instagram: 'https://www.instagram.com/nexustech.ve/',
     instagramHandle: '@nexustech.ve',
@@ -85,7 +85,7 @@ export const techTemplate: StoreConfig = {
       ctaPrimaryText: 'Explorar Equipos',
       ctaPrimaryLink: '#menu',
       ctaSecondaryText: 'Consultar Stock',
-      ctaSecondaryLink: 'https://wa.me/584124756191',
+      ctaSecondaryLink: 'https://wa.me/584241230046',
       slides: [
         { image: '/assets/product_laptop.webp', alt: 'Laptops y computadoras de alto rendimiento' },
         { image: '/assets/product_monitor.webp', alt: 'Monitores gamer y pantallas profesionales' },

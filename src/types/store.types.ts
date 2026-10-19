@@ -51,8 +51,8 @@ export interface StoreBusinessConfig {
 }
 
 export interface StoreContactConfig {
-  whatsapp: string; // Formato internacional sin +, ej: 584124756191
-  whatsappDisplay?: string; // Ej: +58 412-4756191
+  whatsapp: string; // Formato internacional sin +, ej: 584241230046
+  whatsappDisplay?: string; // Ej: +58 424-1230046
   phone?: string;
   email?: string;
   instagram?: string;

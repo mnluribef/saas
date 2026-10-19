@@ -40,7 +40,7 @@ export function createStoreConfig(): StoreMetaConfig {
     const storeMetaEl = document.getElementById('catalog-store-meta');
     const tenantId = resolveActiveTenantId();
     return {
-        whatsappNumber: storeMetaEl?.dataset.whatsapp || '584124756191',
+        whatsappNumber: storeMetaEl?.dataset.whatsapp || '584241230046',
         defaultCurrency: storeMetaEl?.dataset.currency || '$',
         businessName: storeMetaEl?.dataset.businessName || 'Ventrina Store',
         template: storeMetaEl?.dataset.template || 'restaurant',
@@ -68,7 +68,7 @@ export function initCatalogApp(): void {
         try {
             const preloadedConfig = JSON.parse(injectedConfigEl.textContent);
             syncStoreWithSettings(preloadedConfig);
-        } catch (_) {}
+        } catch (_) { }
     }
 
     // Services (Dependency Inversion & Single Responsibility)

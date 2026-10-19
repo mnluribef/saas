@@ -13,7 +13,7 @@ class ProductPageController {
     private cartService: CartService;
     private tenantId: string | null = null;
     private template = 'restaurant';
-    private whatsappNumber = '584124756191';
+    private whatsappNumber = '584241230046';
     private businessName = 'Ventrina Store';
 
     constructor() {
@@ -76,7 +76,7 @@ class ProductPageController {
                 syncStoreWithSettings(config);
                 if (config.business?.name) this.businessName = config.business.name;
                 if (config.contact?.whatsapp) this.whatsappNumber = config.contact.whatsapp;
-            } catch {}
+            } catch { }
         }
     }
 
@@ -364,7 +364,7 @@ class ProductPageController {
                         url: shareUrl,
                     });
                     return;
-                } catch {}
+                } catch { }
             }
 
             try {
@@ -519,7 +519,7 @@ class ProductPageController {
             }).join('');
 
             relatedSection.classList.remove('store-meta-hidden');
-        } catch {}
+        } catch { }
     }
 }
 

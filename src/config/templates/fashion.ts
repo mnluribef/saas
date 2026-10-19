@@ -14,9 +14,9 @@ export const fashionTemplate: StoreConfig = {
     ogImage: '/assets/og_image_fashion.webp',
   },
   contact: {
-    whatsapp: '584124756191',
-    whatsappDisplay: '+58 412-4756191',
-    phone: '+58 412-4756191',
+    whatsapp: '584241230046',
+    whatsappDisplay: '+58 4241230046',
+    phone: '+58 4241230046',
     email: 'contacto@aurastudio.com',
     instagram: 'https://www.instagram.com/aurastudio.ve/',
     instagramHandle: '@aurastudio.ve',
@@ -85,7 +85,7 @@ export const fashionTemplate: StoreConfig = {
       ctaPrimaryText: 'Ver Colección',
       ctaPrimaryLink: '#menu',
       ctaSecondaryText: 'Consultar Tallas',
-      ctaSecondaryLink: 'https://wa.me/584124756191',
+      ctaSecondaryLink: 'https://wa.me/584241230046',
       slides: [
         { image: '/assets/product_vestido.webp', alt: 'Colección de temporada AURA' },
         { image: '/assets/product_blazer.webp', alt: 'Prendas urbanas y chic' },
