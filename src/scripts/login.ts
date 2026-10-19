@@ -13,7 +13,7 @@ form.addEventListener('submit', async (e) => {
     btn.disabled = true;
     btn.textContent = 'Verificando...';
 
-    const username = (document.getElementById('username') as HTMLInputElement).value.trim();
+    const email = (document.getElementById('email') as HTMLInputElement).value.trim();
     const password = (document.getElementById('password') as HTMLInputElement).value;
     const tenant = (document.getElementById('tenant') as HTMLInputElement)?.value.trim() || undefined;
 
@@ -21,7 +21,7 @@ form.addEventListener('submit', async (e) => {
         const res = await fetch('/api/auth', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password, tenant }),
+            body: JSON.stringify({ email, password, tenant }),
             credentials: 'include',
         });
         const data = await res.json() as { success: boolean; tenant?: string; error?: string };

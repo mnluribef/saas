@@ -11,14 +11,10 @@ export const onboardingSchema = z.object({
     tenantName: z.string().min(2, "El nombre del negocio es muy corto").max(100),
     tenantSlug: z.string().min(3).max(60).regex(/^[a-z0-9-]+$/, "El slug solo puede contener minúsculas, números y guiones."),
     template: z.enum(['restaurant', 'hardware', 'fashion', 'tech', 'autoparts']).default('restaurant'),
-    email: z.email("Formato de correo electrónico inválido").optional().nullable(),
-    username: z.string().max(100).optional().nullable(),
+    email: z.email("Formato de correo electrónico inválido"),
     password: strongPasswordSchema,
     whatsapp: z.string().max(30).optional().nullable(),
     acceptTerms: z.boolean().optional(),
-}).refine(data => Boolean(data.email || data.username), {
-    message: "Debes ingresar un correo electrónico válido",
-    path: ["email"]
 });
 
 export type OnboardingInput = z.infer<typeof onboardingSchema>;
@@ -266,9 +262,8 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
             return jsonResponse({ error: 'Datos inválidos', details: result.error.issues }, 400);
         }
 
-        const { tenantName, tenantSlug, template, username, password, email, whatsapp } = result.data;
-        const effectiveEmail = (email || username || '').toLowerCase().trim();
-        const effectiveUsername = effectiveEmail;
+        const { tenantName, tenantSlug, template, password, email, whatsapp } = result.data;
+        const cleanEmail = email.toLowerCase().trim();
         
         // Normalizar número de WhatsApp a formato internacional (E.164 Venezuela / LatAm)
         let cleanWhatsApp = whatsapp ? whatsapp.replace(/[^0-9]/g, '') : null;
@@ -280,7 +275,7 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
             }
         }
 
-        // 2. Verificar disponibilidad de Slug y Correo/Usuario
+        // 2. Verificar disponibilidad de Slug y Correo
         const existingTenant = await db.prepare('SELECT id FROM tenants WHERE id = ?').bind(tenantSlug).first();
         if (existingTenant) {
             return jsonResponse({ error: `El subdominio o dirección "${tenantSlug}" ya está en uso.` }, 400);
@@ -289,13 +284,13 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
         const hasEmailCol = await ensureUsersEmailColumn(db);
 
         const existingUser = hasEmailCol
-            ? await db.prepare('SELECT id FROM users WHERE (username = ? OR email = ?) AND tenant_id = ?')
-                .bind(effectiveUsername, effectiveEmail, tenantSlug).first()
+            ? await db.prepare('SELECT id FROM users WHERE email = ? AND tenant_id = ?')
+                .bind(cleanEmail, tenantSlug).first()
             : await db.prepare('SELECT id FROM users WHERE username = ? AND tenant_id = ?')
-                .bind(effectiveUsername, tenantSlug).first();
+                .bind(cleanEmail, tenantSlug).first();
 
         if (existingUser) {
-            return jsonResponse({ error: `El correo "${effectiveEmail}" ya está registrado en esta tienda.` }, 400);
+            return jsonResponse({ error: `El correo "${cleanEmail}" ya está registrado en esta tienda.` }, 400);
         }
 
         // 3. Hash de contraseña directo con PBKDF2 + salt (Fix #5)
@@ -319,10 +314,10 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
         const userInsertStmt = hasEmailCol
             ? db.prepare(
                 'INSERT INTO users (username, email, password_hash, password_salt, role, tenant_id) VALUES (?, ?, ?, ?, ?, ?)'
-            ).bind(effectiveUsername, effectiveEmail, finalHash, salt, 'admin', tenantSlug)
+            ).bind(cleanEmail, cleanEmail, finalHash, salt, 'admin', tenantSlug)
             : db.prepare(
                 'INSERT INTO users (username, password_hash, password_salt, role, tenant_id) VALUES (?, ?, ?, ?, ?)'
-            ).bind(effectiveUsername, finalHash, salt, 'admin', tenantSlug);
+            ).bind(cleanEmail, finalHash, salt, 'admin', tenantSlug);
 
         const statements: D1PreparedStatement[] = [
             db.prepare(
@@ -341,7 +336,7 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
 
             db.prepare(
                 'INSERT INTO sessions (token, username, expires_at, tenant_id) VALUES (?, ?, ?, ?)'
-            ).bind(sessionToken, effectiveUsername, expiresAt, tenantSlug)
+            ).bind(sessionToken, cleanEmail, expiresAt, tenantSlug)
         ];
 
         // 5. Sembrar productos iniciales de ejemplo para eliminar el efecto de "tablero vacío"
@@ -365,7 +360,7 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
                 context.waitUntil(fetch(env.WEBHOOK_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ event: 'new_tenant_registered', tenantSlug, tenantName, username, email })
+                    body: JSON.stringify({ event: 'new_tenant_registered', tenantSlug, tenantName, email: cleanEmail })
                 }));
             } catch (e) {
                 console.error("Webhook error:", e);

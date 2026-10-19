@@ -18,7 +18,7 @@ export const strongPasswordSchema = z.string()
     .refine(p => !COMMON_PASSWORDS.has(p.toLowerCase()), "La contraseña es demasiado común o predecible");
 
 export const loginSchema = z.object({
-    username: z.string().min(1, "Usuario requerido"),
+    email: z.email("Correo electrónico válido requerido"),
     password: z.string().min(1, "Contraseña requerida"),
     tenant: z.string().max(60).optional(),
     tenantId: z.string().max(60).optional(),
@@ -46,6 +46,7 @@ interface RateLimitRow {
 interface UserDbRow {
     id: string;
     username: string;
+    email: string;
     password_hash: string;
     password_salt: string | null;
     role: string;
@@ -134,7 +135,7 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
 
     if (user) {
         return jsonResponse(
-            { authenticated: true, username: user.username, role: user.role, tenantId: user.tenant_id },
+            { authenticated: true, email: user.email, username: user.email, role: user.role, tenantId: user.tenant_id },
             200,
             { "Cache-Control": "no-store, no-cache, must-revalidate" }
         );
@@ -168,10 +169,10 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
         const parseResult = loginSchema.safeParse(bodyJson);
 
         if (!parseResult.success) {
-            return jsonResponse({ error: "Usuario y contraseña requeridos.", details: parseResult.error.issues }, 400);
+            return jsonResponse({ error: "Correo electrónico y contraseña requeridos.", details: parseResult.error.issues }, 400);
         }
         
-        const { username, password, tenant: bodyTenant, tenantId: bodyTenantId } = parseResult.data;
+        const { email, password, tenant: bodyTenant, tenantId: bodyTenantId } = parseResult.data;
 
         // Resolución Inteligente del Tenant
         const urlTenant = new URL(request.url).searchParams.get('tenant');
@@ -182,40 +183,25 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
             effectiveTenantId = resolvedId;
         }
 
-        const cleanIdentifier = username.toLowerCase().trim();
+        const cleanEmail = email.toLowerCase().trim();
 
-        // Si aún no está especificado y cae en 'demo', buscar si este username/email pertenece a un único tenant
+        // Si aún no está especificado y cae en 'demo', buscar si este email pertenece a un único tenant
         if (effectiveTenantId === 'demo') {
             try {
                 const userMatches = await db.prepare(
-                    "SELECT tenant_id FROM users WHERE username = ? OR email = ?"
-                ).bind(cleanIdentifier, cleanIdentifier).all<{ tenant_id: string }>();
+                    "SELECT tenant_id FROM users WHERE email = ?"
+                ).bind(cleanEmail).all<{ tenant_id: string }>();
 
                 if (userMatches?.results && userMatches.results.length === 1) {
                     effectiveTenantId = userMatches.results[0].tenant_id;
                 }
-            } catch {
-                const userMatches = await db.prepare(
-                    "SELECT tenant_id FROM users WHERE username = ?"
-                ).bind(cleanIdentifier).all<{ tenant_id: string }>();
-
-                if (userMatches?.results && userMatches.results.length === 1) {
-                    effectiveTenantId = userMatches.results[0].tenant_id;
-                }
-            }
+            } catch {}
         }
 
-        // Buscar usuario en base de datos (scoped al tenant resuelto) por username o email
-        let user: UserDbRow | null = null;
-        try {
-            user = await db.prepare("SELECT * FROM users WHERE (username = ? OR email = ?) AND tenant_id = ?")
-                .bind(cleanIdentifier, cleanIdentifier, effectiveTenantId)
-                .first<UserDbRow>();
-        } catch {
-            user = await db.prepare("SELECT * FROM users WHERE username = ? AND tenant_id = ?")
-                .bind(cleanIdentifier, effectiveTenantId)
-                .first<UserDbRow>();
-        }
+        // Buscar usuario en base de datos (scoped al tenant resuelto) por email exclusivamente
+        const user = await db.prepare("SELECT * FROM users WHERE email = ? AND tenant_id = ?")
+            .bind(cleanEmail, effectiveTenantId)
+            .first<UserDbRow>();
 
         if (!user) {
             await recordFailedAttempt(db, clientIp);
@@ -277,7 +263,7 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
         const uaHash = (await hashSHA256(clientUa)).slice(0, 32);
 
         await db.prepare("INSERT INTO sessions (token, username, expires_at, tenant_id, ip, ua_hash) VALUES (?, ?, ?, ?, ?, ?)")
-            .bind(sessionToken, user.username, expiresAt, effectiveTenantId, clientIp, uaHash)
+            .bind(sessionToken, user.email || cleanEmail, expiresAt, effectiveTenantId, clientIp, uaHash)
             .run();
 
         const url = new URL(request.url);
@@ -286,7 +272,7 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
         const cookie = `ventrina_session=${sessionToken}; Path=/${domainAttr}; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Lax`;
         
         return jsonResponse(
-            { success: true, username: user.username, role: user.role, tenantId: effectiveTenantId, tenant: effectiveTenantId },
+            { success: true, email: user.email || cleanEmail, username: user.email || cleanEmail, role: user.role, tenantId: effectiveTenantId, tenant: effectiveTenantId },
             200,
             { "Set-Cookie": cookie }
         );
@@ -327,9 +313,10 @@ export const onRequestPut: PagesHandler<Env> = async (context) => {
 
         const { currentPassword, newPassword } = parseResult.data;
 
-        // Búsqueda estrictamente aislada por username Y tenant_id
-        const user = await db.prepare("SELECT * FROM users WHERE username = ? AND tenant_id = ?")
-            .bind(sessionUser.username.toLowerCase().trim(), sessionUser.tenant_id)
+        // Búsqueda estrictamente aislada por email Y tenant_id
+        const userEmail = (sessionUser.email || sessionUser.username).toLowerCase().trim();
+        const user = await db.prepare("SELECT * FROM users WHERE (email = ? OR username = ?) AND tenant_id = ?")
+            .bind(userEmail, userEmail, sessionUser.tenant_id)
             .first<UserDbRow>();
 
         if (!user) {

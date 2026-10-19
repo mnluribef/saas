@@ -121,7 +121,6 @@
                 tenantSlug: formData.get('tenantSlug'),
                 template: formData.get('template'),
                 email: emailValue,
-                username: emailValue,
                 password: passwordStr,
                 whatsapp: formData.get('whatsapp') || null,
                 acceptTerms: true

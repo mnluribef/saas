@@ -76,6 +76,7 @@ export interface TenantRow {
 }
 
 export interface UserSession {
+    email: string;
     username: string;
     role: string;
     tenant_id: string;

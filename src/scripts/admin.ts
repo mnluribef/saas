@@ -188,7 +188,7 @@ async function checkSession() {
         const data = (await res.json()) as any;
 
         if (data.authenticated) {
-            currentAdmin = data.username;
+            currentAdmin = data.email || data.username;
             window.currentUserRole = data.role || 'viewer';
             if (data.tenantId && data.tenantId !== 'demo') {
                 const storeUrl = getStoreUrl(data.tenantId);
@@ -253,11 +253,11 @@ if (loginForm) {
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        const username = $val('login-username');
+        const email = $val('login-email') || $val('login-username');
         const passwordPlain = ($input('login-password')?.value || '');
         const submitBtn = $btn('login-btn-submit');
 
-        if (!username || !passwordPlain) return;
+        if (!email || !passwordPlain) return;
 
         if (submitBtn) {
             submitBtn.disabled = true;
@@ -271,13 +271,13 @@ if (loginForm) {
             const res = await fetch('/api/auth', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password: passwordPlain, tenant: urlTenant })
+                body: JSON.stringify({ email, password: passwordPlain, tenant: urlTenant })
             });
 
             const data = (await res.json()) as any;
 
             if (res.ok && data.success) {
-                currentAdmin = data.username;
+                currentAdmin = data.email || data.username;
                 showToast(`¡Bienvenido de vuelta, ${currentAdmin}! 👋`, 'success');
                 showDashboard();
                 loginForm.reset();

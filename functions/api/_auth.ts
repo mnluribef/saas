@@ -22,6 +22,7 @@ interface SessionRow {
     username: string;
     role: string;
     tenant_id: string;
+    email?: string | null;
     ip?: string | null;
     ua_hash?: string | null;
     expires_at?: number;
@@ -83,9 +84,9 @@ export async function verifySession(
 
     try {
         const now = Math.floor(Date.now() / 1000);
-        let query = `SELECT s.username, s.tenant_id, s.ip, s.ua_hash, s.expires_at, u.role 
+        let query = `SELECT s.username, s.tenant_id, s.ip, s.ua_hash, s.expires_at, u.role, u.email 
              FROM sessions s
-             JOIN users u ON s.username = u.username AND s.tenant_id = u.tenant_id
+             JOIN users u ON (s.username = u.email OR s.username = u.username) AND s.tenant_id = u.tenant_id
              WHERE s.token = ? AND s.expires_at > ?`;
         const bindings: (string | number)[] = [token, now];
 
@@ -102,7 +103,7 @@ export async function verifySession(
                 const clientUa = request.headers.get('User-Agent') || 'unknown';
                 const currentUaHash = (await hashSHA256(clientUa)).slice(0, 32);
                 if (session.ua_hash !== currentUaHash) {
-                    console.warn(`[Security] Posible secuestro de sesión detectado para usuario ${session.username}`);
+                    console.warn(`[Security] Posible secuestro de sesión detectado para usuario ${session.email || session.username}`);
                     return null;
                 }
             }
@@ -116,8 +117,10 @@ export async function verifySession(
                     .catch(() => {});
             }
 
+            const effectiveEmail = session.email || session.username;
             return {
-                username: session.username,
+                email: effectiveEmail,
+                username: effectiveEmail,
                 role: session.role,
                 tenant_id: session.tenant_id,
             };

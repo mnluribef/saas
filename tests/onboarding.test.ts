@@ -20,7 +20,7 @@ describe('Onboarding & Account Registration (onboarding.ts)', () => {
             expect(result.success).toBe(true);
         });
 
-        it('accepts legacy registration with username for backwards compatibility', () => {
+        it('rejects registration with username instead of email (no backwards compatibility)', () => {
             const legacyData = {
                 tenantName: 'Mi Tienda Express',
                 tenantSlug: 'mitienda',
@@ -30,10 +30,10 @@ describe('Onboarding & Account Registration (onboarding.ts)', () => {
                 acceptTerms: true
             };
             const result = onboardingSchema.safeParse(legacyData);
-            expect(result.success).toBe(true);
+            expect(result.success).toBe(false);
         });
 
-        it('rejects registration without email and without username', () => {
+        it('rejects registration without email', () => {
             const invalidData = {
                 tenantName: 'Mi Tienda Express',
                 tenantSlug: 'mitienda',
@@ -43,9 +43,6 @@ describe('Onboarding & Account Registration (onboarding.ts)', () => {
             };
             const result = onboardingSchema.safeParse(invalidData);
             expect(result.success).toBe(false);
-            if (!result.success) {
-                expect(result.error.issues[0].message).toContain('correo');
-            }
         });
 
         it('rejects invalid email formats', () => {

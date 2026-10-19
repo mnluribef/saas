@@ -39,9 +39,9 @@ export const openApiSpec = {
                         "application/json": {
                             schema: {
                                 type: "object",
-                                required: ["username", "password"],
+                                required: ["email", "password"],
                                 properties: {
-                                    username: { type: "string" },
+                                    email: { type: "string", format: "email" },
                                     password: { type: "string" },
                                     tenant: { type: "string" }
                                 }
@@ -197,7 +197,7 @@ export const openApiSpec = {
                 tags: ["Usuarios"],
                 parameters: [
                     { name: "id", in: "query", schema: { type: "integer" } },
-                    { name: "username", in: "query", schema: { type: "string" } }
+                    { name: "email", in: "query", schema: { type: "string" } }
                 ],
                 responses: {
                     "200": { description: "Usuario eliminado" }

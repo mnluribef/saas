@@ -8,9 +8,8 @@ import { strongPasswordSchema } from "./auth";
 import type { Env, PagesHandler } from '../types';
 
 export const createUserSchema = z.object({
-    username: z.string().min(3, "El usuario debe tener al menos 3 caracteres").max(50),
+    email: z.email("Correo electrónico válido requerido"),
     password: strongPasswordSchema,
-    email: z.email("Correo electrónico inválido").optional().nullable(),
     role: z.enum(['admin', 'staff']).default('staff')
 });
 
@@ -75,16 +74,16 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
             return jsonResponse({ error: "Datos de usuario inválidos.", details: parseResult.error.issues }, 400);
         }
 
-        const { username, password, email, role } = parseResult.data;
-        const normalizedUsername = username.trim().toLowerCase();
+        const { email, password, role } = parseResult.data;
+        const normalizedEmail = email.trim().toLowerCase();
 
         // Verificar si el usuario ya existe en este tenant
         const existing = await db.prepare(
-            "SELECT id FROM users WHERE tenant_id = ? AND username = ?"
-        ).bind(tenantId, normalizedUsername).first();
+            "SELECT id FROM users WHERE tenant_id = ? AND email = ?"
+        ).bind(tenantId, normalizedEmail).first();
 
         if (existing) {
-            return jsonResponse({ error: `El nombre de usuario "${normalizedUsername}" ya está en uso en esta tienda.` }, 409);
+            return jsonResponse({ error: `El correo "${normalizedEmail}" ya está en uso en esta tienda.` }, 409);
         }
 
         // Hasheo seguro PBKDF2
@@ -93,11 +92,11 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
 
         await db.prepare(
             "INSERT INTO users (username, email, password_hash, password_salt, role, tenant_id) VALUES (?, ?, ?, ?, ?, ?)"
-        ).bind(normalizedUsername, email || null, hash, salt, role, tenantId).run();
+        ).bind(normalizedEmail, normalizedEmail, hash, salt, role, tenantId).run();
 
         return jsonResponse({
             success: true,
-            message: `Usuario "${normalizedUsername}" creado con rol "${role}".`
+            message: `Usuario "${normalizedEmail}" creado con rol "${role}".`
         }, 201);
 
     } catch (err) {
@@ -124,19 +123,19 @@ export const onRequestDelete: PagesHandler<Env> = async (context) => {
 
     try {
         const url = new URL(request.url);
-        const targetUsername = url.searchParams.get("username")?.trim().toLowerCase();
+        const targetEmail = (url.searchParams.get("email") || url.searchParams.get("username"))?.trim().toLowerCase();
         const targetId = url.searchParams.get("id");
 
-        if (!targetUsername && !targetId) {
-            return jsonResponse({ error: "Debe especificar el id o username del usuario a eliminar." }, 400);
+        if (!targetEmail && !targetId) {
+            return jsonResponse({ error: "Debe especificar el id o correo electrónico del usuario a eliminar." }, 400);
         }
 
         // Buscar al usuario
         let targetUser: UserListRow | null = null;
         if (targetId) {
             targetUser = await db.prepare("SELECT * FROM users WHERE id = ? AND tenant_id = ?").bind(targetId, tenantId).first<UserListRow>();
-        } else if (targetUsername) {
-            targetUser = await db.prepare("SELECT * FROM users WHERE username = ? AND tenant_id = ?").bind(targetUsername, tenantId).first<UserListRow>();
+        } else if (targetEmail) {
+            targetUser = await db.prepare("SELECT * FROM users WHERE (email = ? OR username = ?) AND tenant_id = ?").bind(targetEmail, targetEmail, tenantId).first<UserListRow>();
         }
 
         if (!targetUser) {
@@ -144,7 +143,9 @@ export const onRequestDelete: PagesHandler<Env> = async (context) => {
         }
 
         // Impedir que un admin se elimine a sí mismo
-        if (targetUser.username.toLowerCase() === currentUser.username.toLowerCase()) {
+        const currentIdentifier = (currentUser.email || currentUser.username).toLowerCase();
+        const targetIdentifier = (targetUser.email || targetUser.username).toLowerCase();
+        if (targetIdentifier === currentIdentifier) {
             return jsonResponse({ error: "No puedes eliminar tu propia cuenta de usuario activa." }, 400);
         }
 
@@ -161,13 +162,13 @@ export const onRequestDelete: PagesHandler<Env> = async (context) => {
 
         // Eliminar sesiones activas del usuario y luego el usuario
         await db.batch([
-            db.prepare("DELETE FROM sessions WHERE username = ? AND tenant_id = ?").bind(targetUser.username, tenantId),
+            db.prepare("DELETE FROM sessions WHERE (username = ? OR username = ?) AND tenant_id = ?").bind(targetUser.username, targetUser.email || targetUser.username, tenantId),
             db.prepare("DELETE FROM users WHERE id = ? AND tenant_id = ?").bind(targetUser.id, tenantId)
         ]);
 
         return jsonResponse({
             success: true,
-            message: `Usuario "${targetUser.username}" eliminado exitosamente.`
+            message: `Usuario "${targetUser.email || targetUser.username}" eliminado exitosamente.`
         });
 
     } catch (err) {
