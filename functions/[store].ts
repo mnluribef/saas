@@ -41,7 +41,8 @@ export const onRequest: PagesHandler<Env, 'store'> = async (context) => {
 
         // 3. Redirigir permanentemente (301) al subdominio del tenant
         const url = new URL(request.url);
-        const host = url.hostname.toLowerCase();
+        const rawHost = request.headers.get('x-forwarded-host') || url.hostname;
+        const host = rawHost.split(':')[0].toLowerCase();
         const isLocal = host.includes('localhost');
         const targetHost = isLocal
             ? `${tenant.id}.localhost${url.port ? ':' + url.port : ''}`

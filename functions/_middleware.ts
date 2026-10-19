@@ -9,7 +9,8 @@ import type { Env, PagesContext } from './types';
 export const onRequest = async (context: PagesContext<Env>): Promise<Response> => {
     const { request, env, next } = context;
     const url = new URL(request.url);
-    const host = url.hostname.toLowerCase();
+    const rawHost = request.headers.get('x-forwarded-host') || url.hostname;
+    const host = rawHost.split(':')[0].toLowerCase();
     const pathname = url.pathname;
 
     // 1. Descartar archivos estáticos del sistema y bundles compilados

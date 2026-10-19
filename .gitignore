@@ -13,3 +13,17 @@
 node_modules/
 dist/
 .DS_Store
+.agents/rules/scope.md
+.astro/dev.json
+.astro/dev.log
+.astro/preview.json
+.astro/preview.log
+.env.example
+.kiro/steering/product.md
+.kiro/steering/structure.md
+.kiro/steering/tech.md
+.astro/dev.json
+.astro/dev.log
+.astro/preview.json
+.astro/preview.log
+.env.example

@@ -368,13 +368,14 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
         }
 
         const url = new URL(request.url);
-        const isVentrinaApp = url.hostname.endsWith('ventrina.app');
+        const host = (request.headers.get('x-forwarded-host') || url.hostname).toLowerCase();
+        const isVentrinaApp = host.endsWith('ventrina.app');
         const domainAttr = isVentrinaApp ? '; Domain=.ventrina.app' : '';
         const cookie = `ventrina_session=${sessionToken}; Path=/${domainAttr}; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Lax`;
 
         const storeHost = isVentrinaApp 
             ? `${tenantSlug}.ventrina.app` 
-            : (url.hostname.includes('localhost') ? `${tenantSlug}.localhost:${url.port || '8788'}` : `${tenantSlug}.${url.host}`);
+            : (host.includes('localhost') ? `${tenantSlug}.localhost:${url.port || '8788'}` : `${tenantSlug}.${host}`);
 
         return jsonResponse({
             success: true,

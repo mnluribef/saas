@@ -84,7 +84,8 @@ export function extractSubdomain(host: string): string | null {
  */
 export async function resolveTenant(request: Request, db: D1Database, kv?: KVNamespace): Promise<TenantResolution> {
     const url = new URL(request.url);
-    const host = url.hostname; // e.g. 'fogon.ventrina.app' or 'fogon.com'
+    const rawHost = request.headers.get('x-forwarded-host') || url.hostname;
+    const host = rawHost.split(':')[0].toLowerCase();
 
     // 0.1 Query Parameter RESTRINGIDO: solo permitido cuando se acompaña de la clave de super-admin.
     const qsTenant = url.searchParams.get('tenant');

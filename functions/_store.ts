@@ -157,11 +157,15 @@ export async function renderProductPage(
         productImg = new URL(productImg.startsWith('/') ? productImg : `/${productImg}`, url.origin).toString();
     }
 
-    const host = url.hostname.toLowerCase();
+    const rawHost = request.headers.get('x-forwarded-host') || url.hostname;
+    const host = rawHost.split(':')[0].toLowerCase();
+    const effectiveOrigin = request.headers.get('x-forwarded-host') 
+        ? `${url.protocol}//${rawHost}` 
+        : url.origin;
     const isSubdomainOrCustom = host.endsWith('.ventrina.app') || host.endsWith('.localhost') || host === tenant.domain;
     const canonicalUrl = isSubdomainOrCustom
-        ? `${url.origin}/p/${encodeURIComponent(productId)}`
-        : `${url.origin}/${tenant.id}/p/${encodeURIComponent(productId)}`;
+        ? `${effectiveOrigin}/p/${encodeURIComponent(productId)}`
+        : `${effectiveOrigin}/${tenant.id}/p/${encodeURIComponent(productId)}`;
 
     const rewriter = new HTMLRewriter()
         .on('title', {

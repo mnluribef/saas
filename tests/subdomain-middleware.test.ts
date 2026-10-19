@@ -197,4 +197,28 @@ describe('Root Pages Middleware (_middleware.ts): Subdomains & Routing', () => {
         expect(html).toContain('Tienda no encontrada');
         expect(html).toContain('inexistente');
     });
+
+    it('renders the store catalogue when proxied by Cloudflare Worker with X-Forwarded-Host', async () => {
+        const next = vi.fn();
+        const context = {
+            request: new Request('https://ventrina.app/', {
+                headers: {
+                    'X-Forwarded-Host': 'fogon.ventrina.app',
+                    'X-Forwarded-Proto': 'https'
+                }
+            }),
+            env: createMockEnv(),
+            next,
+            params: {},
+            data: {},
+            waitUntil: vi.fn()
+        } as unknown as PagesContext<Env>;
+
+        const res = await onRequest(context);
+        expect(next).not.toHaveBeenCalled();
+        expect(res.status).toBe(200);
+        const html = await res.text();
+        expect(html).toContain('El Fogón Criollo | Catálogo & Pedidos');
+        expect(html).toContain('data-tenant="fogon"');
+    });
 });

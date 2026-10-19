@@ -267,7 +267,8 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
             .run();
 
         const url = new URL(request.url);
-        const isVentrinaApp = url.hostname.endsWith('ventrina.app');
+        const host = (request.headers.get('x-forwarded-host') || url.hostname).toLowerCase();
+        const isVentrinaApp = host.endsWith('ventrina.app');
         const domainAttr = isVentrinaApp ? '; Domain=.ventrina.app' : '';
         const cookie = `ventrina_session=${sessionToken}; Path=/${domainAttr}; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Lax`;
         
@@ -382,7 +383,8 @@ export const onRequestDelete: PagesHandler<Env> = async (context) => {
     }
 
     const url = new URL(request.url);
-    const isVentrinaApp = url.hostname.endsWith('ventrina.app');
+    const host = (request.headers.get('x-forwarded-host') || url.hostname).toLowerCase();
+    const isVentrinaApp = host.endsWith('ventrina.app');
     const domainAttr = isVentrinaApp ? '; Domain=.ventrina.app' : '';
     const clearVentrinaCookie = `ventrina_session=; Path=/${domainAttr}; Max-Age=0; HttpOnly; Secure; SameSite=Lax`;
 
