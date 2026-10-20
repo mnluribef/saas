@@ -939,10 +939,28 @@
 .palette-card[data-palette-id="nordic-sage"] .swatch-text { background-color: #14261C; color: #ffffff; }
 
 /* 12. Sunset Coral & Melocotón Tropical */
-.palette-card[data-palette-id="sunset-coral"] .swatch-primary { background-color: #F43F5E; color: #ffffff; }
-.palette-card[data-palette-id="sunset-coral"] .swatch-accent { background-color: #F59E0B; color: #ffffff; }
-.palette-card[data-palette-id="sunset-coral"] .swatch-bg { background-color: #FFFBFB; color: #4C0519; }
-.palette-card[data-palette-id="sunset-coral"] .swatch-text { background-color: #4C0519; color: #ffffff; }
+.palette-card[data-palette-id="sunset-coral"] .swatch-primary { background-color: #FF5E3A; color: #ffffff; }
+.palette-card[data-palette-id="sunset-coral"] .swatch-accent { background-color: #FFA534; color: #3D1508; }
+.palette-card[data-palette-id="sunset-coral"] .swatch-bg { background-color: #FFFDFB; color: #3D1508; }
+.palette-card[data-palette-id="sunset-coral"] .swatch-text { background-color: #3D1508; color: #ffffff; }
+
+/* 13. Aqua Lagoon & Turquesa Caribe */
+.palette-card[data-palette-id="aqua-lagoon"] .swatch-primary { background-color: #0D9488; color: #ffffff; }
+.palette-card[data-palette-id="aqua-lagoon"] .swatch-accent { background-color: #F59E0B; color: #042F2E; }
+.palette-card[data-palette-id="aqua-lagoon"] .swatch-bg { background-color: #F7FDFE; color: #042F2E; }
+.palette-card[data-palette-id="aqua-lagoon"] .swatch-text { background-color: #042F2E; color: #ffffff; }
+
+/* 14. Caramel Mocha & Café Espresso */
+.palette-card[data-palette-id="caramel-mocha"] .swatch-primary { background-color: #854D0E; color: #ffffff; }
+.palette-card[data-palette-id="caramel-mocha"] .swatch-accent { background-color: #D97706; color: #ffffff; }
+.palette-card[data-palette-id="caramel-mocha"] .swatch-bg { background-color: #FCF9F5; color: #2E1805; }
+.palette-card[data-palette-id="caramel-mocha"] .swatch-text { background-color: #2E1805; color: #ffffff; }
+
+/* 15. Cyber Lime & Neón Matrix */
+.palette-card[data-palette-id="cyber-lime"] .swatch-primary { background-color: #65A30D; color: #ffffff; }
+.palette-card[data-palette-id="cyber-lime"] .swatch-accent { background-color: #06B6D4; color: #0F1F0A; }
+.palette-card[data-palette-id="cyber-lime"] .swatch-bg { background-color: #FAFCFA; color: #0F1F0A; }
+.palette-card[data-palette-id="cyber-lime"] .swatch-text { background-color: #0F1F0A; color: #ffffff; }
 
 /* ==========================================================================
    SECCIÓN Y MODAL DE CÓDIGO QR DE LA TIENDA

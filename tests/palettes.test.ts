@@ -6,7 +6,7 @@ import { createStoreConfig } from '../src/config/store.config';
 describe('Color Palettes Engine (src/config/palettes.ts)', () => {
     it('returns all defined palettes in getAllPalettes()', () => {
         const palettes = getAllPalettes();
-        expect(palettes.length).toBe(12);
+        expect(palettes.length).toBe(15);
 
         const ids = palettes.map(p => p.id);
         expect(ids).toContain('default');
@@ -21,6 +21,9 @@ describe('Color Palettes Engine (src/config/palettes.ts)', () => {
         expect(ids).toContain('midnight-gold');
         expect(ids).toContain('nordic-sage');
         expect(ids).toContain('sunset-coral');
+        expect(ids).toContain('aqua-lagoon');
+        expect(ids).toContain('caramel-mocha');
+        expect(ids).toContain('cyber-lime');
     });
 
     it('returns null for default palette or null/empty inputs', () => {
@@ -95,7 +98,7 @@ describe('Color Palettes Engine (src/config/palettes.ts)', () => {
 
     it('ensures all non-default palettes define a dark heroBg so header and footer do not turn white', () => {
         const palettes = getAllPalettes().filter(p => p.id !== 'default');
-        expect(palettes.length).toBe(11);
+        expect(palettes.length).toBe(14);
 
         for (const p of palettes) {
             expect(p.theme?.heroBg).toBeDefined();
