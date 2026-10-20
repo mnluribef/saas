@@ -53,14 +53,15 @@ export function renderStoreNotFound(store: string): Response {
  * Renderiza el catálogo principal de una tienda a partir de su plantilla demo
  */
 export async function renderStorePage(request: Request, env: Env, tenant: TenantRow): Promise<Response> {
-    const template = tenant.template || 'restaurant';
-    const url = new URL(request.url);
+    try {
+        const template = tenant.template || 'restaurant';
+        const url = new URL(request.url);
 
-    if (!env.ASSETS) {
-        return new Response('Assets binding no disponible', { status: 500 });
-    }
+        if (!env.ASSETS) {
+            return new Response('Assets binding no disponible', { status: 500 });
+        }
 
-    let templateResponse = await env.ASSETS.fetch(new Request(new URL(`/demo/${template}/index.html`, url.origin)));
+        let templateResponse = await env.ASSETS.fetch(new Request(new URL(`/demo/${template}/index.html`, url.origin)));
     if (!templateResponse.ok) {
         templateResponse = await env.ASSETS.fetch(new Request(new URL(`/demo/${template}`, url.origin)));
     }
@@ -167,12 +168,21 @@ export async function renderStorePage(request: Request, env: Env, tenant: Tenant
             }
         });
 
-    const transformedResponse = rewriter.transform(templateResponse);
+        const transformedResponse = rewriter.transform(templateResponse);
 
-    return new Response(transformedResponse.body, {
-        status: 200,
-        headers: transformedResponse.headers
-    });
+        return new Response(transformedResponse.body, {
+            status: 200,
+            headers: transformedResponse.headers
+        });
+    } catch (err: unknown) {
+        console.error(JSON.stringify({
+            type: 'ssr_render_error',
+            target: 'store_page',
+            tenantId: tenant.id,
+            error: err instanceof Error ? err.message : String(err)
+        }));
+        return new Response('Error al procesar y renderizar el catálogo de la tienda.', { status: 500 });
+    }
 }
 
 /**
@@ -185,9 +195,10 @@ export async function renderProductPage(
     productId: string,
     db: D1Database
 ): Promise<Response> {
-    if (!env.ASSETS) {
-        return new Response('Assets binding no disponible', { status: 500 });
-    }
+    try {
+        if (!env.ASSETS) {
+            return new Response('Assets binding no disponible', { status: 500 });
+        }
 
     const product = (await db.prepare(
         'SELECT id, name, description, price, image_url, category, brand, model, template FROM products WHERE tenant_id = ? AND id = ? AND active = 1'
@@ -328,9 +339,19 @@ export async function renderProductPage(
             }
         });
 
-    const transformed = rewriter.transform(pageResponse);
-    return new Response(transformed.body, {
-        status: 200,
-        headers: transformed.headers
-    });
+        const transformed = rewriter.transform(pageResponse);
+        return new Response(transformed.body, {
+            status: 200,
+            headers: transformed.headers
+        });
+    } catch (err: unknown) {
+        console.error(JSON.stringify({
+            type: 'ssr_render_error',
+            target: 'product_page',
+            tenantId: tenant.id,
+            productId,
+            error: err instanceof Error ? err.message : String(err)
+        }));
+        return new Response('Error al cargar la ficha del producto.', { status: 500 });
+    }
 }

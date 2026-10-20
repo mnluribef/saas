@@ -167,7 +167,7 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
                 });
                 const signature = await generateWebhookSignature(webhookPayload, webhookSecret);
 
-                context.waitUntil(
+                context.waitUntil?.(
                     fetch(env.WEBHOOK_URL, {
                         method: 'POST',
                         headers: {
@@ -255,7 +255,7 @@ export const onRequestPut: PagesHandler<Env> = async (context) => {
                 });
                 const signature = await generateWebhookSignature(webhookPayload, webhookSecret);
 
-                context.waitUntil(
+                context.waitUntil?.(
                     fetch(env.WEBHOOK_URL, {
                         method: 'POST',
                         headers: {

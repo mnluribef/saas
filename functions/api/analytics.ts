@@ -42,6 +42,16 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
         const url = new URL(request.url);
         const planKey = tenant?.plan || 'basic';
 
+        // F-02: Las analíticas avanzadas están restringidas a planes Pro y Enterprise
+        const hasAnalyticsFeature = ['pro', 'enterprise', 'demo'].includes(planKey);
+        if (!hasAnalyticsFeature) {
+            return jsonResponse({
+                error: 'Las analíticas avanzadas requieren plan Pro o Enterprise.',
+                upgradeRequired: true,
+                currentPlan: planKey
+            }, 403);
+        }
+
         // Fix #16: Soporte para rangos de fecha personalizados
         const fromDate = url.searchParams.get("from"); // formato YYYY-MM-DD
         const toDate = url.searchParams.get("to");     // formato YYYY-MM-DD

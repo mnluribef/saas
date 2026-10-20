@@ -78,7 +78,11 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
         if (!prodRes.ok) {
             return jsonResponse({ error: prodRes.error }, prodRes.code || 404);
         }
-        return jsonResponse(prodRes.data);
+        return jsonResponse(prodRes.data, 200, {
+            "Cache-Control": "public, max-age=60, s-maxage=3600, stale-while-revalidate=86400",
+            "Vary": "X-Tenant-Id",
+            "X-Tenant-Id": tenantId
+        });
     }
 
     try {
@@ -113,6 +117,7 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
             meta: { total, page, limit, totalPages: Math.ceil(total / limit) }
         }, 200, {
             "Cache-Control": cacheControl,
+            "Vary": "X-Tenant-Id",
             "X-Tenant-Id": tenantId
         });
     } catch (err) {

@@ -1,9 +1,10 @@
 // functions/api/categories.ts
-// Gestor Central de Categorías del Catálogo - Ventrina SaaS
+// Gestor Central de Categorías del Catálogo - Ventrina SaaS (DIP, S-06, P-01)
 import { z } from "zod";
 import { verifySession, unauthorizedResponse, forbiddenResponse, validateCsrf } from "./_auth";
 import { resolveTenant } from "./_tenant";
 import { getDB, jsonResponse } from "./_helpers";
+import { CategoryRepository } from "./_repositories";
 import type { Env, PagesHandler } from '../types';
 
 export interface CategoryItem {
@@ -39,38 +40,6 @@ function formatCategoryName(slug: string): string {
 }
 
 /**
- * Helper para sincronizar las definiciones de categorías en tenant_settings y tenants.config_json
- */
-async function saveCustomCategories(db: any, tenantId: string, tenant: any, categories: Array<{ id: string; name: string; icon?: string }>) {
-    try {
-        await db.prepare(`
-            INSERT INTO tenant_settings (tenant_id, namespace, data_json, updated_at)
-            VALUES (?, 'categories', ?, CURRENT_TIMESTAMP)
-            ON CONFLICT(tenant_id, namespace) DO UPDATE SET
-                data_json = excluded.data_json,
-                updated_at = CURRENT_TIMESTAMP
-        `).bind(tenantId, JSON.stringify(categories)).run();
-    } catch (e) {
-        console.warn("No se pudo escribir en tenant_settings(categories):", e);
-    }
-
-    try {
-        let currentConfig: Record<string, any> = {};
-        if (tenant?.config_json) {
-            try {
-                currentConfig = JSON.parse(tenant.config_json);
-            } catch {}
-        }
-        currentConfig.categories = categories;
-        await db.prepare(
-            "UPDATE tenants SET config_json = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
-        ).bind(JSON.stringify(currentConfig), tenantId).run();
-    } catch (e) {
-        console.warn("No se pudo actualizar tenants.config_json(categories):", e);
-    }
-}
-
-/**
  * GET /api/categories
  * Retorna las categorías activas en los productos del tenant con su conteo en tiempo real,
  * fusionadas con las definiciones personalizadas (nombres visibles, emojis e iconos).
@@ -81,25 +50,17 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
     const { id: tenantId, tenant } = await resolveTenant(request, db);
 
     try {
-        // 1. Obtener conteo real agrupado de productos por categoría
-        const { results: productCounts } = await db.prepare(`
-            SELECT category, COUNT(*) as count 
-            FROM products 
-            WHERE tenant_id = ? AND category IS NOT NULL AND TRIM(category) != '' 
-            GROUP BY category 
-            ORDER BY count DESC
-        `).bind(tenantId).all<{ category: string; count: number }>();
+        const categoryRepo = new CategoryRepository(db);
 
-        // 2. Obtener definiciones guardadas en tenant_settings o config_json
+        // P-01: Obtener conteo y metadata en una sola llamada batch a D1
+        const { productCounts, customJson } = await categoryRepo.getCategoriesData(tenantId);
+
         let customCategories: Array<{ id: string; name: string; icon?: string }> = [];
-        try {
-            const row = await db.prepare(
-                "SELECT data_json FROM tenant_settings WHERE tenant_id = ? AND namespace = 'categories'"
-            ).bind(tenantId).first<{ data_json: string }>();
-            if (row && row.data_json) {
-                customCategories = JSON.parse(row.data_json);
-            }
-        } catch {}
+        if (customJson) {
+            try {
+                customCategories = JSON.parse(customJson);
+            } catch {}
+        }
 
         if ((!customCategories || customCategories.length === 0) && tenant?.config_json) {
             try {
@@ -164,7 +125,7 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
             categories
         }, 200, { "Cache-Control": cacheControl });
 
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error("Error en GET /api/categories:", err);
         return jsonResponse({ error: "Error al obtener las categorías del catálogo." }, 500);
     }
@@ -197,15 +158,16 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
 
         const { id, name, icon } = parseResult.data;
         const slug = id.toLowerCase().trim();
+        const categoryRepo = new CategoryRepository(db);
 
         // Cargar categorías existentes
         let customCategories: Array<{ id: string; name: string; icon?: string }> = [];
-        try {
-            const row = await db.prepare(
-                "SELECT data_json FROM tenant_settings WHERE tenant_id = ? AND namespace = 'categories'"
-            ).bind(tenantId).first<{ data_json: string }>();
-            if (row && row.data_json) customCategories = JSON.parse(row.data_json);
-        } catch {}
+        const customJson = await categoryRepo.getCustomCategoriesJson(tenantId);
+        if (customJson) {
+            try {
+                customCategories = JSON.parse(customJson);
+            } catch {}
+        }
 
         if (!Array.isArray(customCategories)) customCategories = [];
 
@@ -216,7 +178,7 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
             customCategories.push({ id: slug, name, icon: icon || 'tag' });
         }
 
-        await saveCustomCategories(db, tenantId, tenant, customCategories);
+        await categoryRepo.saveCustomCategories(tenantId, tenant, customCategories);
 
         return jsonResponse({
             success: true,
@@ -224,7 +186,7 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
             category: { id: slug, name, icon: icon || 'tag', count: 0 }
         }, 201);
 
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error("Error en POST /api/categories:", err);
         return jsonResponse({ error: "Error al crear la categoría." }, 500);
     }
@@ -260,23 +222,19 @@ export const onRequestPut: PagesHandler<Env> = async (context) => {
         const newSlug = newCategory.toLowerCase().trim();
         const displayName = name || formatCategoryName(newSlug);
 
-        // 1. Actualizar atómicamente todos los productos de este tenant que tengan esta categoría
-        const updateResult = await db.prepare(`
-            UPDATE products 
-            SET category = ?, type_id = ? 
-            WHERE (category = ? OR type_id = ?) AND tenant_id = ?
-        `).bind(newSlug, newSlug, oldSlug, oldSlug, tenantId).run();
+        const categoryRepo = new CategoryRepository(db);
 
-        const affectedCount = updateResult.meta?.changes ?? 0;
+        // 1. Actualizar atómicamente todos los productos de este tenant que tengan esta categoría
+        const affectedCount = await categoryRepo.updateProductsCategory(tenantId, oldSlug, newSlug);
 
         // 2. Actualizar configuración persistida
         let customCategories: Array<{ id: string; name: string; icon?: string }> = [];
-        try {
-            const row = await db.prepare(
-                "SELECT data_json FROM tenant_settings WHERE tenant_id = ? AND namespace = 'categories'"
-            ).bind(tenantId).first<{ data_json: string }>();
-            if (row && row.data_json) customCategories = JSON.parse(row.data_json);
-        } catch {}
+        const customJson = await categoryRepo.getCustomCategoriesJson(tenantId);
+        if (customJson) {
+            try {
+                customCategories = JSON.parse(customJson);
+            } catch {}
+        }
 
         if (!Array.isArray(customCategories)) customCategories = [];
 
@@ -295,7 +253,7 @@ export const onRequestPut: PagesHandler<Env> = async (context) => {
             });
         }
 
-        await saveCustomCategories(db, tenantId, tenant, customCategories);
+        await categoryRepo.saveCustomCategories(tenantId, tenant, customCategories);
 
         return jsonResponse({
             success: true,
@@ -304,7 +262,7 @@ export const onRequestPut: PagesHandler<Env> = async (context) => {
             category: { id: newSlug, name: displayName, icon: icon || 'tag' }
         }, 200);
 
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error("Error en PUT /api/categories:", err);
         return jsonResponse({ error: "Error al actualizar la categoría." }, 500);
     }
@@ -338,15 +296,10 @@ export const onRequestDelete: PagesHandler<Env> = async (context) => {
         const { category, reassignTo } = parseResult.data;
         const targetSlug = category.trim();
         const fallbackSlug = reassignTo?.toLowerCase().trim();
+        const categoryRepo = new CategoryRepository(db);
 
         // Verificar si la categoría tiene productos
-        const countRow = await db.prepare(`
-            SELECT COUNT(*) as count 
-            FROM products 
-            WHERE (category = ? OR type_id = ?) AND tenant_id = ?
-        `).bind(targetSlug, targetSlug, tenantId).first<{ count: number }>();
-
-        const productCount = Number(countRow?.count) || 0;
+        const productCount = await categoryRepo.countProductsByCategory(tenantId, targetSlug);
 
         if (productCount > 0) {
             if (!fallbackSlug || fallbackSlug === targetSlug) {
@@ -356,25 +309,21 @@ export const onRequestDelete: PagesHandler<Env> = async (context) => {
             }
 
             // Reasignar productos a la categoría destino
-            await db.prepare(`
-                UPDATE products 
-                SET category = ?, type_id = ? 
-                WHERE (category = ? OR type_id = ?) AND tenant_id = ?
-            `).bind(fallbackSlug, fallbackSlug, targetSlug, targetSlug, tenantId).run();
+            await categoryRepo.updateProductsCategory(tenantId, targetSlug, fallbackSlug);
         }
 
         // Eliminar de las definiciones personalizadas
         let customCategories: Array<{ id: string; name: string; icon?: string }> = [];
-        try {
-            const row = await db.prepare(
-                "SELECT data_json FROM tenant_settings WHERE tenant_id = ? AND namespace = 'categories'"
-            ).bind(tenantId).first<{ data_json: string }>();
-            if (row && row.data_json) customCategories = JSON.parse(row.data_json);
-        } catch {}
+        const customJson = await categoryRepo.getCustomCategoriesJson(tenantId);
+        if (customJson) {
+            try {
+                customCategories = JSON.parse(customJson);
+            } catch {}
+        }
 
         if (Array.isArray(customCategories)) {
             customCategories = customCategories.filter(c => c.id !== targetSlug);
-            await saveCustomCategories(db, tenantId, tenant, customCategories);
+            await categoryRepo.saveCustomCategories(tenantId, tenant, customCategories);
         }
 
         return jsonResponse({
@@ -385,7 +334,7 @@ export const onRequestDelete: PagesHandler<Env> = async (context) => {
             reassignedCount: productCount
         }, 200);
 
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error("Error en DELETE /api/categories:", err);
         return jsonResponse({ error: "Error al eliminar la categoría." }, 500);
     }

@@ -75,8 +75,20 @@ export async function generateWebhookSignature(payload: string, secret: string):
 export async function resolveBcvRate(
     db: D1Database,
     tenantId: string,
-    clientRate?: number
+    clientRate?: number,
+    tenantConfigJson?: string | null
 ): Promise<{ rate: number; error?: string }> {
+    // P-02: Intentar resolver la tasa directamente desde el config_json cacheado del tenant para evitar roundtrip a D1
+    if (tenantConfigJson) {
+        try {
+            const config = JSON.parse(tenantConfigJson);
+            const tenantRate = parseFloat(config?.bcvRate || config?.labels?.bcvRate || config?.bcv_rate);
+            if (!isNaN(tenantRate) && tenantRate > 0) {
+                return { rate: tenantRate };
+            }
+        } catch {}
+    }
+
     try {
         const bcvSetting = await db.prepare(
             "SELECT value FROM settings WHERE key = 'bcv_rate' AND tenant_id = ?"
@@ -315,8 +327,8 @@ export class OrderService {
             }
         }
 
-        // 5. Resolución de tasa BCV segura
-        const bcvResolution = await resolveBcvRate(this.db, tenantId, clientRate);
+        // 5. Resolución de tasa BCV segura (P-02: con fallback a tenant.config_json)
+        const bcvResolution = await resolveBcvRate(this.db, tenantId, clientRate, tenant?.config_json);
         if (bcvResolution.error || bcvResolution.rate <= 0) {
             return err(bcvResolution.error || "Tasa BCV inválida o no configurada.", 400);
         }

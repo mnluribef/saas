@@ -2,9 +2,10 @@
 // Endpoints de autenticación, sesión y cambio de contraseña
 import type { D1Database } from '@cloudflare/workers-types';
 import { z } from "zod";
-import { verifySession, unauthorizedResponse, forbiddenResponse, validateCsrf, generateSalt, hashPasswordPBKDF2, hashSHA256 } from "./_auth";
+import { verifySession, unauthorizedResponse, forbiddenResponse, validateCsrf, generateSalt, hashPasswordPBKDF2, hashSHA256, generateSessionToken, buildSessionCookie } from "./_auth";
 import { resolveTenant } from "./_tenant";
 import { getDB, parseCookies, jsonResponse } from "./_helpers";
+import { RateLimitService } from "./_services/rate-limit.service";
 import type { Env, PagesHandler } from '../types';
 
 export const COMMON_PASSWORDS = new Set([
@@ -36,12 +37,6 @@ export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_TIME_MS = 5 * 60 * 1000; // 5 minutos de bloqueo
 
-interface RateLimitRow {
-    ip: string;
-    count: number;
-    first_attempt: number;
-    lockout_until: number;
-}
 
 interface UserDbRow {
     id: string;
@@ -54,67 +49,7 @@ interface UserDbRow {
 }
 
 export async function purgeExpiredRateLimits(db: D1Database): Promise<number> {
-    const now = Date.now();
-    try {
-        const res = await db.prepare(
-            "DELETE FROM rate_limits WHERE (? - first_attempt > ?) AND (? >= lockout_until)"
-        ).bind(now, LOCKOUT_TIME_MS, now).run();
-        return res?.meta?.changes ?? 0;
-    } catch {
-        return 0;
-    }
-}
-
-async function checkRateLimit(db: D1Database, ip: string): Promise<{ allowed: boolean; remainingMinutes?: number }> {
-    const now = Date.now();
-    
-    // Auto-purga de registros expirados en segundo plano (Fix #8)
-    await purgeExpiredRateLimits(db);
-    
-    let record: RateLimitRow | null = null;
-    try {
-        record = await db.prepare("SELECT * FROM rate_limits WHERE ip = ?").bind(ip).first<RateLimitRow>();
-    } catch {
-        return { allowed: true };
-    }
-    
-    if (!record) return { allowed: true };
-
-    if (now < record.lockout_until) {
-        const remainingMinutes = Math.ceil((record.lockout_until - now) / 60000);
-        return { allowed: false, remainingMinutes };
-    }
-
-    if (now - record.first_attempt > LOCKOUT_TIME_MS) {
-        await db.prepare("DELETE FROM rate_limits WHERE ip = ?").bind(ip).run();
-        return { allowed: true };
-    }
-
-    return { allowed: true };
-}
-
-async function recordFailedAttempt(db: D1Database, ip: string): Promise<void> {
-    const now = Date.now();
-    try {
-        const record = await db.prepare("SELECT * FROM rate_limits WHERE ip = ?").bind(ip).first<RateLimitRow>();
-        
-        if (!record) {
-            await db.prepare("INSERT INTO rate_limits (ip, count, first_attempt, lockout_until) VALUES (?, 1, ?, 0)").bind(ip, now).run();
-        } else {
-            const newCount = record.count + 1;
-            let newLockout = 0;
-            if (newCount >= MAX_ATTEMPTS) {
-                newLockout = now + LOCKOUT_TIME_MS;
-            }
-            await db.prepare("UPDATE rate_limits SET count = ?, lockout_until = ? WHERE ip = ?").bind(newCount, newLockout, ip).run();
-        }
-    } catch {}
-}
-
-async function clearRateLimit(db: D1Database, ip: string): Promise<void> {
-    try {
-        await db.prepare("DELETE FROM rate_limits WHERE ip = ?").bind(ip).run();
-    } catch {}
+    return new RateLimitService(db).purgeExpired(LOCKOUT_TIME_MS);
 }
 
 /**
@@ -156,8 +91,14 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
     const db = getDB(env);
     const clientIp = request.headers.get("CF-Connecting-IP") || request.headers.get("x-real-ip") || "unknown";
 
-    // 1. Verificar Rate Limit
-    const rateCheck = await checkRateLimit(db, clientIp);
+    // 1. Verificar Rate Limit (S-03 & P-04: Purga asíncrona sin bloquear)
+    const rateLimitService = new RateLimitService(db);
+    context.waitUntil?.(rateLimitService.purgeExpired(LOCKOUT_TIME_MS).catch(() => {}));
+
+    const rateCheck = await rateLimitService.checkRateLimit(clientIp, {
+        maxAttempts: MAX_ATTEMPTS,
+        windowMs: LOCKOUT_TIME_MS
+    });
     if (!rateCheck.allowed) {
         return jsonResponse({ 
             error: `Demasiados intentos fallidos. Por seguridad, espera ${rateCheck.remainingMinutes} minuto(s) antes de reintentar.` 
@@ -204,7 +145,7 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
             .first<UserDbRow>();
 
         if (!user) {
-            await recordFailedAttempt(db, clientIp);
+            await rateLimitService.recordFailure(clientIp, { maxAttempts: MAX_ATTEMPTS, windowMs: LOCKOUT_TIME_MS });
             return jsonResponse({ error: "Credenciales inválidas o tienda no encontrada." }, 401);
         }
 
@@ -246,15 +187,15 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
         }
 
         if (!isMatch) {
-            await recordFailedAttempt(db, clientIp);
+            await rateLimitService.recordFailure(clientIp, { maxAttempts: MAX_ATTEMPTS, windowMs: LOCKOUT_TIME_MS });
             return jsonResponse({ error: "Credenciales inválidas." }, 401);
         }
 
         // Login exitoso: limpiar intentos fallidos
-        await clearRateLimit(db, clientIp);
+        await rateLimitService.clear(clientIp);
 
-        // Generar un token seguro de sesión
-        const sessionToken = crypto.randomUUID();
+        // Generar un token criptográficamente seguro de sesión (256 bits S-04)
+        const sessionToken = generateSessionToken();
         const maxAge = 7 * 24 * 60 * 60; // 7 días en segundos
         const expiresAt = Math.floor(Date.now() / 1000) + maxAge;
 
@@ -273,11 +214,7 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
                 .run();
         }
 
-        const url = new URL(request.url);
-        const host = (request.headers.get('x-forwarded-host') || url.hostname).toLowerCase();
-        const isVentrinaApp = host.endsWith('ventrina.app');
-        const domainAttr = isVentrinaApp ? '; Domain=.ventrina.app' : '';
-        const cookie = `ventrina_session=${sessionToken}; Path=/${domainAttr}; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Lax`;
+        const cookie = buildSessionCookie(sessionToken, request, maxAge);
         
         return jsonResponse(
             { success: true, email: user.email || cleanEmail, username: user.email || cleanEmail, role: user.role, tenantId: effectiveTenantId, tenant: effectiveTenantId },
@@ -303,8 +240,14 @@ export const onRequestPut: PagesHandler<Env> = async (context) => {
     const db = getDB(env);
     const clientIp = request.headers.get("CF-Connecting-IP") || request.headers.get("x-real-ip") || "unknown";
 
-    // Protección contra fuerza bruta en cambio de contraseña (Fix #4)
-    const rateCheck = await checkRateLimit(db, clientIp);
+    // Protección contra fuerza bruta en cambio de contraseña (Fix #4, S-03)
+    const rateLimitService = new RateLimitService(db);
+    context.waitUntil?.(rateLimitService.purgeExpired(LOCKOUT_TIME_MS).catch(() => {}));
+
+    const rateCheck = await rateLimitService.checkRateLimit(clientIp, {
+        maxAttempts: MAX_ATTEMPTS,
+        windowMs: LOCKOUT_TIME_MS
+    });
     if (!rateCheck.allowed) {
         return jsonResponse({ 
             error: `Demasiados intentos fallidos. Por seguridad, espera ${rateCheck.remainingMinutes} minuto(s) antes de reintentar.` 
@@ -348,7 +291,7 @@ export const onRequestPut: PagesHandler<Env> = async (context) => {
         }
 
         if (!currentMatch) {
-            await recordFailedAttempt(db, clientIp);
+            await rateLimitService.recordFailure(clientIp, { maxAttempts: MAX_ATTEMPTS, windowMs: LOCKOUT_TIME_MS });
             return jsonResponse({ error: "La contraseña actual es incorrecta." }, 400);
         }
 
@@ -361,7 +304,7 @@ export const onRequestPut: PagesHandler<Env> = async (context) => {
             .run();
 
         // Limpiar intentos fallidos tras éxito
-        await clearRateLimit(db, clientIp);
+        await rateLimitService.clear(clientIp);
 
         return jsonResponse({ success: true, message: "Contraseña actualizada exitosamente." });
 
@@ -389,11 +332,7 @@ export const onRequestDelete: PagesHandler<Env> = async (context) => {
         }
     }
 
-    const url = new URL(request.url);
-    const host = (request.headers.get('x-forwarded-host') || url.hostname).toLowerCase();
-    const isVentrinaApp = host.endsWith('ventrina.app');
-    const domainAttr = isVentrinaApp ? '; Domain=.ventrina.app' : '';
-    const clearVentrinaCookie = `ventrina_session=; Path=/${domainAttr}; Max-Age=0; HttpOnly; Secure; SameSite=Lax`;
+    const clearVentrinaCookie = buildSessionCookie('', request, 0);
 
     const headers = new Headers({
         "Content-Type": "application/json"

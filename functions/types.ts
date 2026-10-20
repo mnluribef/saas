@@ -11,6 +11,7 @@ export interface Env {
     SUPERADMIN_KEY?: string;
     TURNSTILE_SECRET_KEY?: string;
     WEBHOOK_URL?: string;
+    WEBHOOK_SECRET?: string;
     RESEND_API_KEY?: string;
     EMAIL_FROM?: string;
     ENVIRONMENT?: string;
@@ -30,7 +31,7 @@ export interface PagesContext<E = Env, P extends string = string> {
         ASSETS?: { fetch: typeof fetch };
     };
     params: Record<P, string | string[]>;
-    waitUntil: (promise: Promise<unknown>) => void;
+    waitUntil?: (promise: Promise<unknown>) => void;
     next: (input?: Request | string, init?: RequestInit) => Promise<Response>;
     data: Record<string, unknown>;
 }

@@ -1,6 +1,6 @@
 // tests/palettes.test.ts
 import { describe, it, expect } from 'vitest';
-import { COLOR_PALETTES, getPalette, getAllPalettes } from '../src/config/palettes';
+import { getPalette, getAllPalettes } from '../src/config/palettes';
 import { createStoreConfig } from '../src/config/store.config';
 
 describe('Color Palettes Engine (src/config/palettes.ts)', () => {

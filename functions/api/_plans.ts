@@ -52,7 +52,7 @@ export async function checkProductLimit(
     const planLimits = PLANS[planKey] || PLANS['basic'];
     
     const row = await db.prepare(
-        'SELECT COUNT(*) as total FROM products WHERE tenant_id = ?'
+        'SELECT COUNT(*) as total FROM products WHERE tenant_id = ? AND active = 1'
     ).bind(tenant?.id || 'demo').first<{ total: number }>();
 
     const total = row?.total ?? 0;

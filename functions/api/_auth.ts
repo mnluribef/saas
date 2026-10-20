@@ -37,9 +37,9 @@ export function validateCsrf(request: Request, tenantDomain?: string | null): bo
         return true;
     }
 
-    // Cabecera custom explícita enviada por clientes SPA
+    // Cabecera custom explícita enviada por clientes SPA (restringida a valores conocidos S-05)
     const requestedWith = request.headers.get('X-Requested-With');
-    if (requestedWith) return true;
+    if (requestedWith && (requestedWith === 'XMLHttpRequest' || requestedWith === 'fetch')) return true;
 
     const origin = request.headers.get('Origin');
     const referer = request.headers.get('Referer');
@@ -234,3 +234,29 @@ export function forbiddenResponse(message = "Prohibido. No tienes permisos para 
         }
     });
 }
+
+/**
+ * Genera un token criptográficamente seguro con 256 bits de entropía real (S-04)
+ */
+export function generateSessionToken(): string {
+    const bytes = new Uint8Array(32);
+    crypto.getRandomValues(bytes);
+    return bytesToHex(bytes);
+}
+
+/**
+ * Genera la directiva Set-Cookie para la sesión de forma consistente y segura
+ */
+export function buildSessionCookie(token: string, requestOrHost: Request | string, maxAge: number): string {
+    let host = '';
+    if (typeof requestOrHost === 'string') {
+        host = requestOrHost.toLowerCase();
+    } else {
+        const url = new URL(requestOrHost.url);
+        host = (requestOrHost.headers.get('x-forwarded-host') || url.hostname).toLowerCase();
+    }
+    const isVentrinaApp = host.endsWith('ventrina.app');
+    const domainAttr = isVentrinaApp ? '; Domain=.ventrina.app' : '';
+    return `ventrina_session=${token}; Path=/${domainAttr}; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Lax`;
+}
+

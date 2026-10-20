@@ -3,3 +3,4 @@
 export * from './order.repo';
 export * from './product.repo';
 export * from './settings.repo';
+export * from './category.repo';
