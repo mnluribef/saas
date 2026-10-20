@@ -329,6 +329,15 @@ const { business, contact, features } = config;
                     Copiar
                 </button>
             </div>
+
+            <!-- Selector dinámico si el tenant tiene múltiples cuentas de Pago Móvil -->
+            <div id="pm-accounts-selector-group" class="cart-pm-selector-group d-none">
+                <label for="pm-account-selector" class="cart-pm-selector-label">Elige la cuenta de destino:</label>
+                <select id="pm-account-selector" class="cart-pm-select">
+                    <!-- Opciones de cuentas bancarias -->
+                </select>
+            </div>
+
             <ul class="cart-payment-data-list">
                 <li>
                     <strong>Banco:</strong> <span id="pm-data-banco">{config.payment?.pagoMovil?.banco || "Banesco (0134)"}</span>
@@ -338,6 +347,9 @@ const { business, contact, features } = config;
                 </li>
                 <li>
                     <strong>C.I / RIF:</strong> <span id="pm-data-cedula">{config.payment?.pagoMovil?.cedula || "V-12345678"}</span>
+                </li>
+                <li id="pm-data-titular-item" class="d-none">
+                    <strong>Titular:</strong> <span id="pm-data-titular"></span>
                 </li>
             </ul>
             <div class="cart-payment-total-box">

@@ -243,7 +243,18 @@ export const restaurantTemplate: StoreConfig = {
       banco: 'Banesco (0134)',
       telefono: '0412-4756191',
       cedula: 'V-12345678',
+      titular: 'FOGÓN C.A.',
     },
+    pagoMovilAccounts: [
+      {
+        id: 'pm-1',
+        banco: 'Banesco (0134)',
+        telefono: '0412-4756191',
+        cedula: 'V-12345678',
+        titular: 'FOGÓN C.A.',
+        isDefault: true,
+      }
+    ],
     zelle: {
       email: 'contacto@fogon.ve',
       titular: 'FOGÓN C.A.',

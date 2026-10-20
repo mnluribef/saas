@@ -197,12 +197,23 @@ export interface StoreFeaturesConfig {
   allowCustomNotes: boolean;
 }
 
+export interface PagoMovilAccount {
+  id?: string;
+  banco: string;
+  telefono: string;
+  cedula: string;
+  titular?: string;
+  isDefault?: boolean;
+}
+
 export interface StorePaymentConfig {
   pagoMovil?: {
     banco: string;
     telefono: string;
     cedula: string;
+    titular?: string;
   };
+  pagoMovilAccounts?: PagoMovilAccount[];
   zelle?: {
     email: string;
     titular: string;

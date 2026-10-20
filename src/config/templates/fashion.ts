@@ -242,7 +242,18 @@ export const fashionTemplate: StoreConfig = {
       banco: 'Banesco (0134)',
       telefono: '0412-4756191',
       cedula: 'V-24567890',
+      titular: 'AURA STUDIO FASHION',
     },
+    pagoMovilAccounts: [
+      {
+        id: 'pm-1',
+        banco: 'Banesco (0134)',
+        telefono: '0412-4756191',
+        cedula: 'V-24567890',
+        titular: 'AURA STUDIO FASHION',
+        isDefault: true,
+      }
+    ],
     zelle: {
       email: 'pagos@aurastudio.com',
       titular: 'AURA STUDIO FASHION',

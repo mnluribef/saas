@@ -242,7 +242,18 @@ export const hardwareTemplate: StoreConfig = {
       banco: 'Mercantil (0105)',
       telefono: '0412-4756191',
       cedula: 'J-40192831',
+      titular: 'FERROMAX SUMINISTROS C.A.',
     },
+    pagoMovilAccounts: [
+      {
+        id: 'pm-1',
+        banco: 'Mercantil (0105)',
+        telefono: '0412-4756191',
+        cedula: 'J-40192831',
+        titular: 'FERROMAX SUMINISTROS C.A.',
+        isDefault: true,
+      }
+    ],
     zelle: {
       email: 'pagos@ferromax.com',
       titular: 'FERROMAX SUMINISTROS C.A.',

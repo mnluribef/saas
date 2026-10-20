@@ -722,20 +722,36 @@ const palettes = getAllPalettes();
                     </div>
 
                     <div class="settings-card">
-                        <h4 class="dynamic-item-badge">📱 Datos para Pago Móvil (Venezuela)</h4>
-                        <div class="settings-form-group">
-                            <label for="cfg-pm-banco">Banco y Código</label>
-                            <input type="text" id="cfg-pm-banco" class="form-control" placeholder="Ej: Banesco (0134) o Banco de Venezuela (0102)" />
+                        <div class="settings-card-header">
+                            <div>
+                                <h4 class="dynamic-item-badge">📱 Cuentas de Pago Móvil (Venezuela)</h4>
+                                <p class="settings-card-subtitle">Configura una o múltiples cuentas bancarias. Si registras varias, el cliente podrá elegir a cuál transferir durante el checkout.</p>
+                            </div>
+                            <button type="button" class="btn-add-item btn-add-compact" id="btn-add-pagomovil">
+                                <i data-lucide="plus-circle"></i> Agregar Cuenta
+                            </button>
                         </div>
-                        <div class="settings-grid-2">
-                            <div class="settings-form-group">
-                                <label for="cfg-pm-telefono">Teléfono Afiliado</label>
-                                <input type="text" id="cfg-pm-telefono" class="form-control" placeholder="Ej: 0412-4756191" />
-                            </div>
-                            <div class="settings-form-group">
-                                <label for="cfg-pm-cedula">Cédula / RIF</label>
-                                <input type="text" id="cfg-pm-cedula" class="form-control" placeholder="Ej: V-12345678 o J-12345678-0" />
-                            </div>
+
+                        <!-- Datalist de Bancos frecuentes de Venezuela -->
+                        <datalist id="venezuelan-banks-list">
+                            <option value="Banesco (0134)"></option>
+                            <option value="Banco de Venezuela (0102)"></option>
+                            <option value="Mercantil (0105)"></option>
+                            <option value="BBVA Provincial (0108)"></option>
+                            <option value="Banco Nacional de Crédito - BNC (0191)"></option>
+                            <option value="Bancaribe (0114)"></option>
+                            <option value="Bancamiga (0172)"></option>
+                            <option value="Banco Exterior (0115)"></option>
+                            <option value="Banplus (0174)"></option>
+                            <option value="Banco Plaza (0138)"></option>
+                            <option value="Banco Fondo Común - BFC (0151)"></option>
+                            <option value="100% Banco (0156)"></option>
+                            <option value="Banco Bicentenario (0175)"></option>
+                            <option value="Banco del Tesoro (0163)"></option>
+                        </datalist>
+
+                        <div id="pagomovil-items-list" class="dynamic-items-container">
+                            <!-- Inyectado dinámicamente con JavaScript -->
                         </div>
                     </div>
 

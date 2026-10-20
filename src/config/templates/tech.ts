@@ -242,7 +242,18 @@ export const techTemplate: StoreConfig = {
       banco: 'Banesco (0134)',
       telefono: '0412-4756191',
       cedula: 'J-50123984',
+      titular: 'NEXUS TECH SOLUTIONS C.A.',
     },
+    pagoMovilAccounts: [
+      {
+        id: 'pm-1',
+        banco: 'Banesco (0134)',
+        telefono: '0412-4756191',
+        cedula: 'J-50123984',
+        titular: 'NEXUS TECH SOLUTIONS C.A.',
+        isDefault: true,
+      }
+    ],
     zelle: {
       email: 'pagos@nexustech.com',
       titular: 'NEXUS TECH SOLUTIONS C.A.',

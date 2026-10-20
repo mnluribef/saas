@@ -164,14 +164,52 @@ export class SettingsService {
         const currentPayment = (currentConfig.payment || {}) as Record<string, unknown>;
         const currentPagoMovil = (currentPayment.pagoMovil || {}) as Record<string, unknown>;
         const currentZelle = (currentPayment.zelle || {}) as Record<string, unknown>;
+        const currentPmAccounts = (currentPayment.pagoMovilAccounts || []) as Array<Record<string, unknown>>;
+
+        let updatedPmAccounts = updates.payment && updates.payment.pagoMovilAccounts !== undefined
+            ? updates.payment.pagoMovilAccounts
+            : currentPmAccounts;
+
+        // Si solo se actualizaron datos de pagoMovil tradicional y no hay pagoMovilAccounts, sincronizar la primera cuenta
+        if ((!updatedPmAccounts || updatedPmAccounts.length === 0) && (updates.payment?.pagoMovil || currentPagoMovil)) {
+            const pm = ((updates.payment && updates.payment.pagoMovil) || currentPagoMovil) as Record<string, unknown>;
+            if (pm.banco || pm.telefono || pm.cedula) {
+                updatedPmAccounts = [{
+                    id: 'pm_1',
+                    banco: pm.banco || '',
+                    telefono: pm.telefono || '',
+                    cedula: pm.cedula || '',
+                    titular: pm.titular || '',
+                    isDefault: true
+                }];
+            }
+        }
+
+        // Determinar cuenta principal para mantener compatibilidad 100% con payment.pagoMovil
+        let primaryPm: Record<string, string> = {
+            banco: String(currentPagoMovil.banco || ''),
+            telefono: String(currentPagoMovil.telefono || ''),
+            cedula: String(currentPagoMovil.cedula || ''),
+            titular: String(currentPagoMovil.titular || ''),
+            ...((updates.payment && updates.payment.pagoMovil) || {})
+        };
+        if (Array.isArray(updatedPmAccounts) && updatedPmAccounts.length > 0) {
+            const def = (updatedPmAccounts.find(a => (a as any).isDefault) || updatedPmAccounts[0]) as any;
+            if (def) {
+                primaryPm = {
+                    banco: String(def.banco || ''),
+                    telefono: String(def.telefono || ''),
+                    cedula: String(def.cedula || ''),
+                    titular: String(def.titular || ''),
+                };
+            }
+        }
 
         const mergedPayment = {
             ...currentPayment,
             ...(updates.payment || {}),
-            pagoMovil: {
-                ...currentPagoMovil,
-                ...((updates.payment && updates.payment.pagoMovil) || {})
-            },
+            pagoMovil: primaryPm,
+            pagoMovilAccounts: updatedPmAccounts,
             zelle: {
                 ...currentZelle,
                 ...((updates.payment && updates.payment.zelle) || {})

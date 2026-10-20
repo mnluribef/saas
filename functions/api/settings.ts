@@ -77,12 +77,23 @@ export const contactSettingsSchema = z.object({
     hours: z.string().max(180).optional(),
 });
 
+export const pagoMovilAccountSchema = z.object({
+    id: z.string().max(50).optional(),
+    banco: z.string().max(100),
+    telefono: z.string().max(50),
+    cedula: z.string().max(50),
+    titular: z.string().max(100).optional(),
+    isDefault: z.boolean().optional(),
+});
+
 export const paymentSettingsSchema = z.object({
     pagoMovil: z.object({
         banco: z.string().max(100).optional(),
         telefono: z.string().max(50).optional(),
         cedula: z.string().max(50).optional(),
+        titular: z.string().max(100).optional(),
     }).optional(),
+    pagoMovilAccounts: z.array(pagoMovilAccountSchema).max(10).optional(),
     zelle: z.object({
         email: z.string().max(100).optional(),
         titular: z.string().max(100).optional(),

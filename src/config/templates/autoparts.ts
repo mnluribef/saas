@@ -242,7 +242,18 @@ export const autopartsTemplate: StoreConfig = {
       banco: 'Banesco (0134)',
       telefono: '0412-1234567',
       cedula: 'J-40192831',
+      titular: 'MOTOPARTS C.A.',
     },
+    pagoMovilAccounts: [
+      {
+        id: 'pm-1',
+        banco: 'Banesco (0134)',
+        telefono: '0412-1234567',
+        cedula: 'J-40192831',
+        titular: 'MOTOPARTS C.A.',
+        isDefault: true,
+      }
+    ],
     zelle: {
       email: 'pagos@motoparts.com',
       titular: 'MOTOPARTS C.A.',

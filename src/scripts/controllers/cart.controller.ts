@@ -23,6 +23,7 @@ export class CartUIController {
         discountValue: number;
         minOrderAmount: number;
     } | null = null;
+    private pagoMovilAccounts: Array<{ banco: string; telefono: string; cedula: string; titular?: string; isDefault?: boolean }> = [];
 
     constructor(
         cartService: CartService,
@@ -396,12 +397,21 @@ export class CartUIController {
             }
         });
 
+        // Pago Movil account selection
+        document.getElementById('pm-account-selector')?.addEventListener('change', (e) => {
+            const idx = parseInt((e.target as HTMLSelectElement).value, 10);
+            if (!isNaN(idx) && this.pagoMovilAccounts[idx]) {
+                this.updateDisplayedPagoMovilAccount(this.pagoMovilAccounts[idx]);
+            }
+        });
+
         // Copy Pago Movil Data
         document.getElementById('copy-pm-btn')?.addEventListener('click', async (e) => {
             const banco = document.getElementById('pm-data-banco')?.textContent?.trim() || '';
             const telefono = document.getElementById('pm-data-telefono')?.textContent?.trim() || '';
             const cedula = document.getElementById('pm-data-cedula')?.textContent?.trim() || '';
-            const copyText = `Banco: ${banco}\nTeléfono: ${telefono}\nC.I/RIF: ${cedula}`;
+            const titular = document.getElementById('pm-data-titular')?.textContent?.trim() || '';
+            const copyText = `Banco: ${banco}\nTeléfono: ${telefono}\nC.I/RIF: ${cedula}${titular ? `\nTitular: ${titular}` : ''}`;
             
             try {
                 await navigator.clipboard.writeText(copyText);
@@ -581,12 +591,20 @@ export class CartUIController {
             waBtn.innerHTML = 'Registrando Pedido...';
         }
 
+        let resolvedPaymentMethod = paymentMethod;
+        if (paymentMethod === 'pago_movil') {
+            const selectedBank = document.getElementById('pm-data-banco')?.textContent?.trim();
+            if (selectedBank) {
+                resolvedPaymentMethod = `pago_movil:${selectedBank}`;
+            }
+        }
+
         const submissionData: OrderSubmissionData = {
             clientName,
             clientPhone,
             deliveryType,
             deliveryAddress,
-            paymentMethod,
+            paymentMethod: resolvedPaymentMethod,
             paymentReference,
             paymentReceipt: this.uploadedReceiptBase64,
             couponCode: this.appliedCoupon?.code,
@@ -640,6 +658,53 @@ export class CartUIController {
             if (waBtn) {
                 waBtn.disabled = false;
                 waBtn.innerHTML = 'Enviar Pedido por WhatsApp';
+            }
+        }
+    }
+
+    public setPagoMovilAccounts(accounts: Array<{ banco: string; telefono: string; cedula: string; titular?: string; isDefault?: boolean }>): void {
+        this.pagoMovilAccounts = accounts || [];
+        this.renderPagoMovilSelector();
+    }
+
+    private renderPagoMovilSelector(): void {
+        const selectorGroup = document.getElementById('pm-accounts-selector-group');
+        const selector = document.getElementById('pm-account-selector') as HTMLSelectElement | null;
+        if (!selectorGroup || !selector) return;
+
+        if (this.pagoMovilAccounts.length > 1) {
+            selectorGroup.classList.remove('d-none');
+            selector.innerHTML = this.pagoMovilAccounts.map((acc, idx) => {
+                const label = `${acc.banco} — ${acc.telefono}${acc.titular ? ` (${acc.titular})` : ''}`;
+                return `<option value="${idx}" ${acc.isDefault ? 'selected' : ''}>${label}</option>`;
+            }).join('');
+
+            const selectedIdx = selector.selectedIndex >= 0 ? selector.selectedIndex : 0;
+            this.updateDisplayedPagoMovilAccount(this.pagoMovilAccounts[selectedIdx]);
+        } else if (this.pagoMovilAccounts.length === 1) {
+            selectorGroup.classList.add('d-none');
+            this.updateDisplayedPagoMovilAccount(this.pagoMovilAccounts[0]);
+        }
+    }
+
+    private updateDisplayedPagoMovilAccount(acc?: { banco: string; telefono: string; cedula: string; titular?: string }): void {
+        if (!acc) return;
+        const b = document.getElementById('pm-data-banco');
+        const t = document.getElementById('pm-data-telefono');
+        const c = document.getElementById('pm-data-cedula');
+        const titularRow = document.getElementById('pm-data-titular-item');
+        const titularSpan = document.getElementById('pm-data-titular');
+
+        if (b && acc.banco) b.textContent = acc.banco;
+        if (t && acc.telefono) t.textContent = acc.telefono;
+        if (c && acc.cedula) c.textContent = acc.cedula;
+
+        if (titularRow && titularSpan) {
+            if (acc.titular) {
+                titularSpan.textContent = acc.titular;
+                titularRow.classList.remove('d-none');
+            } else {
+                titularRow.classList.add('d-none');
             }
         }
     }

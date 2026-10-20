@@ -114,7 +114,12 @@ export class OrderService implements IOrderService {
             efectivo: '💵 Efectivo',
             punto: '💳 Punto de Venta',
         };
-        msg += `\n*Pago:* ${paymentLabels[data.paymentMethod] || data.paymentMethod}`;
+        let paymentDisplay = paymentLabels[data.paymentMethod] || data.paymentMethod;
+        if (data.paymentMethod && data.paymentMethod.startsWith('pago_movil:')) {
+            const bank = data.paymentMethod.replace('pago_movil:', '').trim();
+            paymentDisplay = `📱 Pago Móvil (${bank})`;
+        }
+        msg += `\n*Pago:* ${paymentDisplay}`;
         if (data.paymentReference) {
             msg += `\n*Referencia:* ${data.paymentReference}`;
         }

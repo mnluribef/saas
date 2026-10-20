@@ -108,17 +108,25 @@ export function applyFullTenantConfig(
     if (cfg.storePrefix) config.storePrefix = cfg.storePrefix;
 
     // Actualizar datos de pago móvil en el DOM si fueron configurados
-    if (pm?.banco) {
-        const el = document.getElementById('pm-data-banco');
-        if (el) el.textContent = pm.banco;
-    }
-    if (pm?.telefono) {
-        const el = document.getElementById('pm-data-telefono');
-        if (el) el.textContent = pm.telefono;
-    }
-    if (pm?.cedula) {
-        const el = document.getElementById('pm-data-cedula');
-        if (el) el.textContent = pm.cedula;
+    const pmAccounts = cfg.payment?.pagoMovilAccounts && Array.isArray(cfg.payment.pagoMovilAccounts) && cfg.payment.pagoMovilAccounts.length > 0
+        ? cfg.payment.pagoMovilAccounts
+        : (pm ? [{ banco: pm.banco || '', telefono: pm.telefono || '', cedula: pm.cedula || '', titular: pm.titular || '', isDefault: true }] : []);
+
+    if (cartController && pmAccounts.length > 0) {
+        cartController.setPagoMovilAccounts(pmAccounts);
+    } else {
+        if (pm?.banco) {
+            const el = document.getElementById('pm-data-banco');
+            if (el) el.textContent = pm.banco;
+        }
+        if (pm?.telefono) {
+            const el = document.getElementById('pm-data-telefono');
+            if (el) el.textContent = pm.telefono;
+        }
+        if (pm?.cedula) {
+            const el = document.getElementById('pm-data-cedula');
+            if (el) el.textContent = pm.cedula;
+        }
     }
 
     // Actualizar datos de Zelle en el DOM

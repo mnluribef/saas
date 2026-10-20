@@ -360,6 +360,44 @@
     color: var(--white);
 }
 
+.btn-add-compact {
+    width: auto !important;
+    padding: 0.45rem 0.9rem !important;
+    font-size: 0.8rem !important;
+}
+
+.dynamic-item-header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.pm-default-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-color);
+    padding: 0.2rem 0.55rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.pm-default-toggle:hover {
+    color: var(--white);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.pm-default-toggle input[type="radio"] {
+    accent-color: var(--primary);
+    cursor: pointer;
+}
+
 /* Pie de Configuración con Botón Flotante/Fijo */
 .settings-sticky-footer {
     display: flex;

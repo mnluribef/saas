@@ -848,7 +848,7 @@ async function loadAnalytics() {
             } else {
                 data.paymentMethods.forEach((pm: any) => {
                     const pct = Math.round((pm.count / totalPaymentOrders) * 100);
-                    const name = pm.payment_method === 'pago_movil' ? 'Pago Móvil' :
+                    const name = pm.payment_method?.startsWith('pago_movil') ? `Pago Móvil${pm.payment_method.includes(':') ? ` (${pm.payment_method.split(':')[1]})` : ''}` :
                                  pm.payment_method === 'efectivo' ? 'Efectivo' :
                                  pm.payment_method === 'zelle' ? 'Zelle' :
                                  pm.payment_method === 'punto' ? 'Punto de Venta' : pm.payment_method;
@@ -1350,7 +1350,11 @@ async function viewOrderDetails(orderId: string) {
         };
 
         if (paymentMethodElem) {
-            paymentMethodElem.textContent = paymentLabels[order.payment_method] || order.payment_method || 'Por acordar';
+            let label = paymentLabels[order.payment_method];
+            if (!label && order.payment_method?.startsWith('pago_movil:')) {
+                label = `Pago Móvil (${order.payment_method.replace('pago_movil:', '').trim()})`;
+            }
+            paymentMethodElem.textContent = label || order.payment_method || 'Por acordar';
         }
         if (paymentRefElem) {
             paymentRefElem.textContent = order.payment_reference || 'Sin referencia registrada';
@@ -1459,7 +1463,7 @@ function openPaymentModal(orderId: string, newStatus: string) {
     }
 
     if (paymentMethodSelect && targetOrder?.payment_method) {
-        paymentMethodSelect.value = targetOrder.payment_method;
+        paymentMethodSelect.value = targetOrder.payment_method.startsWith('pago_movil') ? 'pago_movil' : targetOrder.payment_method;
     }
     if (paymentReferenceInput) {
         paymentReferenceInput.value = targetOrder?.payment_reference || '';
@@ -4272,6 +4276,83 @@ function renderFaq(items: any[] = []) {
     if (window.lucide) lucide.createIcons();
 }
 
+// 7. Cuentas de Pago Móvil (Venezuela)
+function renderPagoMovilAccounts(items: any[] = []) {
+    const container = document.getElementById('pagomovil-items-list');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const accounts = items.length > 0 ? items : [{ banco: '', telefono: '', cedula: '', titular: '', isDefault: true }];
+
+    accounts.forEach((acc, idx) => {
+        const row = document.createElement('div');
+        row.className = 'dynamic-item-card pagomovil-item-row';
+        const isDefault = acc.isDefault || idx === 0;
+
+        row.innerHTML = `
+            <div class="dynamic-item-header">
+                <div class="dynamic-item-header-left">
+                    <span class="dynamic-item-badge">
+                        <i data-lucide="smartphone"></i> Cuenta #${idx + 1}
+                    </span>
+                    <label class="pm-default-toggle" title="Marcar como cuenta principal">
+                        <input type="radio" name="pm-default-account-radio" class="pm-account-default-radio" ${isDefault ? 'checked' : ''} />
+                        <span>Cuenta Principal</span>
+                    </label>
+                </div>
+                <button type="button" class="btn-remove-item btn-del-pagomovil" title="Eliminar cuenta">
+                    <i data-lucide="trash-2"></i> Quitar
+                </button>
+            </div>
+            <div class="settings-grid-2">
+                <div class="settings-form-group">
+                    <label>Banco y Código</label>
+                    <input type="text" list="venezuelan-banks-list" class="form-control pm-banco-input" placeholder="Ej: Banesco (0134) o Mercantil (0105)" value="${acc.banco || ''}" />
+                </div>
+                <div class="settings-form-group">
+                    <label>Teléfono Afiliado</label>
+                    <input type="text" class="form-control pm-telefono-input" placeholder="Ej: 0412-4756191" value="${acc.telefono || ''}" />
+                </div>
+            </div>
+            <div class="settings-grid-2">
+                <div class="settings-form-group">
+                    <label>Cédula / RIF</label>
+                    <input type="text" class="form-control pm-cedula-input" placeholder="Ej: V-12345678 o J-12345678-0" value="${acc.cedula || ''}" />
+                </div>
+                <div class="settings-form-group">
+                    <label>Titular / Alias (Opcional)</label>
+                    <input type="text" class="form-control pm-titular-input" placeholder="Ej: Mi Tienda C.A." value="${acc.titular || ''}" />
+                </div>
+            </div>
+        `;
+        container.appendChild(row);
+
+        const delBtn = row.querySelector('.btn-del-pagomovil');
+        if (delBtn) {
+            delBtn.addEventListener('click', () => {
+                const totalRows = container.querySelectorAll('.pagomovil-item-row').length;
+                if (totalRows <= 1) {
+                    showToast('Debes mantener al menos una cuenta de Pago Móvil', 'warning');
+                    return;
+                }
+                const wasDefault = (row.querySelector('.pm-account-default-radio') as HTMLInputElement)?.checked;
+                row.remove();
+                if (wasDefault) {
+                    const firstRadio = container.querySelector('.pm-account-default-radio') as HTMLInputElement | null;
+                    if (firstRadio) firstRadio.checked = true;
+                }
+                container.querySelectorAll('.pagomovil-item-row').forEach((r, i) => {
+                    const badge = r.querySelector('.dynamic-item-badge');
+                    if (badge) badge.innerHTML = `<i data-lucide="smartphone"></i> Cuenta #${i + 1}`;
+                });
+                if (window.lucide) lucide.createIcons();
+            });
+        }
+    });
+
+    if (window.lucide) lucide.createIcons();
+}
+
 // --- CARGA DE TODAS LAS CONFIGURACIONES DESDE LA API ---
 async function loadStoreSettings() {
     try {
@@ -4424,9 +4505,10 @@ function updateStoreUrls(tenant: any) {
         setVal('cfg-instagram', c.instagram || '');
         setVal('cfg-instagram-handle', c.instagramHandle || '');
 
-        setVal('cfg-pm-banco', pm.banco || '');
-        setVal('cfg-pm-telefono', pm.telefono || '');
-        setVal('cfg-pm-cedula', pm.cedula || '');
+        const pmAccounts = p.pagoMovilAccounts && Array.isArray(p.pagoMovilAccounts) && p.pagoMovilAccounts.length > 0
+            ? p.pagoMovilAccounts
+            : (pm.banco || pm.telefono || pm.cedula ? [{ ...pm, isDefault: true }] : []);
+        renderPagoMovilAccounts(pmAccounts);
 
         setVal('cfg-zelle-email', z.email || '');
         setVal('cfg-zelle-titular', z.titular || '');
@@ -4533,6 +4615,21 @@ if (btnAddFaq) {
     });
 }
 
+const btnAddPm = document.getElementById('btn-add-pagomovil');
+if (btnAddPm) {
+    btnAddPm.addEventListener('click', () => {
+        const currentAccounts = collectPagoMovilAccounts();
+        currentAccounts.push({
+            banco: '',
+            telefono: '',
+            cedula: '',
+            titular: '',
+            isDefault: currentAccounts.length === 0,
+        });
+        renderPagoMovilAccounts(currentAccounts);
+    });
+}
+
 // Funciones recolectoras de los formularios dinámicos
 function collectHeroSlides() {
     const rows = document.querySelectorAll('.hero-slide-row');
@@ -4604,6 +4701,32 @@ function collectFaqs() {
         const a = getRowVal(r, '.faq-a-input');
         if (q && a) items.push({ q, a });
     });
+    return items;
+}
+
+function collectPagoMovilAccounts() {
+    const rows = document.querySelectorAll('.pagomovil-item-row');
+    const items: any[] = [];
+    rows.forEach((r, idx) => {
+        const banco = getRowVal(r, '.pm-banco-input');
+        const telefono = getRowVal(r, '.pm-telefono-input');
+        const cedula = getRowVal(r, '.pm-cedula-input');
+        const titular = getRowVal(r, '.pm-titular-input');
+        const isDefault = (r.querySelector('.pm-account-default-radio') as HTMLInputElement)?.checked || false;
+        if (banco || telefono || cedula) {
+            items.push({
+                id: `pm_${idx + 1}`,
+                banco,
+                telefono,
+                cedula,
+                titular: titular || '',
+                isDefault,
+            });
+        }
+    });
+    if (items.length > 0 && !items.some(a => a.isDefault)) {
+        items[0].isDefault = true;
+    }
     return items;
 }
 
@@ -4701,11 +4824,17 @@ if (storeSettingsForm) {
                 instagramHandle: $val('cfg-instagram-handle') || undefined,
             },
             payment: {
-                pagoMovil: {
-                    banco: $val('cfg-pm-banco') || undefined,
-                    telefono: $val('cfg-pm-telefono') || undefined,
-                    cedula: $val('cfg-pm-cedula') || undefined,
-                },
+                pagoMovilAccounts: collectPagoMovilAccounts(),
+                pagoMovil: (function() {
+                    const accs = collectPagoMovilAccounts();
+                    const def = accs.find(a => a.isDefault) || accs[0] || {};
+                    return {
+                        banco: def.banco || undefined,
+                        telefono: def.telefono || undefined,
+                        cedula: def.cedula || undefined,
+                        titular: def.titular || undefined,
+                    };
+                })(),
                 zelle: {
                     email: $val('cfg-zelle-email') || undefined,
                     titular: $val('cfg-zelle-titular') || undefined,
