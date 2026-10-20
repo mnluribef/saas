@@ -55,6 +55,7 @@ export const COLOR_PALETTES: Record<string, PaletteDefinition> = {
             bgPage: '#FFFDF7',
             bgSection: '#FEF9EE',
             bgCard: '#FFFFFF',
+            heroBg: '#1A0B02',
             borderSubtle: 'rgba(180, 83, 9, 0.14)',
             borderFocus: '#D97706',
             textHeading: '#451A03',
@@ -91,6 +92,7 @@ export const COLOR_PALETTES: Record<string, PaletteDefinition> = {
             bgPage: '#FBFDFB',
             bgSection: '#F0FDF4',
             bgCard: '#FFFFFF',
+            heroBg: '#031A12',
             borderSubtle: 'rgba(5, 150, 105, 0.14)',
             borderFocus: '#059669',
             textHeading: '#064E3B',
@@ -127,6 +129,7 @@ export const COLOR_PALETTES: Record<string, PaletteDefinition> = {
             bgPage: '#F8FAFC',
             bgSection: '#F1F5F9',
             bgCard: '#FFFFFF',
+            heroBg: '#070F1E',
             borderSubtle: 'rgba(37, 99, 235, 0.14)',
             borderFocus: '#2563EB',
             textHeading: '#0F172A',
@@ -163,6 +166,7 @@ export const COLOR_PALETTES: Record<string, PaletteDefinition> = {
             bgPage: '#FAFAFE',
             bgSection: '#F3F0FF',
             bgCard: '#FFFFFF',
+            heroBg: '#0F071D',
             borderSubtle: 'rgba(124, 58, 237, 0.14)',
             borderFocus: '#7C3AED',
             textHeading: '#2E1065',
@@ -199,6 +203,7 @@ export const COLOR_PALETTES: Record<string, PaletteDefinition> = {
             bgPage: '#FFFBFB',
             bgSection: '#FFF1F1',
             bgCard: '#FFFFFF',
+            heroBg: '#180406',
             borderSubtle: 'rgba(220, 38, 38, 0.14)',
             borderFocus: '#DC2626',
             textHeading: '#450A0A',
@@ -235,6 +240,7 @@ export const COLOR_PALETTES: Record<string, PaletteDefinition> = {
             bgPage: '#FFFDFD',
             bgSection: '#FFF5F6',
             bgCard: '#FFFFFF',
+            heroBg: '#180611',
             borderSubtle: 'rgba(225, 29, 72, 0.14)',
             borderFocus: '#E11D48',
             textHeading: '#4C0519',
@@ -271,6 +277,7 @@ export const COLOR_PALETTES: Record<string, PaletteDefinition> = {
             bgPage: '#F8FAFC',
             bgSection: '#EDF2F7',
             bgCard: '#FFFFFF',
+            heroBg: '#090D16',
             borderSubtle: 'rgba(15, 23, 42, 0.14)',
             borderFocus: '#0F172A',
             textHeading: '#020617',
@@ -307,6 +314,7 @@ export const COLOR_PALETTES: Record<string, PaletteDefinition> = {
             bgPage: '#FFFCF9',
             bgSection: '#FFF3EB',
             bgCard: '#FFFFFF',
+            heroBg: '#1A0A04',
             borderSubtle: 'rgba(194, 65, 12, 0.14)',
             borderFocus: '#C2410C',
             textHeading: '#431407',
@@ -368,7 +376,7 @@ export function generatePaletteCss(paletteId?: string | null): string {
     const themeTextMuted = theme.textMuted || '#7A523B';
     const themeTextLight = theme.textLight || '#A67C65';
 
-    const themeHeroBg = theme.heroBg || themeBgPage;
+    const themeHeroBg = theme.heroBg || '#0A1120';
     const themeHeroOverlay = theme.heroOverlay || 'linear-gradient(to bottom right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 60%, transparent 100%)';
     const themeHeroFade = theme.heroFadeBottom || `linear-gradient(to top, ${themeBgPage} 0%, transparent 100%)`;
 

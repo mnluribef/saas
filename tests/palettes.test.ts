@@ -1,6 +1,6 @@
 // tests/palettes.test.ts
 import { describe, it, expect } from 'vitest';
-import { getPalette, getAllPalettes } from '../src/config/palettes';
+import { getPalette, getAllPalettes, generatePaletteCss } from '../src/config/palettes';
 import { createStoreConfig } from '../src/config/store.config';
 
 describe('Color Palettes Engine (src/config/palettes.ts)', () => {
@@ -82,9 +82,27 @@ describe('Color Palettes Engine (src/config/palettes.ts)', () => {
         expect(slateCss).toContain(':root {');
         expect(slateCss).toContain('--theme-primary: #0F172A !important;');
         expect(slateCss).toContain('--theme-accent: #3B82F6 !important;');
+        expect(slateCss).toContain('--theme-hero-bg: #090D16 !important;');
+        expect(slateCss).toContain('--hero-bg: #090D16 !important;');
         expect(slateCss).toContain('--rose: #0F172A !important;');
         expect(slateCss).toContain('--gold: #3B82F6 !important;');
         expect(slateCss).toContain('--grad-hero:');
         expect(slateCss).toContain('--grad-cta:');
+    });
+
+    it('ensures all non-default palettes define a dark heroBg so header and footer do not turn white', () => {
+        const palettes = getAllPalettes().filter(p => p.id !== 'default');
+        expect(palettes.length).toBe(8);
+
+        for (const p of palettes) {
+            expect(p.theme?.heroBg).toBeDefined();
+            // El heroBg debe ser un tono oscuro para contrastar con textos blancos del header y footer
+            expect(p.theme?.heroBg).not.toBe(p.theme?.bgPage);
+            expect(p.theme?.heroBg?.startsWith('#')).toBe(true);
+
+            const css = generatePaletteCss(p.id);
+            expect(css).toContain(`--theme-hero-bg: ${p.theme?.heroBg} !important;`);
+            expect(css).toContain(`--hero-bg: ${p.theme?.heroBg} !important;`);
+        }
     });
 });

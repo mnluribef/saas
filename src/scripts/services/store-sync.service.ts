@@ -52,8 +52,21 @@ export function applyPalette(paletteId?: string | null): void {
     lastAppliedPaletteId = normalizedId;
 
     const existing = document.getElementById('dynamic-palette-override') as HTMLStyleElement | null;
+    const root = document.documentElement;
     if (!normalizedId) {
         if (existing) existing.remove();
+        root.style.removeProperty('--theme-primary');
+        root.style.removeProperty('--rose');
+        root.style.removeProperty('--theme-primary-hover');
+        root.style.removeProperty('--rose-deep');
+        root.style.removeProperty('--theme-accent');
+        root.style.removeProperty('--gold');
+        root.style.removeProperty('--theme-bg-page');
+        root.style.removeProperty('--cream');
+        root.style.removeProperty('--theme-text-heading');
+        root.style.removeProperty('--brown-dark');
+        root.style.removeProperty('--theme-hero-bg');
+        root.style.removeProperty('--hero-bg');
         return;
     }
 
@@ -74,7 +87,6 @@ export function applyPalette(paletteId?: string | null): void {
     if (!pal || !pal.theme) return;
 
     const t = pal.theme;
-    const root = document.documentElement;
 
     // Resguardo garantizado de variables CSS principales
     if (t.primaryColor) {
@@ -96,6 +108,10 @@ export function applyPalette(paletteId?: string | null): void {
     if (t.textHeading) {
         root.style.setProperty('--theme-text-heading', t.textHeading, 'important');
         root.style.setProperty('--brown-dark', t.textHeading, 'important');
+    }
+    if (t.heroBg) {
+        root.style.setProperty('--theme-hero-bg', t.heroBg, 'important');
+        root.style.setProperty('--hero-bg', t.heroBg, 'important');
     }
 }
 
