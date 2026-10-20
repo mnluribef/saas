@@ -84,18 +84,35 @@ export async function verifySession(
 
     try {
         const now = Math.floor(Date.now() / 1000);
-        let query = `SELECT s.username, s.tenant_id, s.ip, s.ua_hash, s.expires_at, u.role, u.email 
-             FROM sessions s
-             JOIN users u ON (s.username = u.email OR s.username = u.username) AND s.tenant_id = u.tenant_id
-             WHERE s.token = ? AND s.expires_at > ?`;
-        const bindings: (string | number)[] = [token, now];
+        let session: SessionRow | null = null;
+        try {
+            let query = `SELECT s.username, s.tenant_id, s.ip, s.ua_hash, s.expires_at, u.role, u.email 
+                 FROM sessions s
+                 JOIN users u ON (s.username = u.email OR s.username = u.username) AND s.tenant_id = u.tenant_id
+                 WHERE s.token = ? AND s.expires_at > ?`;
+            const bindings: (string | number)[] = [token, now];
 
-        if (tenantId) {
-            query += ' AND s.tenant_id = ?';
-            bindings.push(tenantId);
+            if (tenantId) {
+                query += ' AND s.tenant_id = ?';
+                bindings.push(tenantId);
+            }
+
+            session = await db.prepare(query).bind(...bindings).first<SessionRow>();
+        } catch {
+            // Fallback defensivo si la tabla sessions no tiene ip o ua_hash
+            let fallbackQuery = `SELECT s.username, s.tenant_id, s.expires_at, u.role, u.email 
+                 FROM sessions s
+                 JOIN users u ON (s.username = u.email OR s.username = u.username) AND s.tenant_id = u.tenant_id
+                 WHERE s.token = ? AND s.expires_at > ?`;
+            const fallbackBindings: (string | number)[] = [token, now];
+
+            if (tenantId) {
+                fallbackQuery += ' AND s.tenant_id = ?';
+                fallbackBindings.push(tenantId);
+            }
+
+            session = await db.prepare(fallbackQuery).bind(...fallbackBindings).first<SessionRow>();
         }
-
-        const session = await db.prepare(query).bind(...bindings).first<SessionRow>();
 
         if (session) {
             // S-03: Mitigar secuestro de sesión mediante comparación de hash de User-Agent

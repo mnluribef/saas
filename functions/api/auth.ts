@@ -262,9 +262,16 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
         const clientUa = request.headers.get("User-Agent") || "unknown";
         const uaHash = (await hashSHA256(clientUa)).slice(0, 32);
 
-        await db.prepare("INSERT INTO sessions (token, username, expires_at, tenant_id, ip, ua_hash) VALUES (?, ?, ?, ?, ?, ?)")
-            .bind(sessionToken, user.email || cleanEmail, expiresAt, effectiveTenantId, clientIp, uaHash)
-            .run();
+        try {
+            await db.prepare("INSERT INTO sessions (token, username, expires_at, tenant_id, ip, ua_hash) VALUES (?, ?, ?, ?, ?, ?)")
+                .bind(sessionToken, user.email || cleanEmail, expiresAt, effectiveTenantId, clientIp, uaHash)
+                .run();
+        } catch {
+            // Fallback defensivo si la tabla sessions no tiene las columnas ip o ua_hash
+            await db.prepare("INSERT INTO sessions (token, username, expires_at, tenant_id) VALUES (?, ?, ?, ?)")
+                .bind(sessionToken, user.email || cleanEmail, expiresAt, effectiveTenantId)
+                .run();
+        }
 
         const url = new URL(request.url);
         const host = (request.headers.get('x-forwarded-host') || url.hostname).toLowerCase();
