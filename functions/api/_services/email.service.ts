@@ -356,10 +356,12 @@ export async function sendWelcomeEmail(
     const subject = `¡Bienvenido a Ventrina! Tu tienda "${data.tenantName}" ya está lista 🚀`;
     const html = generateWelcomeEmailHtml(data);
     const text = generateWelcomeEmailText(data);
-    const from = env.EMAIL_FROM || 'Ventrina <onboarding@ventrina.app>';
+    const nodeEnv = (globalThis as unknown as { process?: { env?: Record<string, string | undefined> } }).process?.env;
+    const apiKey = env.RESEND_API_KEY || nodeEnv?.RESEND_API_KEY;
+    const from = env.EMAIL_FROM || nodeEnv?.EMAIL_FROM || 'Ventrina <onboarding@ventrina.app>';
 
     // Modo simulación defensivo si no hay clave API configurada (desarrollo local / staging / tests)
-    if (!env.RESEND_API_KEY) {
+    if (!apiKey) {
         console.log(`[EmailService] Clave RESEND_API_KEY no configurada. Simulando envío de bienvenida a: ${data.to}`);
         console.log(`[EmailService] Asunto: ${subject}`);
         console.log(`[EmailService] Enlace Tienda: ${data.storeUrl} | Admin: ${data.adminUrl}`);
@@ -374,7 +376,7 @@ export async function sendWelcomeEmail(
         const response = await fetch('https://api.resend.com/emails', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${env.RESEND_API_KEY}`,
+                'Authorization': `Bearer ${apiKey}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
