@@ -926,6 +926,24 @@
 .palette-card[data-palette-id="terracotta-sunset"] .swatch-bg { background-color: #FFFCF9; color: #431407; }
 .palette-card[data-palette-id="terracotta-sunset"] .swatch-text { background-color: #431407; color: #ffffff; }
 
+/* 10. Midnight Luxury & Oro Imperial */
+.palette-card[data-palette-id="midnight-gold"] .swatch-primary { background-color: #D4AF37; color: #111217; }
+.palette-card[data-palette-id="midnight-gold"] .swatch-accent { background-color: #F3E5AB; color: #111217; }
+.palette-card[data-palette-id="midnight-gold"] .swatch-bg { background-color: #FAF9F6; color: #111217; }
+.palette-card[data-palette-id="midnight-gold"] .swatch-text { background-color: #111217; color: #ffffff; }
+
+/* 11. Nordic Sage & Terracota Suave */
+.palette-card[data-palette-id="nordic-sage"] .swatch-primary { background-color: #2D5A46; color: #ffffff; }
+.palette-card[data-palette-id="nordic-sage"] .swatch-accent { background-color: #E07A5F; color: #ffffff; }
+.palette-card[data-palette-id="nordic-sage"] .swatch-bg { background-color: #FBF9F5; color: #14261C; }
+.palette-card[data-palette-id="nordic-sage"] .swatch-text { background-color: #14261C; color: #ffffff; }
+
+/* 12. Sunset Coral & Melocotón Tropical */
+.palette-card[data-palette-id="sunset-coral"] .swatch-primary { background-color: #F43F5E; color: #ffffff; }
+.palette-card[data-palette-id="sunset-coral"] .swatch-accent { background-color: #F59E0B; color: #ffffff; }
+.palette-card[data-palette-id="sunset-coral"] .swatch-bg { background-color: #FFFBFB; color: #4C0519; }
+.palette-card[data-palette-id="sunset-coral"] .swatch-text { background-color: #4C0519; color: #ffffff; }
+
 /* ==========================================================================
    SECCIÓN Y MODAL DE CÓDIGO QR DE LA TIENDA
    ========================================================================== */

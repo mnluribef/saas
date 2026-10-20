@@ -326,6 +326,117 @@ export const COLOR_PALETTES: Record<string, PaletteDefinition> = {
             badgeBorder: 'rgba(194, 65, 12, 0.35)',
             badgeText: '#7C2D12'
         }
+    },
+    'midnight-gold': {
+        id: 'midnight-gold',
+        name: 'Midnight Luxury & Oro Imperial',
+        description: 'Lujo sobrio en negro carbón con acentos en oro imperial pulido y champagne. Ideal para joyería, relojes, licores finos y alta gama.',
+        category: 'elegante',
+        preview: {
+            primary: '#D4AF37',
+            accent: '#F3E5AB',
+            bgPage: '#FAF9F6',
+            text: '#111217'
+        },
+        theme: {
+            primaryColor: '#D4AF37',
+            primaryHover: '#B89628',
+            primaryDeep: '#8C7016',
+            primaryLight: 'rgba(212, 175, 55, 0.12)',
+            primaryPale: '#FDFBF2',
+            accentColor: '#E5C158',
+            accentHover: '#D4AF37',
+            accentLight: 'rgba(229, 193, 88, 0.15)',
+            accentPale: '#FFFDF5',
+            bgPage: '#FAF9F6',
+            bgSection: '#F4F2EC',
+            bgCard: '#FFFFFF',
+            heroBg: '#0C0D12',
+            borderSubtle: 'rgba(212, 175, 55, 0.18)',
+            borderFocus: '#D4AF37',
+            textHeading: '#111217',
+            textBody: '#272830',
+            textMuted: '#5A5C69',
+            textLight: '#858796',
+            shadowColor: 'rgba(212, 175, 55, 0.22)',
+            badgeBg: 'rgba(212, 175, 55, 0.15)',
+            badgeBorder: 'rgba(212, 175, 55, 0.40)',
+            badgeText: '#997A15'
+        }
+    },
+    'nordic-sage': {
+        id: 'nordic-sage',
+        name: 'Nordic Sage & Terracota Suave',
+        description: 'Verde salvia escandinavo y arcilla suave sobre marfil lino. Ideal para interiorismo, cosmética botánica, cerámica y bienestar.',
+        category: 'fresco',
+        preview: {
+            primary: '#2D5A46',
+            accent: '#E07A5F',
+            bgPage: '#FBF9F5',
+            text: '#14261C'
+        },
+        theme: {
+            primaryColor: '#2D5A46',
+            primaryHover: '#234737',
+            primaryDeep: '#173024',
+            primaryLight: 'rgba(45, 90, 70, 0.12)',
+            primaryPale: '#EEF5F1',
+            accentColor: '#E07A5F',
+            accentHover: '#C96348',
+            accentLight: 'rgba(224, 122, 95, 0.15)',
+            accentPale: '#FDF1ED',
+            bgPage: '#FBF9F5',
+            bgSection: '#F3EFE8',
+            bgCard: '#FFFFFF',
+            heroBg: '#081A12',
+            borderSubtle: 'rgba(45, 90, 70, 0.14)',
+            borderFocus: '#2D5A46',
+            textHeading: '#14261C',
+            textBody: '#233B2E',
+            textMuted: '#476655',
+            textLight: '#6D8D7C',
+            shadowColor: 'rgba(45, 90, 70, 0.18)',
+            badgeBg: 'rgba(224, 122, 95, 0.15)',
+            badgeBorder: 'rgba(224, 122, 95, 0.38)',
+            badgeText: '#C96348'
+        }
+    },
+    'sunset-coral': {
+        id: 'sunset-coral',
+        name: 'Sunset Coral & Melocotón Tropical',
+        description: 'Coral vibrante con destellos melocotón y mango dorado. Creado para ropa playera, heladerías, smoothies y marcas juveniles.',
+        category: 'cálido',
+        preview: {
+            primary: '#F43F5E',
+            accent: '#F59E0B',
+            bgPage: '#FFFBFB',
+            text: '#4C0519'
+        },
+        theme: {
+            primaryColor: '#F43F5E',
+            primaryHover: '#E11D48',
+            primaryDeep: '#BE123C',
+            primaryLight: 'rgba(244, 63, 94, 0.12)',
+            primaryPale: '#FFF1F2',
+            accentColor: '#F59E0B',
+            accentHover: '#D97706',
+            accentLight: 'rgba(245, 158, 11, 0.15)',
+            accentPale: '#FEF3C7',
+            bgPage: '#FFFBFB',
+            bgSection: '#FFF1F2',
+            bgCard: '#FFFFFF',
+            heroBg: '#1A0810',
+            borderSubtle: 'rgba(244, 63, 94, 0.14)',
+            borderFocus: '#F43F5E',
+            textHeading: '#4C0519',
+            textBody: '#881337',
+            textMuted: '#9F1239',
+            textLight: '#BE123C',
+            shadowColor: 'rgba(244, 63, 94, 0.20)',
+            badgeBg: 'rgba(245, 158, 11, 0.18)',
+            badgeBorder: 'rgba(244, 63, 94, 0.35)',
+            badgeText: '#BE123C'
+        }
     }
 };
 
