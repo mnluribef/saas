@@ -482,7 +482,7 @@ export const COLOR_PALETTES: Record<string, PaletteDefinition> = {
         category: 'cálido',
         preview: {
             primary: '#854D0E',
-            accent: '#D97706',
+            accent: '#D48B38',
             bgPage: '#FCF9F5',
             text: '#2E1805'
         },
@@ -492,10 +492,10 @@ export const COLOR_PALETTES: Record<string, PaletteDefinition> = {
             primaryDeep: '#542E0C',
             primaryLight: 'rgba(133, 77, 14, 0.12)',
             primaryPale: '#FEFCE8',
-            accentColor: '#D97706',
-            accentHover: '#B45309',
-            accentLight: 'rgba(217, 119, 6, 0.15)',
-            accentPale: '#FEF3C7',
+            accentColor: '#D48B38',
+            accentHover: '#B8732A',
+            accentLight: 'rgba(212, 139, 56, 0.15)',
+            accentPale: '#FEF6EC',
             bgPage: '#FCF9F5',
             bgSection: '#F7F0E6',
             bgCard: '#FFFFFF',
@@ -507,7 +507,7 @@ export const COLOR_PALETTES: Record<string, PaletteDefinition> = {
             textMuted: '#7A502B',
             textLight: '#A47850',
             shadowColor: 'rgba(133, 77, 14, 0.22)',
-            badgeBg: 'rgba(217, 119, 6, 0.18)',
+            badgeBg: 'rgba(212, 139, 56, 0.18)',
             badgeBorder: 'rgba(133, 77, 14, 0.35)',
             badgeText: '#713F12'
         }
@@ -547,6 +547,43 @@ export const COLOR_PALETTES: Record<string, PaletteDefinition> = {
             badgeBg: 'rgba(6, 182, 212, 0.18)',
             badgeBorder: 'rgba(101, 163, 13, 0.38)',
             badgeText: '#365314'
+        }
+    },
+    'indigo-ochre': {
+        id: 'indigo-ochre',
+        name: 'Índigo Denim & Ocre Urbano',
+        description: 'Azul índigo contemporáneo con acentos en ocre tostado y fondo despejado. Creado para moda urbana, denim, calzado y estudios creativos.',
+        category: 'elegante',
+        preview: {
+            primary: '#4338CA',
+            accent: '#EAB308',
+            bgPage: '#FAF9FE',
+            text: '#1E1B4B'
+        },
+        theme: {
+            primaryColor: '#4338CA',
+            primaryHover: '#3730A3',
+            primaryDeep: '#312E81',
+            primaryLight: 'rgba(67, 56, 202, 0.12)',
+            primaryPale: '#EEF2FF',
+            accentColor: '#EAB308',
+            accentHover: '#CA8A04',
+            accentLight: 'rgba(234, 179, 8, 0.15)',
+            accentPale: '#FEFCE8',
+            bgPage: '#FAF9FE',
+            bgSection: '#F1F0FA',
+            bgCard: '#FFFFFF',
+            heroBg: '#0C0E24',
+            borderSubtle: 'rgba(67, 56, 202, 0.15)',
+            borderFocus: '#4338CA',
+            textHeading: '#1E1B4B',
+            textBody: '#312E81',
+            textMuted: '#4F46E5',
+            textLight: '#6366F1',
+            shadowColor: 'rgba(67, 56, 202, 0.22)',
+            badgeBg: 'rgba(234, 179, 8, 0.18)',
+            badgeBorder: 'rgba(67, 56, 202, 0.35)',
+            badgeText: '#3730A3'
         }
     }
 };
