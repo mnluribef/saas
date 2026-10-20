@@ -42,6 +42,8 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
                 id: tenant.id,
                 name: tenant.name,
                 plan: planDetails.name,
+                planKey: planKey,
+                hasAnalytics: ['pro', 'enterprise', 'demo'].includes(planKey),
                 status: tenant.active === 1 ? 'Activo' : 'Suspendido',
                 domain: tenant.domain || `${tenant.id}.ventrina.app`
             },

@@ -475,6 +475,9 @@ async function loadBcvRate() {
     }
 }
 
+let currentTenantPlanKey: string | null = null;
+let currentTenantHasAnalytics: boolean = true;
+
 async function loadBillingData() {
     try {
         const res = await fetch('/api/billing');
@@ -482,6 +485,13 @@ async function loadBillingData() {
             const data = (await res.json()) as any;
             
             // Info de Plan
+            if (data.tenant) {
+                currentTenantPlanKey = data.tenant.planKey || (data.tenant.plan === 'Básico' || data.tenant.plan === 'basic' ? 'basic' : 'pro');
+                currentTenantHasAnalytics = typeof data.tenant.hasAnalytics === 'boolean'
+                    ? data.tenant.hasAnalytics
+                    : Boolean(currentTenantPlanKey && ['pro', 'enterprise', 'demo'].includes(currentTenantPlanKey));
+            }
+
             const elPlanName = document.getElementById('billing-plan-name');
             if (elPlanName) elPlanName.textContent = data.tenant.plan;
             
@@ -526,13 +536,13 @@ async function loadBillingData() {
 }
 
 async function refreshAllData() {
+    await loadBillingData();
     await Promise.all([
         loadBcvRate(),
         loadOrders(),
         loadProducts(),
         loadSales(),
         loadStats(),
-        loadBillingData(),
         loadCoupons(),
         loadCategories()
     ]);
@@ -682,10 +692,83 @@ async function loadStats() {
     }
 }
 
+function renderAnalyticsLockedState() {
+    const monthRevEl = document.getElementById('metric-month-revenue');
+    const monthRevBsEl = document.getElementById('metric-month-revenue-bs');
+    const growthContainer = document.getElementById('metric-growth-container');
+    const avgTicketEl = document.getElementById('metric-average-ticket');
+    const avgTicketBsEl = document.getElementById('metric-average-ticket-bs');
+
+    if (monthRevEl) {
+        monthRevEl.innerHTML = '<span class="badge-pro-locked"><i data-lucide="lock" class="icon-inline"></i> Plan Pro</span>';
+    }
+    if (monthRevBsEl) {
+        monthRevBsEl.textContent = 'Disponible en planes Pro';
+    }
+    if (growthContainer) {
+        growthContainer.innerHTML = '';
+    }
+
+    if (avgTicketEl) {
+        avgTicketEl.innerHTML = '<span class="badge-pro-locked"><i data-lucide="lock" class="icon-inline"></i> Plan Pro</span>';
+    }
+    if (avgTicketBsEl) {
+        avgTicketBsEl.textContent = 'Disponible en planes Pro';
+    }
+
+    const topProdContainer = document.getElementById('top-products-container');
+    if (topProdContainer) {
+        topProdContainer.innerHTML = `
+            <div class="analytics-locked-state">
+                <div class="analytics-locked-icon">
+                    <i data-lucide="award"></i>
+                </div>
+                <h4>Ranking de Productos Pro</h4>
+                <p>Identifica tus productos más vendidos, unidades facturadas y tendencias de demanda.</p>
+                <button type="button" class="btn-action go-to-billing-btn">
+                    <i data-lucide="zap"></i> Mejorar a Plan Pro
+                </button>
+            </div>
+        `;
+    }
+
+    const breakdownContainer = document.getElementById('breakdown-container');
+    if (breakdownContainer) {
+        breakdownContainer.innerHTML = `
+            <div class="analytics-locked-state">
+                <div class="analytics-locked-icon">
+                    <i data-lucide="pie-chart"></i>
+                </div>
+                <h4>Canales de Pago y Entrega</h4>
+                <p>Conoce la distribución de métodos de pago y despacho preferidos por tus clientes.</p>
+                <button type="button" class="btn-action go-to-billing-btn">
+                    <i data-lucide="zap"></i> Mejorar a Plan Pro
+                </button>
+            </div>
+        `;
+    }
+
+    if (window.lucide) {
+        lucide.createIcons();
+    }
+}
+
 async function loadAnalytics() {
     try {
+        // Evitar petición a /api/analytics y el error 403 si el plan es básico/gratis
+        if (currentTenantPlanKey && !currentTenantHasAnalytics) {
+            renderAnalyticsLockedState();
+            return;
+        }
+
         const res = await fetch('/api/analytics');
-        if (!res.ok) return;
+        if (!res.ok) {
+            if (res.status === 403) {
+                currentTenantHasAnalytics = false;
+                renderAnalyticsLockedState();
+            }
+            return;
+        }
         const data = (await res.json()) as any;
         
         // 1. Ingresos Mes Actual y Crecimiento
@@ -3169,6 +3252,16 @@ function handleReportPayment() {
 document.addEventListener('click', (e) => {
     const t = e.target as HTMLElement | null;
     if (!t) return;
+
+    // Navegar a Facturación desde tarjetas de analíticas bloqueadas (Plan Básico / Gratis)
+    if (t.closest('.go-to-billing-btn')) {
+        const billingTab = document.querySelector('.sidebar-link[data-target="section-billing"]') as HTMLElement | null;
+        if (billingTab) {
+            billingTab.click();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        return;
+    }
 
     // View Order Details
     const btnViewOrder = t.closest('[data-action="view-order"]') as HTMLElement | null;
