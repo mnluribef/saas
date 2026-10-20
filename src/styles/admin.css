@@ -214,9 +214,15 @@ body {
 
 .main-header {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2.5rem;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-bottom: 2.25rem;
+    width: 100%;
+}
+
+.main-title {
+    display: flex;
+    flex-direction: column;
 }
 
 .main-title h1 {
@@ -224,6 +230,7 @@ body {
     font-family: "Outfit", sans-serif;
     color: var(--white);
     margin-bottom: 0.25rem;
+    letter-spacing: -0.02em;
 }
 
 .main-title p {
@@ -1009,8 +1016,28 @@ select option {
 /* Header & Barra Superior */
 .header-actions {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+    width: 100%;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.header-actions-group {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.header-actions-left {
+    justify-content: flex-start;
+}
+
+.header-actions-right {
+    justify-content: flex-end;
 }
 
 .badge-bcv-wrapper {
@@ -1837,8 +1864,9 @@ select option {
     display: block;
 }
 
-/* Botón Header: Acceso Rápido 'Ver Mi Tienda' */
-.btn-header-store {
+/* Botón Header: Acceso Rápido 'Ver Mi Tienda' y 'Código QR' */
+.btn-header-store,
+.btn-header-qr {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
@@ -1850,10 +1878,12 @@ select option {
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 10px;
     text-decoration: none;
+    cursor: pointer;
     transition: var(--transition);
 }
 
-.btn-header-store:hover {
+.btn-header-store:hover,
+.btn-header-qr:hover {
     background: rgba(59, 130, 246, 0.12);
     border-color: rgba(59, 130, 246, 0.4);
     color: #60a5fa;
@@ -1861,11 +1891,16 @@ select option {
 }
 
 @media (max-width: 640px) {
-    .btn-header-store-text {
+    .btn-header-store-text,
+    .btn-header-qr-text {
         display: none;
     }
-    .btn-header-store {
+    .btn-header-store,
+    .btn-header-qr {
         padding: 0.5rem;
+    }
+    .main-title h1 {
+        font-size: 1.6rem;
     }
 }
 
