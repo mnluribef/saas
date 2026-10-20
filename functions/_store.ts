@@ -17,10 +17,19 @@ export interface ProductRow {
 }
 
 interface RewriterElement {
-    setInnerContent(content: string): void;
+    setInnerContent(content: string, options?: { html?: boolean }): void;
     setAttribute(name: string, value: string): void;
     remove(): void;
     append(content: string, options?: { html?: boolean }): void;
+}
+
+function escapeHtml(str: string): string {
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
 }
 
 /**
@@ -92,17 +101,19 @@ export async function renderStorePage(request: Request, env: Env, tenant: Tenant
         })
         .on('.logo-text', {
             element(e: RewriterElement) {
-                if (logoSecondary) {
-                    e.setInnerContent(`<span class="logo-primary">${logoPrimary}</span><span class="logo-secondary">${logoSecondary}</span>`);
+                const safePrimary = escapeHtml(logoPrimary);
+                const safeSecondary = escapeHtml(logoSecondary);
+                if (safeSecondary) {
+                    e.setInnerContent(`<span class="logo-primary">${safePrimary}</span><span class="logo-secondary">${safeSecondary}</span>`, { html: true });
                 } else {
-                    e.setInnerContent(`<span class="logo-primary">${logoPrimary}</span>`);
+                    e.setInnerContent(`<span class="logo-primary">${safePrimary}</span>`, { html: true });
                 }
             }
         })
         .on('.footer-copyright', {
             element(e: RewriterElement) {
                 const currentYear = new Date().getFullYear();
-                e.setInnerContent(`&copy; ${currentYear} ${businessName}. Todos los derechos reservados.`);
+                e.setInnerContent(`&copy; ${currentYear} ${escapeHtml(businessName)}. Todos los derechos reservados.`, { html: true });
             }
         })
         .on('#catalog-store-meta', {
@@ -254,17 +265,19 @@ export async function renderProductPage(
         })
         .on('.logo-text', {
             element(e: RewriterElement) {
-                if (logoSecondary) {
-                    e.setInnerContent(`<span class="logo-primary">${logoPrimary}</span><span class="logo-secondary">${logoSecondary}</span>`);
+                const safePrimary = escapeHtml(logoPrimary);
+                const safeSecondary = escapeHtml(logoSecondary);
+                if (safeSecondary) {
+                    e.setInnerContent(`<span class="logo-primary">${safePrimary}</span><span class="logo-secondary">${safeSecondary}</span>`, { html: true });
                 } else {
-                    e.setInnerContent(`<span class="logo-primary">${logoPrimary}</span>`);
+                    e.setInnerContent(`<span class="logo-primary">${safePrimary}</span>`, { html: true });
                 }
             }
         })
         .on('.footer-copyright', {
             element(e: RewriterElement) {
                 const currentYear = new Date().getFullYear();
-                e.setInnerContent(`&copy; ${currentYear} ${businessName}. Todos los derechos reservados.`);
+                e.setInnerContent(`&copy; ${currentYear} ${escapeHtml(businessName)}. Todos los derechos reservados.`, { html: true });
             }
         })
         .on('meta[name="description"]', {

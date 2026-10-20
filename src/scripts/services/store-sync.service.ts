@@ -46,6 +46,15 @@ function safeSetHtml(elOrSelector: Element | string | null, html: string): void 
     }
 }
 
+function escapeHtml(str: string): string {
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 export function applyPalette(paletteId?: string | null): void {
     const normalizedId = paletteId && paletteId !== 'default' ? paletteId : null;
     if (normalizedId === lastAppliedPaletteId) return;
@@ -148,11 +157,12 @@ export function syncStoreWithSettings(cfg: any): void {
     // Logo Textos en Header y Footer
     if (hasChanged('logo', { p: b.logoTextPrimary, s: b.logoTextSecondary, name: storeName })) {
         const logoTextEls = document.querySelectorAll('.logo-text');
-        const primary = b.logoTextPrimary || '';
-        const secondary = b.logoTextSecondary || '';
+        const primary = escapeHtml(b.logoTextPrimary || '');
+        const secondary = escapeHtml(b.logoTextSecondary || '');
+        const safeStoreName = escapeHtml(storeName || '');
         const targetHtml = (primary || secondary)
             ? (secondary ? `<span class="logo-primary">${primary}</span><span class="logo-secondary">${secondary}</span>` : `<span class="logo-primary">${primary}</span>`)
-            : (storeName ? `<span class="logo-primary">${storeName}</span>` : '');
+            : (safeStoreName ? `<span class="logo-primary">${safeStoreName}</span>` : '');
 
         if (targetHtml) {
             logoTextEls.forEach(el => safeSetHtml(el, targetHtml));
