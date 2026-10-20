@@ -167,9 +167,7 @@ export async function renderStorePage(request: Request, env: Env, tenant: Tenant
         .on('head', {
             element(e: RewriterElement) {
                 e.append(`<meta name="ventrina-tenant" content="${tenant.id}" />`, { html: true });
-                e.append(`<meta name="vendly-tenant" content="${tenant.id}" />`, { html: true });
                 e.append(`<meta name="ventrina-business" content="${businessName}" />`, { html: true });
-                e.append(`<meta name="vendly-business" content="${businessName}" />`, { html: true });
                 if (paletteCss) {
                     e.append(`<style id="server-palette-override">${paletteCss}</style>`, { html: true });
                 }
@@ -334,11 +332,9 @@ export async function renderProductPage(
         .on('head', {
             element(e: RewriterElement) {
                 e.append(`<meta name="ventrina-tenant" content="${tenant.id}" />`, { html: true });
-                e.append(`<meta name="vendly-tenant" content="${tenant.id}" />`, { html: true });
+                e.append(`<meta name="ventrina-tenant" content="${tenant.id}" />`, { html: true });
                 e.append(`<meta name="ventrina-product-id" content="${productId}" />`, { html: true });
-                e.append(`<meta name="vendly-product-id" content="${productId}" />`, { html: true });
                 e.append(`<meta name="ventrina-business" content="${businessName}" />`, { html: true });
-                e.append(`<meta name="vendly-business" content="${businessName}" />`, { html: true });
                 if (paletteCss) {
                     e.append(`<style id="server-palette-override">${paletteCss}</style>`, { html: true });
                 }

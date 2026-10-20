@@ -937,10 +937,10 @@ function renderChart(chartData: any[]) {
             datasets: [{
                 label: 'Ingresos (Bs)',
                 data: totals,
-                borderColor: '#c9748a',
-                backgroundColor: 'rgba(201, 116, 138, 0.2)',
+                borderColor: '#4F46E5',
+                backgroundColor: 'rgba(79, 70, 229, 0.15)',
                 borderWidth: 3,
-                pointBackgroundColor: '#b8860b',
+                pointBackgroundColor: '#06B6D4',
                 pointBorderColor: '#fff',
                 pointBorderWidth: 2,
                 pointRadius: 5,

@@ -109,10 +109,10 @@
 }
 
 .settings-tab-btn.active {
-    background: linear-gradient(135deg, var(--primary) 0%, rgba(201, 116, 138, 0.7) 100%);
+    background: linear-gradient(135deg, var(--primary) 0%, #4338ca 100%);
     border-color: var(--primary);
     color: #ffffff;
-    box-shadow: 0 4px 12px rgba(201, 116, 138, 0.25);
+    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3);
 }
 
 /* Paneles de Contenido */
@@ -372,7 +372,7 @@
 }
 
 .btn-save-all {
-    background: linear-gradient(135deg, var(--primary) 0%, #a855f7 100%);
+    background: linear-gradient(135deg, var(--primary) 0%, #4338ca 100%);
     color: #ffffff;
     border: none;
     border-radius: 12px;
@@ -383,13 +383,13 @@
     display: inline-flex;
     align-items: center;
     gap: 0.6rem;
-    box-shadow: 0 4px 18px rgba(201, 116, 138, 0.35);
+    box-shadow: 0 4px 18px rgba(79, 70, 229, 0.35);
     transition: var(--transition);
 }
 
 .btn-save-all:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 24px rgba(201, 116, 138, 0.5);
+    box-shadow: 0 6px 24px rgba(79, 70, 229, 0.5);
 }
 
 .btn-save-all:disabled {
@@ -459,9 +459,9 @@
 .badge-accent {
     font-size: 0.75rem;
     font-weight: 600;
-    background: rgba(201, 116, 138, 0.15);
+    background: rgba(79, 70, 229, 0.15);
     color: var(--primary);
-    border: 1px solid rgba(201, 116, 138, 0.3);
+    border: 1px solid rgba(79, 70, 229, 0.3);
     padding: 0.2rem 0.6rem;
     border-radius: 9999px;
 }
