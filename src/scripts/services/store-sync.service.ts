@@ -1,5 +1,8 @@
 // src/scripts/services/store-sync.service.ts
-// Sincroniza dinámicamente todos los textos, imágenes y secciones de la tienda desde /api/settings
+// Sincroniza dinámicamente y con alto rendimiento todos los textos, imágenes y secciones de la tienda desde /api/settings
+
+import { getPalette, generatePaletteCss } from '../../config/palettes';
+import { initScrollReveal } from '../utils/reveal.util';
 
 const ICON_SVGS: Record<string, string> = {
     flame: '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>',
@@ -17,16 +20,44 @@ const ICON_SVGS: Record<string, string> = {
 
 const STAR_SVG = '<svg viewBox="0 0 24 24" class="star-svg"><path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z"/></svg>';
 
-import { getPalette, generatePaletteCss } from '../../config/palettes';
+// Control de firmas y caché en memoria para evitar mutaciones redundantes y layout thrashing
+let lastAppliedPaletteId: string | null = null;
+let lastFullConfigSig: string | null = null;
+const sectionSignatures = new Map<string, string>();
+
+function hasChanged(key: string, data: unknown): boolean {
+    const sig = typeof data === 'object' ? JSON.stringify(data) : String(data);
+    if (sectionSignatures.get(key) === sig) return false;
+    sectionSignatures.set(key, sig);
+    return true;
+}
+
+function safeSetText(elOrSelector: Element | string | null, text: string): void {
+    const el = typeof elOrSelector === 'string' ? document.querySelector(elOrSelector) : elOrSelector;
+    if (el && el.textContent !== text) {
+        el.textContent = text;
+    }
+}
+
+function safeSetHtml(elOrSelector: Element | string | null, html: string): void {
+    const el = typeof elOrSelector === 'string' ? document.querySelector(elOrSelector) : elOrSelector;
+    if (el && el.innerHTML !== html) {
+        el.innerHTML = html;
+    }
+}
 
 export function applyPalette(paletteId?: string | null): void {
+    const normalizedId = paletteId && paletteId !== 'default' ? paletteId : null;
+    if (normalizedId === lastAppliedPaletteId) return;
+    lastAppliedPaletteId = normalizedId;
+
     const existing = document.getElementById('dynamic-palette-override') as HTMLStyleElement | null;
-    if (!paletteId || paletteId === 'default') {
+    if (!normalizedId) {
         if (existing) existing.remove();
         return;
     }
 
-    const css = generatePaletteCss(paletteId);
+    const css = generatePaletteCss(normalizedId);
     if (!css) return;
 
     let styleEl = existing;
@@ -35,14 +66,17 @@ export function applyPalette(paletteId?: string | null): void {
         styleEl.id = 'dynamic-palette-override';
         document.head.appendChild(styleEl);
     }
-    styleEl.textContent = css;
+    if (styleEl.textContent !== css) {
+        styleEl.textContent = css;
+    }
 
-    const pal = getPalette(paletteId);
+    const pal = getPalette(normalizedId);
     if (!pal || !pal.theme) return;
 
     const t = pal.theme;
     const root = document.documentElement;
 
+    // Resguardo garantizado de variables CSS principales
     if (t.primaryColor) {
         root.style.setProperty('--theme-primary', t.primaryColor, 'important');
         root.style.setProperty('--rose', t.primaryColor, 'important');
@@ -51,71 +85,27 @@ export function applyPalette(paletteId?: string | null): void {
         root.style.setProperty('--theme-primary-hover', t.primaryHover, 'important');
         root.style.setProperty('--rose-deep', t.primaryHover, 'important');
     }
-    if (t.primaryDeep) {
-        root.style.setProperty('--theme-primary-deep', t.primaryDeep, 'important');
-        root.style.setProperty('--rose-dark', t.primaryDeep, 'important');
-    }
-    if (t.primaryLight) {
-        root.style.setProperty('--theme-primary-light', t.primaryLight, 'important');
-        root.style.setProperty('--rose-light', t.primaryLight, 'important');
-    }
-    if (t.primaryPale) {
-        root.style.setProperty('--theme-primary-pale', t.primaryPale, 'important');
-        root.style.setProperty('--rose-pale', t.primaryPale, 'important');
-    }
-
     if (t.accentColor) {
         root.style.setProperty('--theme-accent', t.accentColor, 'important');
         root.style.setProperty('--gold', t.accentColor, 'important');
     }
-    if (t.accentHover) {
-        root.style.setProperty('--theme-accent-hover', t.accentHover, 'important');
-        root.style.setProperty('--gold-deep', t.accentHover, 'important');
-    }
-    if (t.accentLight) {
-        root.style.setProperty('--theme-accent-light', t.accentLight, 'important');
-        root.style.setProperty('--gold-light', t.accentLight, 'important');
-    }
-    if (t.accentPale) {
-        root.style.setProperty('--theme-accent-pale', t.accentPale, 'important');
-        root.style.setProperty('--gold-pale', t.accentPale, 'important');
-    }
-
     if (t.bgPage) {
         root.style.setProperty('--theme-bg-page', t.bgPage, 'important');
         root.style.setProperty('--cream', t.bgPage, 'important');
     }
-    if (t.bgSection) {
-        root.style.setProperty('--theme-bg-section', t.bgSection, 'important');
-        root.style.setProperty('--blush', t.bgSection, 'important');
-    }
-    if (t.bgCard) root.style.setProperty('--theme-bg-card', t.bgCard, 'important');
-
-    if (t.borderSubtle) root.style.setProperty('--theme-border-subtle', t.borderSubtle, 'important');
-    if (t.borderFocus) root.style.setProperty('--theme-border-focus', t.borderFocus, 'important');
-
     if (t.textHeading) {
         root.style.setProperty('--theme-text-heading', t.textHeading, 'important');
         root.style.setProperty('--brown-dark', t.textHeading, 'important');
     }
-    if (t.textBody) {
-        root.style.setProperty('--theme-text-body', t.textBody, 'important');
-        root.style.setProperty('--brown-body', t.textBody, 'important');
-    }
-    if (t.textMuted) {
-        root.style.setProperty('--theme-text-muted', t.textMuted, 'important');
-        root.style.setProperty('--brown-light', t.textMuted, 'important');
-    }
-    if (t.textLight) root.style.setProperty('--theme-text-light', t.textLight, 'important');
-
-    if (t.shadowColor) root.style.setProperty('--theme-shadow', `0 12px 36px ${t.shadowColor}`, 'important');
-    if (t.badgeBg) root.style.setProperty('--theme-badge-bg', t.badgeBg, 'important');
-    if (t.badgeBorder) root.style.setProperty('--theme-badge-border', t.badgeBorder, 'important');
-    if (t.badgeText) root.style.setProperty('--theme-badge-text', t.badgeText, 'important');
 }
 
 export function syncStoreWithSettings(cfg: any): void {
     if (!cfg) return;
+
+    // Fast-exit si la configuración recibida es idéntica a la ya aplicada
+    const currentSig = JSON.stringify(cfg);
+    if (currentSig === lastFullConfigSig) return;
+    lastFullConfigSig = currentSig;
 
     if (cfg.palette || cfg.theme?.palette) {
         applyPalette(cfg.palette || cfg.theme?.palette);
@@ -132,41 +122,37 @@ export function syncStoreWithSettings(cfg: any): void {
     const fq = lnd.faq || {};
 
     const storeName = b.name || '';
+    let needsRevealRefresh = false;
 
     // 1. IDENTIDAD / BRANDING
-    if (storeName) {
+    if (storeName && document.title !== `${storeName} | Catálogo & Pedidos`) {
         document.title = `${storeName} | Catálogo & Pedidos`;
     }
 
     // Logo Textos en Header y Footer
-    const logoTextEls = document.querySelectorAll('.logo-text');
-    if (b.logoTextPrimary !== undefined || b.logoTextSecondary !== undefined) {
+    if (hasChanged('logo', { p: b.logoTextPrimary, s: b.logoTextSecondary, name: storeName })) {
+        const logoTextEls = document.querySelectorAll('.logo-text');
         const primary = b.logoTextPrimary || '';
         const secondary = b.logoTextSecondary || '';
-        logoTextEls.forEach(el => {
-            if (secondary) {
-                el.innerHTML = `<span class="logo-primary">${primary}</span><span class="logo-secondary">${secondary}</span>`;
-            } else {
-                el.innerHTML = `<span class="logo-primary">${primary}</span>`;
-            }
-        });
-    } else if (storeName) {
-        logoTextEls.forEach(el => {
-            el.innerHTML = `<span class="logo-primary">${storeName}</span>`;
-        });
+        const targetHtml = (primary || secondary)
+            ? (secondary ? `<span class="logo-primary">${primary}</span><span class="logo-secondary">${secondary}</span>` : `<span class="logo-primary">${primary}</span>`)
+            : (storeName ? `<span class="logo-primary">${storeName}</span>` : '');
+
+        if (targetHtml) {
+            logoTextEls.forEach(el => safeSetHtml(el, targetHtml));
+        }
     }
 
-    // Actualizar también el copyright en el footer si existe
+    // Footer Copyright
     if (storeName) {
         const footerCopyright = document.querySelector('.footer-copyright');
         if (footerCopyright) {
-            const currentYear = new Date().getFullYear();
-            footerCopyright.textContent = `© ${currentYear} ${storeName}. Todos los derechos reservados.`;
+            safeSetText(footerCopyright, `© ${new Date().getFullYear()} ${storeName}. Todos los derechos reservados.`);
         }
     }
 
     // Logo Imagen en Header
-    if (b.logoImage) {
+    if (b.logoImage && hasChanged('logoImage', b.logoImage)) {
         const logoLinks = document.querySelectorAll('.logo');
         logoLinks.forEach(link => {
             const existingSvg = link.querySelector('svg');
@@ -181,22 +167,20 @@ export function syncStoreWithSettings(cfg: any): void {
                     imgEl.style.borderRadius = '6px';
                     existingSvg.parentNode?.replaceChild(imgEl, existingSvg);
                 }
-                imgEl.src = b.logoImage;
-                imgEl.alt = b.name || 'Logo';
+                if (imgEl.src !== b.logoImage) imgEl.src = b.logoImage;
+                imgEl.alt = storeName || 'Logo';
             }
         });
     }
 
     // Descripción en Footer
     if (b.description) {
-        const footerDesc = document.querySelector('.footer-info > p');
-        if (footerDesc) footerDesc.textContent = b.description;
+        safeSetText('.footer-info > p', b.description);
     }
 
     // 2. HERO
     if (h.badgeText) {
-        const badgeEl = document.querySelector('.hero-label span');
-        if (badgeEl) badgeEl.textContent = h.badgeText;
+        safeSetText('.hero-label span', h.badgeText);
     }
 
     if (h.headline !== undefined || h.headlineHighlight !== undefined) {
@@ -204,59 +188,49 @@ export function syncStoreWithSettings(cfg: any): void {
         if (h1El) {
             const headline = h.headline !== undefined ? h.headline : (h1El.childNodes[0]?.textContent?.trim() || '');
             const highlight = h.headlineHighlight !== undefined ? h.headlineHighlight : (h1El.querySelector('em')?.textContent || '');
-            h1El.innerHTML = `${headline} <em>${highlight}</em>`;
+            safeSetHtml(h1El, `${headline} <em>${highlight}</em>`);
         }
     }
 
     if (h.subheadline) {
-        const subheadlineEl = document.querySelector('.hero-content p');
-        if (subheadlineEl) subheadlineEl.textContent = h.subheadline;
+        safeSetText('.hero-content p', h.subheadline);
     }
 
     if (h.ctaPrimaryText || h.ctaPrimaryLink) {
         const cta1 = document.querySelector('.hero-content a.btn-primary') as HTMLAnchorElement | null;
         if (cta1) {
-            if (h.ctaPrimaryLink) cta1.href = h.ctaPrimaryLink;
-            const span = cta1.querySelector('span');
-            if (span && h.ctaPrimaryText) span.textContent = h.ctaPrimaryText;
+            if (h.ctaPrimaryLink && cta1.getAttribute('href') !== h.ctaPrimaryLink) cta1.href = h.ctaPrimaryLink;
+            if (h.ctaPrimaryText) safeSetText(cta1.querySelector('span'), h.ctaPrimaryText);
         }
     }
 
     if (h.ctaSecondaryText || h.ctaSecondaryLink) {
         const cta2 = document.querySelector('.hero-content a.btn-secondary') as HTMLAnchorElement | null;
         if (cta2) {
-            if (h.ctaSecondaryLink) cta2.href = h.ctaSecondaryLink;
-            const span = cta2.querySelector('span');
-            if (span && h.ctaSecondaryText) span.textContent = h.ctaSecondaryText;
+            if (h.ctaSecondaryLink && cta2.getAttribute('href') !== h.ctaSecondaryLink) cta2.href = h.ctaSecondaryLink;
+            if (h.ctaSecondaryText) safeSetText(cta2.querySelector('span'), h.ctaSecondaryText);
         }
     }
 
-    // Slides del Hero
-    if (Array.isArray(h.slides) && h.slides.length > 0) {
+    // Slides del Hero en un solo paso de innerHTML
+    if (Array.isArray(h.slides) && h.slides.length > 0 && hasChanged('slides', h.slides)) {
         const sliderContainer = document.querySelector('.hero-slider');
         if (sliderContainer) {
-            sliderContainer.innerHTML = '';
-            h.slides.forEach((slide: any, idx: number) => {
-                if (!slide.image) return;
-                const slideDiv = document.createElement('div');
-                slideDiv.className = `slide ${idx === 0 ? 'active' : ''}`;
-                slideDiv.innerHTML = `<img src="${slide.image}" alt="${slide.alt || 'Portada'}" loading="${idx === 0 ? 'eager' : 'lazy'}" />`;
-                sliderContainer.appendChild(slideDiv);
-            });
+            sliderContainer.innerHTML = h.slides.map((slide: any, idx: number) => {
+                if (!slide.image) return '';
+                return `<div class="slide ${idx === 0 ? 'active' : ''}"><img src="${slide.image}" alt="${slide.alt || 'Portada'}" loading="${idx === 0 ? 'eager' : 'lazy'}" /></div>`;
+            }).join('');
         }
     }
 
-    // Stats de Confianza
-    if (Array.isArray(h.stats) && h.stats.length > 0) {
+    // Stats de Confianza en un solo paso de innerHTML
+    if (Array.isArray(h.stats) && h.stats.length > 0 && hasChanged('stats', h.stats)) {
         const statsGrid = document.querySelector('.stats-grid');
         if (statsGrid) {
-            statsGrid.innerHTML = '';
-            h.stats.forEach((st: any) => {
-                const item = document.createElement('div');
-                item.className = 'stat-item reveal';
-                item.innerHTML = `<h3>${st.value || ''}</h3><p>${st.label || ''}</p>`;
-                statsGrid.appendChild(item);
-            });
+            statsGrid.innerHTML = h.stats.map((st: any) =>
+                `<div class="stat-item reveal"><h3>${st.value || ''}</h3><p>${st.label || ''}</p></div>`
+            ).join('');
+            needsRevealRefresh = true;
         }
     }
 
@@ -266,172 +240,165 @@ export function syncStoreWithSettings(cfg: any): void {
         if (catH2) {
             const title = cat.title !== undefined ? cat.title : '';
             const highlight = cat.titleHighlight !== undefined ? cat.titleHighlight : '';
-            catH2.innerHTML = `${title} <span>${highlight}</span>`;
+            safeSetHtml(catH2, `${title} <span>${highlight}</span>`);
         }
     }
 
     if (cat.subtitle) {
-        const catSub = document.querySelector('#menu .section-header p');
-        if (catSub) catSub.textContent = cat.subtitle;
+        safeSetText('#menu .section-header p', cat.subtitle);
     }
 
     if (cat.searchPlaceholder) {
         const searchInput = document.getElementById('product-search') as HTMLInputElement | null;
-        if (searchInput) searchInput.placeholder = cat.searchPlaceholder;
+        if (searchInput && searchInput.placeholder !== cat.searchPlaceholder) {
+            searchInput.placeholder = cat.searchPlaceholder;
+        }
     }
 
     if (cat.productDetailViewMode || cat.productDetailShareBtn) {
         const storeMetaEl = document.getElementById('catalog-store-meta');
         if (storeMetaEl) {
-            if (cat.productDetailViewMode) storeMetaEl.dataset.productDetailViewMode = cat.productDetailViewMode;
-            if (cat.productDetailShareBtn) storeMetaEl.dataset.productDetailShareBtn = cat.productDetailShareBtn;
+            if (cat.productDetailViewMode && storeMetaEl.dataset.productDetailViewMode !== cat.productDetailViewMode) {
+                storeMetaEl.dataset.productDetailViewMode = cat.productDetailViewMode;
+            }
+            if (cat.productDetailShareBtn && storeMetaEl.dataset.productDetailShareBtn !== cat.productDetailShareBtn) {
+                storeMetaEl.dataset.productDetailShareBtn = cat.productDetailShareBtn;
+            }
         }
     }
 
-    // 4. BENEFICIOS
+    // 4. BENEFICIOS en un solo paso de innerHTML
     if (ben.title !== undefined || ben.titleHighlight !== undefined) {
         const benH2 = document.querySelector('#nosotros .section-header h2');
         if (benH2) {
             const title = ben.title !== undefined ? ben.title : '';
             const highlight = ben.titleHighlight !== undefined ? ben.titleHighlight : '';
-            benH2.innerHTML = `${title} <span>${highlight}</span>?`;
+            safeSetHtml(benH2, `${title} <span>${highlight}</span>?`);
         }
     }
 
     if (ben.subtitle) {
-        const benSub = document.querySelector('#nosotros .section-header p');
-        if (benSub) benSub.textContent = ben.subtitle;
+        safeSetText('#nosotros .section-header p', ben.subtitle);
     }
 
-    if (Array.isArray(ben.items) && ben.items.length > 0) {
+    if (Array.isArray(ben.items) && ben.items.length > 0 && hasChanged('benefits', ben.items)) {
         const benefitsGrid = document.querySelector('.benefits-grid');
         if (benefitsGrid) {
-            benefitsGrid.innerHTML = '';
-            ben.items.forEach((b: any) => {
-                const card = document.createElement('div');
-                card.className = 'benefit-card reveal';
+            benefitsGrid.innerHTML = ben.items.map((b: any) => {
                 const svgIcon = ICON_SVGS[b.icon] || ICON_SVGS.award;
-                card.innerHTML = `
-                    <div class="benefit-icon">${svgIcon}</div>
-                    <h3>${b.title || ''}</h3>
-                    <p>${b.description || ''}</p>
+                return `
+                    <div class="benefit-card reveal">
+                        <div class="benefit-icon">${svgIcon}</div>
+                        <h3>${b.title || ''}</h3>
+                        <p>${b.description || ''}</p>
+                    </div>
                 `;
-                benefitsGrid.appendChild(card);
-            });
+            }).join('');
+            needsRevealRefresh = true;
         }
     }
 
-    // 5. PROCESO ("¿CÓMO PEDIR?")
+    // 5. PROCESO en un solo paso de innerHTML
     if (prc.title !== undefined || prc.titleHighlight !== undefined) {
         const prcH2 = document.querySelector('#como-pedir .section-header h2');
         if (prcH2) {
             const title = prc.title !== undefined ? prc.title : '';
             const highlight = prc.titleHighlight !== undefined ? prc.titleHighlight : '';
-            prcH2.innerHTML = `${title} <span>${highlight}</span>`;
+            safeSetHtml(prcH2, `${title} <span>${highlight}</span>`);
         }
     }
 
     if (prc.subtitle) {
-        const prcSub = document.querySelector('#como-pedir .section-header p');
-        if (prcSub) prcSub.textContent = prc.subtitle;
+        safeSetText('#como-pedir .section-header p', prc.subtitle);
     }
 
-    if (Array.isArray(prc.steps) && prc.steps.length > 0) {
+    if (Array.isArray(prc.steps) && prc.steps.length > 0 && hasChanged('process', prc.steps)) {
         const processGrid = document.querySelector('.process-grid');
         if (processGrid) {
-            processGrid.innerHTML = '';
-            prc.steps.forEach((s: any) => {
-                const stepEl = document.createElement('div');
-                stepEl.className = 'reveal process-step';
-                stepEl.innerHTML = `
+            processGrid.innerHTML = prc.steps.map((s: any) => `
+                <div class="reveal process-step">
                     <div class="process-number">${s.number ?? ''}</div>
                     <h3>${s.title || ''}</h3>
                     <p>${s.description || ''}</p>
-                `;
-                processGrid.appendChild(stepEl);
-            });
+                </div>
+            `).join('');
+            needsRevealRefresh = true;
         }
     }
 
-    // 6. TESTIMONIOS
+    // 6. TESTIMONIOS en un solo paso de innerHTML
     if (tst.title !== undefined || tst.titleHighlight !== undefined) {
         const tstH2 = document.querySelector('#testimonios .section-header h2');
         if (tstH2) {
             const title = tst.title !== undefined ? tst.title : '';
             const highlight = tst.titleHighlight !== undefined ? tst.titleHighlight : '';
-            tstH2.innerHTML = `${title} <span>${highlight}</span>`;
+            safeSetHtml(tstH2, `${title} <span>${highlight}</span>`);
         }
     }
 
     if (tst.subtitle) {
-        const tstSub = document.querySelector('#testimonios .section-header p');
-        if (tstSub) tstSub.textContent = tst.subtitle;
+        safeSetText('#testimonios .section-header p', tst.subtitle);
     }
 
-    if (Array.isArray(tst.items) && tst.items.length > 0) {
+    if (Array.isArray(tst.items) && tst.items.length > 0 && hasChanged('testimonials', tst.items)) {
         const testGrid = document.querySelector('.testimonials-grid');
         if (testGrid) {
-            testGrid.innerHTML = '';
-            tst.items.forEach((t: any) => {
-                const card = document.createElement('div');
-                card.className = 'testimonial-card reveal';
+            testGrid.innerHTML = tst.items.map((t: any) => {
                 const starsCount = Math.max(1, Math.min(5, t.rating || 5));
                 const starsHtml = STAR_SVG.repeat(starsCount);
                 const avatar = t.avatar || '/assets/client_maria.webp';
-                card.innerHTML = `
-                    <div class="stars">${starsHtml}</div>
-                    <p class="review">"${t.review || ''}"</p>
-                    <div class="client-info">
-                        <div class="client-avatar">
-                            <img src="${avatar}" alt="${t.name || 'Cliente'}" loading="lazy" />
-                        </div>
-                        <div>
-                            <h4>${t.name || ''}</h4>
-                            <p>${t.role || 'Cliente'}</p>
+                return `
+                    <div class="testimonial-card reveal">
+                        <div class="stars">${starsHtml}</div>
+                        <p class="review">"${t.review || ''}"</p>
+                        <div class="client-info">
+                            <div class="client-avatar">
+                                <img src="${avatar}" alt="${t.name || 'Cliente'}" loading="lazy" />
+                            </div>
+                            <div>
+                                <h4>${t.name || ''}</h4>
+                                <p>${t.role || 'Cliente'}</p>
+                            </div>
                         </div>
                     </div>
                 `;
-                testGrid.appendChild(card);
-            });
+            }).join('');
+            needsRevealRefresh = true;
         }
     }
 
-    // 7. PREGUNTAS FRECUENTES (FAQ)
+    // 7. PREGUNTAS FRECUENTES (FAQ) en un solo paso de innerHTML
     if (fq.title !== undefined || fq.titleHighlight !== undefined) {
         const fqH2 = document.querySelector('#faq .section-header h2');
         if (fqH2) {
             const title = fq.title !== undefined ? fq.title : '';
             const highlight = fq.titleHighlight !== undefined ? fq.titleHighlight : '';
-            fqH2.innerHTML = `${title} <span>${highlight}</span>`;
+            safeSetHtml(fqH2, `${title} <span>${highlight}</span>`);
         }
     }
 
     if (fq.subtitle) {
-        const fqSub = document.querySelector('#faq .section-header p');
-        if (fqSub) fqSub.textContent = fq.subtitle;
+        safeSetText('#faq .section-header p', fq.subtitle);
     }
 
-    if (Array.isArray(fq.items) && fq.items.length > 0) {
+    if (Array.isArray(fq.items) && fq.items.length > 0 && hasChanged('faq', fq.items)) {
         const faqWrapper = document.querySelector('.faq-wrapper');
         if (faqWrapper) {
-            faqWrapper.innerHTML = '';
-            fq.items.forEach((item: any) => {
-                const card = document.createElement('div');
-                card.className = 'faq-card reveal';
-                card.innerHTML = `
+            faqWrapper.innerHTML = fq.items.map((item: any) => `
+                <div class="faq-card reveal">
                     <h4>
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="faq-icon"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
                         ${item.q || ''}
                     </h4>
                     <p>${item.a || ''}</p>
-                `;
-                faqWrapper.appendChild(card);
-            });
+                </div>
+            `).join('');
+            needsRevealRefresh = true;
         }
     }
 
     // 8. CONTACTO & FOOTER
-    if (c.whatsapp) {
+    if (c.whatsapp && hasChanged('whatsapp', c.whatsapp)) {
         const waLinks = document.querySelectorAll('a[href*="wa.me"]');
         waLinks.forEach(a => {
             const el = a as HTMLAnchorElement;
@@ -445,14 +412,14 @@ export function syncStoreWithSettings(cfg: any): void {
         });
     }
 
-    if (c.instagram || c.instagramHandle) {
+    if ((c.instagram || c.instagramHandle) && hasChanged('instagram', { url: c.instagram, handle: c.instagramHandle })) {
         const igLinks = document.querySelectorAll('a[href*="instagram.com"]');
         igLinks.forEach(a => {
             const el = a as HTMLAnchorElement;
-            if (c.instagram) el.href = c.instagram;
+            if (c.instagram && el.href !== c.instagram) el.href = c.instagram;
             if (c.instagramHandle) {
                 const textNodes = Array.from(el.childNodes).filter(n => n.nodeType === Node.TEXT_NODE);
-                if (textNodes.length > 0) {
+                if (textNodes.length > 0 && textNodes[textNodes.length - 1].textContent !== ` ${c.instagramHandle}`) {
                     textNodes[textNodes.length - 1].textContent = ` ${c.instagramHandle}`;
                 }
             }
@@ -460,11 +427,10 @@ export function syncStoreWithSettings(cfg: any): void {
     }
 
     if (c.hours) {
-        const hoursEl = document.querySelector('.footer-hours');
-        if (hoursEl) hoursEl.textContent = `🕐 ${c.hours}`;
+        safeSetText('.footer-hours', `🕐 ${c.hours}`);
     }
 
-    if (c.address) {
+    if (c.address && hasChanged('address', c.address)) {
         const addressEls = document.querySelectorAll('.footer-contact-link');
         addressEls.forEach(el => {
             if (el.textContent && el.querySelector('svg path[d*="20 10c0 6-8 12"]')) {
@@ -482,8 +448,9 @@ export function syncStoreWithSettings(cfg: any): void {
         const pickupRadio = document.querySelector('input[name="delivery-type"][value="retiro"]');
         if (pickupRadio && pickupRadio.parentElement) {
             const textNodes = Array.from(pickupRadio.parentElement.childNodes).filter(n => n.nodeType === Node.TEXT_NODE);
-            if (textNodes.length > 0) {
-                textNodes[textNodes.length - 1].textContent = ` 🏪 ${lbl.pickupOptionName}`;
+            const target = ` 🏪 ${lbl.pickupOptionName}`;
+            if (textNodes.length > 0 && textNodes[textNodes.length - 1].textContent !== target) {
+                textNodes[textNodes.length - 1].textContent = target;
             }
         }
     }
@@ -493,16 +460,20 @@ export function syncStoreWithSettings(cfg: any): void {
         if (deliveryRadio && deliveryRadio.parentElement) {
             const name = lbl.deliveryOptionName || 'Delivery';
             const price = lbl.deliveryOptionPrice !== undefined ? lbl.deliveryOptionPrice : 5;
+            const target = ` 🛵 ${name} (+${price ? '$' + price : 'Gratis'})`;
             const textNodes = Array.from(deliveryRadio.parentElement.childNodes).filter(n => n.nodeType === Node.TEXT_NODE);
-            if (textNodes.length > 0) {
-                textNodes[textNodes.length - 1].textContent = ` 🛵 ${name} (+${price ? '$' + price : 'Gratis'})`;
+            if (textNodes.length > 0 && textNodes[textNodes.length - 1].textContent !== target) {
+                textNodes[textNodes.length - 1].textContent = target;
             }
         }
     }
 
-    // Botón modal de agregar al carrito
     if (cat.addToCartText) {
-        const addBtnText = document.getElementById('pdm-btn-add-text');
-        if (addBtnText) addBtnText.textContent = cat.addToCartText;
+        safeSetText('#pdm-btn-add-text', cat.addToCartText);
+    }
+
+    // Si se regeneraron elementos .reveal, re-observar con IntersectionObserver
+    if (needsRevealRefresh) {
+        initScrollReveal();
     }
 }
