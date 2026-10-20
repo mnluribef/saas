@@ -21,6 +21,19 @@ function resolveActiveTenantId(): string | undefined {
     const qs = new URLSearchParams(window.location.search).get('tenant');
     if (qs) return qs;
 
+    // Extracción de subdominio (ej: mitienda.ventrina.app o mitienda.localhost)
+    if (typeof window !== 'undefined' && window.location.hostname) {
+        const host = window.location.hostname.toLowerCase();
+        if (host.endsWith('.ventrina.app') || host.endsWith('.vendly.app')) {
+            const sub = host.split('.')[0];
+            if (sub && sub !== 'www' && sub !== 'app') return sub;
+        }
+        if (host.endsWith('.localhost')) {
+            const sub = host.split('.')[0];
+            if (sub && sub !== 'www') return sub;
+        }
+    }
+
     const pathParts = window.location.pathname.split('/').filter(Boolean);
     if (pathParts.length > 0) {
         let candidate = pathParts[0].toLowerCase();
@@ -57,6 +70,72 @@ export function createStoreConfig(): StoreMetaConfig {
     };
 }
 
+export function applyFullTenantConfig(
+    cfg: any,
+    config: StoreMetaConfig,
+    cartController?: CartUIController
+): void {
+    if (!cfg) return;
+
+    // Sincronizar DOM de textos, hero, catálogo, beneficios, testimonios, FAQs, footer
+    syncStoreWithSettings(cfg);
+
+    const b = cfg.business || {};
+    const c = cfg.contact || {};
+    const pm = cfg.payment?.pagoMovil;
+    const z = cfg.payment?.zelle;
+    const l = cfg.labels || {};
+
+    if (b.name) {
+        config.businessName = b.name;
+    }
+
+    if (c.whatsapp) {
+        config.whatsappNumber = c.whatsapp;
+        const waFloat = document.querySelector('.float-wa') as HTMLAnchorElement | null;
+        if (waFloat) {
+            const storeName = b.name || config.businessName || 'la tienda';
+            waFloat.href = `https://wa.me/${c.whatsapp}?text=${encodeURIComponent(`Hola! Vengo de ${storeName} y quiero hacer un pedido`)}`;
+        }
+    }
+
+    if (l.deliveryOptionName) config.deliveryName = l.deliveryOptionName;
+    if (l.pickupOptionName) config.pickupName = l.pickupOptionName;
+    if (l.deliveryOptionPrice !== undefined) config.deliveryPrice = parseFloat(l.deliveryOptionPrice);
+    if (l.itemNounSingular) config.itemNounSingular = l.itemNounSingular;
+    if (l.itemNounPlural) config.itemNounPlural = l.itemNounPlural;
+    if (l.emptyCartEmoji) config.emptyCartEmoji = l.emptyCartEmoji;
+    if (cfg.storePrefix) config.storePrefix = cfg.storePrefix;
+
+    // Actualizar datos de pago móvil en el DOM si fueron configurados
+    if (pm?.banco) {
+        const el = document.getElementById('pm-data-banco');
+        if (el) el.textContent = pm.banco;
+    }
+    if (pm?.telefono) {
+        const el = document.getElementById('pm-data-telefono');
+        if (el) el.textContent = pm.telefono;
+    }
+    if (pm?.cedula) {
+        const el = document.getElementById('pm-data-cedula');
+        if (el) el.textContent = pm.cedula;
+    }
+
+    // Actualizar datos de Zelle en el DOM
+    if (z?.email) {
+        const el = document.getElementById('zelle-data-email');
+        if (el) el.textContent = z.email;
+    }
+    if (z?.titular) {
+        const el = document.getElementById('zelle-data-titular');
+        if (el) el.textContent = z.titular;
+    }
+
+    if (cartController) {
+        cartController.render();
+    }
+}
+
 export function initCatalogApp(): void {
     const config = createStoreConfig();
     const storeKey = (config.tenantId || config.businessName).toLowerCase().replace(/[^a-z0-9]/g, '_') || 'default';
@@ -64,10 +143,10 @@ export function initCatalogApp(): void {
 
     // Hidratación instantánea si fue inyectada por el servidor
     const injectedConfigEl = document.getElementById('injected-tenant-config');
+    let preloadedConfig: any = null;
     if (injectedConfigEl && injectedConfigEl.textContent) {
         try {
-            const preloadedConfig = JSON.parse(injectedConfigEl.textContent);
-            syncStoreWithSettings(preloadedConfig);
+            preloadedConfig = JSON.parse(injectedConfigEl.textContent);
         } catch (_) { }
     }
 
@@ -96,6 +175,11 @@ export function initCatalogApp(): void {
         config
     );
 
+    // Aplicar configuración prehidratada antes del primer render
+    if (preloadedConfig) {
+        applyFullTenantConfig(preloadedConfig, config, cartController);
+    }
+
     // Inicialización global
     initScrollReveal();
     currencyService.fetchRate();
@@ -114,52 +198,7 @@ export function initCatalogApp(): void {
 
     fetch(settingsUrl, { headers: reqHeaders }).then(res => res.json() as Promise<any>).then((data: any) => {
         if (data.success && data.tenant?.config) {
-            const cfg = data.tenant.config;
-            const pm = cfg.payment?.pagoMovil;
-            const z = cfg.payment?.zelle;
-            const c = cfg.contact;
-
-            // Actualizar todos los textos, imágenes de portada, catálogo, beneficios, testimonios y FAQs
-            syncStoreWithSettings(cfg);
-
-            // Actualizar datos de pago móvil en el DOM si fueron configurados
-            if (pm?.banco) {
-                const el = document.getElementById('pm-data-banco');
-                if (el) el.textContent = pm.banco;
-            }
-            if (pm?.telefono) {
-                const el = document.getElementById('pm-data-telefono');
-                if (el) el.textContent = pm.telefono;
-            }
-            if (pm?.cedula) {
-                const el = document.getElementById('pm-data-cedula');
-                if (el) el.textContent = pm.cedula;
-            }
-
-            // Actualizar datos de Zelle en el DOM
-            if (z?.email) {
-                const el = document.getElementById('zelle-data-email');
-                if (el) el.textContent = z.email;
-            }
-            if (z?.titular) {
-                const el = document.getElementById('zelle-data-titular');
-                if (el) el.textContent = z.titular;
-            }
-
-            // Actualizar WhatsApp si fue modificado
-            if (c?.whatsapp) {
-                config.whatsappNumber = c.whatsapp;
-                const waFloat = document.querySelector('.float-wa') as HTMLAnchorElement | null;
-                if (waFloat) {
-                    waFloat.href = `https://wa.me/${c.whatsapp}?text=${encodeURIComponent(`Hola! Vengo de la web y quiero ver el catálogo`)}`;
-                }
-            }
-
-            // Actualizar precio de delivery si fue modificado
-            if (cfg.labels?.deliveryOptionPrice !== undefined) {
-                config.deliveryPrice = parseFloat(cfg.labels.deliveryOptionPrice);
-                cartController.render();
-            }
+            applyFullTenantConfig(data.tenant.config, config, cartController);
         }
     }).catch(() => {
         // En caso de modo offline o demo estático, conserva los valores por defecto

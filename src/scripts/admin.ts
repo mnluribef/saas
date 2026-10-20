@@ -4227,10 +4227,11 @@ function updateStoreUrls(tenant: any) {
 
         // TAB 1: IDENTIDAD
         setVal('cfg-store-template', data.tenant?.template || 'restaurant');
-        setVal('cfg-business-name', b.name || data.tenant?.name || '');
+        const currentStoreName = b.name || data.tenant?.name || '';
+        setVal('cfg-business-name', currentStoreName);
         setVal('cfg-tagline', b.tagline || '');
         setVal('cfg-description', b.description || '');
-        setVal('cfg-logo-primary', b.logoTextPrimary || '');
+        setVal('cfg-logo-primary', b.logoTextPrimary || currentStoreName || '');
         setVal('cfg-logo-secondary', b.logoTextSecondary || '');
         setVal('cfg-store-prefix', cfg.storePrefix || '');
 
@@ -4535,13 +4536,17 @@ if (storeSettingsForm) {
             if (window.lucide) lucide.createIcons();
         }
 
+        const businessName = $val('cfg-business-name') || undefined;
+        const logoPrimary = $val('cfg-logo-primary') || businessName || undefined;
+        const logoSecondary = $val('cfg-logo-secondary') || undefined;
+
         const payload = {
             business: {
-                name: $val('cfg-business-name') || undefined,
+                name: businessName,
                 tagline: $val('cfg-tagline') || undefined,
                 description: $val('cfg-description') || undefined,
-                logoTextPrimary: $val('cfg-logo-primary') || undefined,
-                logoTextSecondary: $val('cfg-logo-secondary') || undefined,
+                logoTextPrimary: logoPrimary,
+                logoTextSecondary: logoSecondary,
                 logoImage: $val('cfg-logo-image') || undefined,
                 ogImage: $val('cfg-og-image') || undefined,
             },

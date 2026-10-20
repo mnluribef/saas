@@ -335,3 +335,127 @@ export function getPalette(paletteId?: string | null): PaletteDefinition | null 
 export function getAllPalettes(): PaletteDefinition[] {
     return Object.values(COLOR_PALETTES);
 }
+
+/**
+ * Genera el bloque CSS completo para inyección en :root con prioridad !important
+ */
+export function generatePaletteCss(paletteId?: string | null): string {
+    if (!paletteId || paletteId === 'default') return '';
+    const pal = getPalette(paletteId);
+    if (!pal || !pal.theme) return '';
+
+    const theme = pal.theme;
+    const themePrimary = theme.primaryColor || '#D97706';
+    const themePrimaryHover = theme.primaryHover || themePrimary;
+    const themePrimaryDeep = theme.primaryDeep || themePrimaryHover;
+    const themePrimaryLight = theme.primaryLight || 'rgba(0,0,0,0.1)';
+    const themePrimaryPale = theme.primaryPale || themePrimaryLight;
+
+    const themeAccent = theme.accentColor || '#F59E0B';
+    const themeAccentHover = theme.accentHover || themeAccent;
+    const themeAccentLight = theme.accentLight || 'rgba(0,0,0,0.1)';
+    const themeAccentPale = theme.accentPale || '#FFFFFF';
+
+    const themeBgPage = theme.bgPage || '#FFFDF9';
+    const themeBgSection = theme.bgSection || '#FFF5EE';
+    const themeBgCard = theme.bgCard || '#FFFFFF';
+
+    const themeBorderSubtle = theme.borderSubtle || 'rgba(0, 0, 0, 0.08)';
+    const themeBorderFocus = theme.borderFocus || themePrimary;
+
+    const themeTextHeading = theme.textHeading || '#1C0A00';
+    const themeTextBody = theme.textBody || '#3D2214';
+    const themeTextMuted = theme.textMuted || '#7A523B';
+    const themeTextLight = theme.textLight || '#A67C65';
+
+    const themeHeroBg = theme.heroBg || themeBgPage;
+    const themeHeroOverlay = theme.heroOverlay || 'linear-gradient(to bottom right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 60%, transparent 100%)';
+    const themeHeroFade = theme.heroFadeBottom || `linear-gradient(to top, ${themeBgPage} 0%, transparent 100%)`;
+
+    const themeGradHero = theme.gradHero || `linear-gradient(135deg, ${themePrimaryHover} 0%, ${themePrimary} 55%, ${themeAccent} 100%)`;
+    const themeGradCta = theme.gradCta || `linear-gradient(135deg, ${themePrimaryHover} 0%, ${themePrimary} 100%)`;
+    const themeGradSection = theme.gradSection || `linear-gradient(160deg, ${themeBgPage} 0%, ${themeBgSection} 100%)`;
+    const themeGradAccent = theme.gradAccent || `linear-gradient(135deg, ${themeAccentHover} 0%, ${themeAccent} 100%)`;
+
+    const themeShadow = `0 12px 36px ${theme.shadowColor || 'rgba(0,0,0,0.18)'}`;
+    const themeShadowCard = theme.shadowCard || '0 4px 20px rgba(0, 0, 0, 0.06)';
+
+    const themeBadgeBg = theme.badgeBg || 'rgba(212, 175, 55, 0.14)';
+    const themeBadgeBorder = theme.badgeBorder || 'rgba(212, 175, 55, 0.38)';
+    const themeBadgeText = theme.badgeText || themeAccent;
+
+    return `:root {
+  --theme-primary: ${themePrimary} !important;
+  --theme-primary-hover: ${themePrimaryHover} !important;
+  --theme-primary-deep: ${themePrimaryDeep} !important;
+  --theme-primary-light: ${themePrimaryLight} !important;
+  --theme-primary-pale: ${themePrimaryPale} !important;
+
+  --theme-accent: ${themeAccent} !important;
+  --theme-accent-hover: ${themeAccentHover} !important;
+  --theme-accent-light: ${themeAccentLight} !important;
+  --theme-accent-pale: ${themeAccentPale} !important;
+
+  --theme-bg-page: ${themeBgPage} !important;
+  --theme-bg-section: ${themeBgSection} !important;
+  --theme-bg-card: ${themeBgCard} !important;
+
+  --theme-border-subtle: ${themeBorderSubtle} !important;
+  --theme-border-focus: ${themeBorderFocus} !important;
+
+  --theme-text-heading: ${themeTextHeading} !important;
+  --theme-text-body: ${themeTextBody} !important;
+  --theme-text-muted: ${themeTextMuted} !important;
+  --theme-text-light: ${themeTextLight} !important;
+
+  --theme-hero-bg: ${themeHeroBg} !important;
+  --theme-hero-overlay: ${themeHeroOverlay} !important;
+  --theme-hero-fade: ${themeHeroFade} !important;
+
+  --theme-grad-hero: ${themeGradHero} !important;
+  --theme-grad-cta: ${themeGradCta} !important;
+  --theme-grad-section: ${themeGradSection} !important;
+  --theme-grad-accent: ${themeGradAccent} !important;
+
+  --theme-shadow: ${themeShadow} !important;
+  --theme-shadow-card: ${themeShadowCard} !important;
+
+  --theme-badge-bg: ${themeBadgeBg} !important;
+  --theme-badge-border: ${themeBadgeBorder} !important;
+  --theme-badge-text: ${themeBadgeText} !important;
+
+  /* Compatibilidad directa con tokens de estilo */
+  --rose: ${themePrimary} !important;
+  --rose-deep: ${themePrimaryHover} !important;
+  --rose-dark: ${themePrimaryDeep} !important;
+  --rose-light: ${themePrimaryLight} !important;
+  --rose-pale: ${themePrimaryPale} !important;
+
+  --gold: ${themeAccent} !important;
+  --gold-deep: ${themeAccentHover} !important;
+  --gold-light: ${themeAccentLight} !important;
+  --gold-pale: ${themeAccentPale} !important;
+
+  --cream: ${themeBgPage} !important;
+  --blush: ${themeBgSection} !important;
+  --bg-card: ${themeBgCard} !important;
+
+  --border-subtle: ${themeBorderSubtle} !important;
+  --border-focus: ${themeBorderFocus} !important;
+
+  --text-heading: ${themeTextHeading} !important;
+  --text-body: ${themeTextBody} !important;
+  --text-muted: ${themeTextMuted} !important;
+  --text-light: ${themeTextLight} !important;
+
+  --hero-bg: ${themeHeroBg} !important;
+  --hero-overlay: ${themeHeroOverlay} !important;
+  --hero-fade-bottom: ${themeHeroFade} !important;
+
+  --grad-hero: ${themeGradHero} !important;
+  --grad-cta: ${themeGradCta} !important;
+  --grad-section: ${themeGradSection} !important;
+  --grad-gold: ${themeGradAccent} !important;
+}`;
+}
+

@@ -17,10 +17,26 @@ const ICON_SVGS: Record<string, string> = {
 
 const STAR_SVG = '<svg viewBox="0 0 24 24" class="star-svg"><path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z"/></svg>';
 
-import { getPalette } from '../../config/palettes';
+import { getPalette, generatePaletteCss } from '../../config/palettes';
 
 export function applyPalette(paletteId?: string | null): void {
-    if (!paletteId || paletteId === 'default') return;
+    const existing = document.getElementById('dynamic-palette-override') as HTMLStyleElement | null;
+    if (!paletteId || paletteId === 'default') {
+        if (existing) existing.remove();
+        return;
+    }
+
+    const css = generatePaletteCss(paletteId);
+    if (!css) return;
+
+    let styleEl = existing;
+    if (!styleEl) {
+        styleEl = document.createElement('style');
+        styleEl.id = 'dynamic-palette-override';
+        document.head.appendChild(styleEl);
+    }
+    styleEl.textContent = css;
+
     const pal = getPalette(paletteId);
     if (!pal || !pal.theme) return;
 
@@ -28,74 +44,74 @@ export function applyPalette(paletteId?: string | null): void {
     const root = document.documentElement;
 
     if (t.primaryColor) {
-        root.style.setProperty('--theme-primary', t.primaryColor);
-        root.style.setProperty('--rose', t.primaryColor);
+        root.style.setProperty('--theme-primary', t.primaryColor, 'important');
+        root.style.setProperty('--rose', t.primaryColor, 'important');
     }
     if (t.primaryHover) {
-        root.style.setProperty('--theme-primary-hover', t.primaryHover);
-        root.style.setProperty('--rose-deep', t.primaryHover);
+        root.style.setProperty('--theme-primary-hover', t.primaryHover, 'important');
+        root.style.setProperty('--rose-deep', t.primaryHover, 'important');
     }
     if (t.primaryDeep) {
-        root.style.setProperty('--theme-primary-deep', t.primaryDeep);
-        root.style.setProperty('--rose-dark', t.primaryDeep);
+        root.style.setProperty('--theme-primary-deep', t.primaryDeep, 'important');
+        root.style.setProperty('--rose-dark', t.primaryDeep, 'important');
     }
     if (t.primaryLight) {
-        root.style.setProperty('--theme-primary-light', t.primaryLight);
-        root.style.setProperty('--rose-light', t.primaryLight);
+        root.style.setProperty('--theme-primary-light', t.primaryLight, 'important');
+        root.style.setProperty('--rose-light', t.primaryLight, 'important');
     }
     if (t.primaryPale) {
-        root.style.setProperty('--theme-primary-pale', t.primaryPale);
-        root.style.setProperty('--rose-pale', t.primaryPale);
+        root.style.setProperty('--theme-primary-pale', t.primaryPale, 'important');
+        root.style.setProperty('--rose-pale', t.primaryPale, 'important');
     }
 
     if (t.accentColor) {
-        root.style.setProperty('--theme-accent', t.accentColor);
-        root.style.setProperty('--gold', t.accentColor);
+        root.style.setProperty('--theme-accent', t.accentColor, 'important');
+        root.style.setProperty('--gold', t.accentColor, 'important');
     }
     if (t.accentHover) {
-        root.style.setProperty('--theme-accent-hover', t.accentHover);
-        root.style.setProperty('--gold-deep', t.accentHover);
+        root.style.setProperty('--theme-accent-hover', t.accentHover, 'important');
+        root.style.setProperty('--gold-deep', t.accentHover, 'important');
     }
     if (t.accentLight) {
-        root.style.setProperty('--theme-accent-light', t.accentLight);
-        root.style.setProperty('--gold-light', t.accentLight);
+        root.style.setProperty('--theme-accent-light', t.accentLight, 'important');
+        root.style.setProperty('--gold-light', t.accentLight, 'important');
     }
     if (t.accentPale) {
-        root.style.setProperty('--theme-accent-pale', t.accentPale);
-        root.style.setProperty('--gold-pale', t.accentPale);
+        root.style.setProperty('--theme-accent-pale', t.accentPale, 'important');
+        root.style.setProperty('--gold-pale', t.accentPale, 'important');
     }
 
     if (t.bgPage) {
-        root.style.setProperty('--theme-bg-page', t.bgPage);
-        root.style.setProperty('--cream', t.bgPage);
+        root.style.setProperty('--theme-bg-page', t.bgPage, 'important');
+        root.style.setProperty('--cream', t.bgPage, 'important');
     }
     if (t.bgSection) {
-        root.style.setProperty('--theme-bg-section', t.bgSection);
-        root.style.setProperty('--blush', t.bgSection);
+        root.style.setProperty('--theme-bg-section', t.bgSection, 'important');
+        root.style.setProperty('--blush', t.bgSection, 'important');
     }
-    if (t.bgCard) root.style.setProperty('--theme-bg-card', t.bgCard);
+    if (t.bgCard) root.style.setProperty('--theme-bg-card', t.bgCard, 'important');
 
-    if (t.borderSubtle) root.style.setProperty('--theme-border-subtle', t.borderSubtle);
-    if (t.borderFocus) root.style.setProperty('--theme-border-focus', t.borderFocus);
+    if (t.borderSubtle) root.style.setProperty('--theme-border-subtle', t.borderSubtle, 'important');
+    if (t.borderFocus) root.style.setProperty('--theme-border-focus', t.borderFocus, 'important');
 
     if (t.textHeading) {
-        root.style.setProperty('--theme-text-heading', t.textHeading);
-        root.style.setProperty('--brown-dark', t.textHeading);
+        root.style.setProperty('--theme-text-heading', t.textHeading, 'important');
+        root.style.setProperty('--brown-dark', t.textHeading, 'important');
     }
     if (t.textBody) {
-        root.style.setProperty('--theme-text-body', t.textBody);
-        root.style.setProperty('--brown-body', t.textBody);
+        root.style.setProperty('--theme-text-body', t.textBody, 'important');
+        root.style.setProperty('--brown-body', t.textBody, 'important');
     }
     if (t.textMuted) {
-        root.style.setProperty('--theme-text-muted', t.textMuted);
-        root.style.setProperty('--brown-light', t.textMuted);
+        root.style.setProperty('--theme-text-muted', t.textMuted, 'important');
+        root.style.setProperty('--brown-light', t.textMuted, 'important');
     }
-    if (t.textLight) root.style.setProperty('--theme-text-light', t.textLight);
+    if (t.textLight) root.style.setProperty('--theme-text-light', t.textLight, 'important');
 
-    if (t.shadowColor) root.style.setProperty('--theme-shadow', `0 12px 36px ${t.shadowColor}`);
-    if (t.badgeBg) root.style.setProperty('--theme-badge-bg', t.badgeBg);
-    if (t.badgeBorder) root.style.setProperty('--theme-badge-border', t.badgeBorder);
-    if (t.badgeText) root.style.setProperty('--theme-badge-text', t.badgeText);
+    if (t.shadowColor) root.style.setProperty('--theme-shadow', `0 12px 36px ${t.shadowColor}`, 'important');
+    if (t.badgeBg) root.style.setProperty('--theme-badge-bg', t.badgeBg, 'important');
+    if (t.badgeBorder) root.style.setProperty('--theme-badge-border', t.badgeBorder, 'important');
+    if (t.badgeText) root.style.setProperty('--theme-badge-text', t.badgeText, 'important');
 }
 
 export function syncStoreWithSettings(cfg: any): void {
@@ -115,19 +131,38 @@ export function syncStoreWithSettings(cfg: any): void {
     const tst = lnd.testimonials || {};
     const fq = lnd.faq || {};
 
+    const storeName = b.name || '';
+
     // 1. IDENTIDAD / BRANDING
-    if (b.name) {
-        document.title = `${b.name} | Catálogo & Pedidos`;
+    if (storeName) {
+        document.title = `${storeName} | Catálogo & Pedidos`;
     }
 
     // Logo Textos en Header y Footer
+    const logoTextEls = document.querySelectorAll('.logo-text');
     if (b.logoTextPrimary !== undefined || b.logoTextSecondary !== undefined) {
-        const logoTextEls = document.querySelectorAll('.logo-text');
+        const primary = b.logoTextPrimary || '';
+        const secondary = b.logoTextSecondary || '';
         logoTextEls.forEach(el => {
-            const primary = b.logoTextPrimary || '';
-            const secondary = b.logoTextSecondary || '';
-            el.innerHTML = `${primary}<span>${secondary}</span>`;
+            if (secondary) {
+                el.innerHTML = `<span class="logo-primary">${primary}</span><span class="logo-secondary">${secondary}</span>`;
+            } else {
+                el.innerHTML = `<span class="logo-primary">${primary}</span>`;
+            }
         });
+    } else if (storeName) {
+        logoTextEls.forEach(el => {
+            el.innerHTML = `<span class="logo-primary">${storeName}</span>`;
+        });
+    }
+
+    // Actualizar también el copyright en el footer si existe
+    if (storeName) {
+        const footerCopyright = document.querySelector('.footer-copyright');
+        if (footerCopyright) {
+            const currentYear = new Date().getFullYear();
+            footerCopyright.textContent = `© ${currentYear} ${storeName}. Todos los derechos reservados.`;
+        }
     }
 
     // Logo Imagen en Header
@@ -396,6 +431,34 @@ export function syncStoreWithSettings(cfg: any): void {
     }
 
     // 8. CONTACTO & FOOTER
+    if (c.whatsapp) {
+        const waLinks = document.querySelectorAll('a[href*="wa.me"]');
+        waLinks.forEach(a => {
+            const el = a as HTMLAnchorElement;
+            if (!el.classList.contains('float-wa') && !el.classList.contains('nav-cta-btn')) {
+                el.href = `https://wa.me/${c.whatsapp}`;
+                const textNodes = Array.from(el.childNodes).filter(n => n.nodeType === Node.TEXT_NODE);
+                if (textNodes.length > 0) {
+                    textNodes[textNodes.length - 1].textContent = ` ${c.whatsappDisplay || '+' + c.whatsapp}`;
+                }
+            }
+        });
+    }
+
+    if (c.instagram || c.instagramHandle) {
+        const igLinks = document.querySelectorAll('a[href*="instagram.com"]');
+        igLinks.forEach(a => {
+            const el = a as HTMLAnchorElement;
+            if (c.instagram) el.href = c.instagram;
+            if (c.instagramHandle) {
+                const textNodes = Array.from(el.childNodes).filter(n => n.nodeType === Node.TEXT_NODE);
+                if (textNodes.length > 0) {
+                    textNodes[textNodes.length - 1].textContent = ` ${c.instagramHandle}`;
+                }
+            }
+        });
+    }
+
     if (c.hours) {
         const hoursEl = document.querySelector('.footer-hours');
         if (hoursEl) hoursEl.textContent = `🕐 ${c.hours}`;
@@ -411,5 +474,35 @@ export function syncStoreWithSettings(cfg: any): void {
                 el.appendChild(document.createTextNode(` ${c.address}`));
             }
         });
+    }
+
+    // 9. LABELS Y OPCIONES DE ENTREGA EN EL CARRITO
+    const lbl = cfg.labels || {};
+    if (lbl.pickupOptionName) {
+        const pickupRadio = document.querySelector('input[name="delivery-type"][value="retiro"]');
+        if (pickupRadio && pickupRadio.parentElement) {
+            const textNodes = Array.from(pickupRadio.parentElement.childNodes).filter(n => n.nodeType === Node.TEXT_NODE);
+            if (textNodes.length > 0) {
+                textNodes[textNodes.length - 1].textContent = ` 🏪 ${lbl.pickupOptionName}`;
+            }
+        }
+    }
+
+    if (lbl.deliveryOptionName || lbl.deliveryOptionPrice !== undefined) {
+        const deliveryRadio = document.querySelector('input[name="delivery-type"][value="delivery"]');
+        if (deliveryRadio && deliveryRadio.parentElement) {
+            const name = lbl.deliveryOptionName || 'Delivery';
+            const price = lbl.deliveryOptionPrice !== undefined ? lbl.deliveryOptionPrice : 5;
+            const textNodes = Array.from(deliveryRadio.parentElement.childNodes).filter(n => n.nodeType === Node.TEXT_NODE);
+            if (textNodes.length > 0) {
+                textNodes[textNodes.length - 1].textContent = ` 🛵 ${name} (+${price ? '$' + price : 'Gratis'})`;
+            }
+        }
+    }
+
+    // Botón modal de agregar al carrito
+    if (cat.addToCartText) {
+        const addBtnText = document.getElementById('pdm-btn-add-text');
+        if (addBtnText) addBtnText.textContent = cat.addToCartText;
     }
 }

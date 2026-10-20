@@ -2,6 +2,7 @@
 // Lógica compartida de renderizado de Tiendas y Fichas de Producto para Subdominios y Rutas
 import type { D1Database } from '@cloudflare/workers-types';
 import type { Env, TenantRow } from './types';
+import { generatePaletteCss } from '../src/config/palettes';
 
 export interface ProductRow {
     id: string;
@@ -69,12 +70,38 @@ export async function renderStorePage(request: Request, env: Env, tenant: Tenant
     }
 
     const configJson = tenant.config_json || '{}';
-    const businessName = tenant.name || 'Tienda';
+    let parsedConfig: any = {};
+    try {
+        parsedConfig = typeof tenant.config_json === 'string' ? JSON.parse(tenant.config_json) : (tenant.config_json || {});
+    } catch {}
+
+    const b = parsedConfig?.business || {};
+    const businessName = b.name || tenant.name || 'Tienda';
+    const logoPrimary = b.logoTextPrimary || b.name || tenant.name || 'Tienda';
+    const logoSecondary = b.logoTextSecondary || '';
+
+    const paletteId = parsedConfig?.palette || parsedConfig?.theme?.palette || null;
+    const paletteCss = generatePaletteCss(paletteId);
 
     const rewriter = new HTMLRewriter()
         .on('title', {
             element(e: RewriterElement) {
                 e.setInnerContent(`${businessName} | Catálogo & Pedidos`);
+            }
+        })
+        .on('.logo-text', {
+            element(e: RewriterElement) {
+                if (logoSecondary) {
+                    e.setInnerContent(`<span class="logo-primary">${logoPrimary}</span><span class="logo-secondary">${logoSecondary}</span>`);
+                } else {
+                    e.setInnerContent(`<span class="logo-primary">${logoPrimary}</span>`);
+                }
+            }
+        })
+        .on('.footer-copyright', {
+            element(e: RewriterElement) {
+                const currentYear = new Date().getFullYear();
+                e.setInnerContent(`&copy; ${currentYear} ${businessName}. Todos los derechos reservados.`);
             }
         })
         .on('#catalog-store-meta', {
@@ -83,8 +110,34 @@ export async function renderStorePage(request: Request, env: Env, tenant: Tenant
                 e.setAttribute('data-business-name', businessName);
                 e.setAttribute('data-template', template);
                 try {
-                    const parsed = JSON.parse(configJson);
-                    const cat = parsed?.landing?.catalog || {};
+                    const cat = parsedConfig?.landing?.catalog || {};
+                    const contact = parsedConfig?.contact || {};
+                    const labels = parsedConfig?.labels || {};
+
+                    if (contact.whatsapp || tenant.whatsapp) {
+                        e.setAttribute('data-whatsapp', contact.whatsapp || tenant.whatsapp);
+                    }
+                    if (labels.deliveryOptionPrice !== undefined) {
+                        e.setAttribute('data-delivery-price', String(labels.deliveryOptionPrice));
+                    }
+                    if (labels.deliveryOptionName) {
+                        e.setAttribute('data-delivery-name', labels.deliveryOptionName);
+                    }
+                    if (labels.pickupOptionName) {
+                        e.setAttribute('data-pickup-name', labels.pickupOptionName);
+                    }
+                    if (labels.itemNounSingular) {
+                        e.setAttribute('data-item-noun-singular', labels.itemNounSingular);
+                    }
+                    if (labels.itemNounPlural) {
+                        e.setAttribute('data-item-noun-plural', labels.itemNounPlural);
+                    }
+                    if (labels.emptyCartEmoji) {
+                        e.setAttribute('data-empty-cart-emoji', labels.emptyCartEmoji);
+                    }
+                    if (parsedConfig.storePrefix) {
+                        e.setAttribute('data-store-prefix', parsedConfig.storePrefix);
+                    }
                     if (cat.productDetailViewMode) {
                         e.setAttribute('data-product-detail-view-mode', cat.productDetailViewMode);
                     }
@@ -105,6 +158,9 @@ export async function renderStorePage(request: Request, env: Env, tenant: Tenant
                 e.append(`<meta name="vendly-tenant" content="${tenant.id}" />`, { html: true });
                 e.append(`<meta name="ventrina-business" content="${businessName}" />`, { html: true });
                 e.append(`<meta name="vendly-business" content="${businessName}" />`, { html: true });
+                if (paletteCss) {
+                    e.append(`<style id="server-palette-override">${paletteCss}</style>`, { html: true });
+                }
                 if (configJson && configJson !== '{}') {
                     e.append(`<script id="injected-tenant-config" type="application/json">${configJson}</script>`, { html: true });
                 }
@@ -147,7 +203,19 @@ export async function renderProductPage(
         return new Response('Error al cargar la plantilla de producto', { status: 500 });
     }
 
-    const businessName = tenant.name || 'Ventrina Store';
+    let parsedConfig: any = {};
+    try {
+        parsedConfig = typeof tenant.config_json === 'string' ? JSON.parse(tenant.config_json) : (tenant.config_json || {});
+    } catch {}
+
+    const b = parsedConfig?.business || {};
+    const businessName = b.name || tenant.name || 'Ventrina Store';
+    const logoPrimary = b.logoTextPrimary || b.name || tenant.name || 'Ventrina Store';
+    const logoSecondary = b.logoTextSecondary || '';
+
+    const paletteId = parsedConfig?.palette || parsedConfig?.theme?.palette || null;
+    const paletteCss = generatePaletteCss(paletteId);
+
     const configJson = tenant.config_json || '{}';
     const productName = product ? product.name : 'Detalle de Producto';
     const productDesc = product?.description || `Consulta precio, detalles y disponibilidad de ${productName} en ${businessName}.`;
@@ -171,6 +239,21 @@ export async function renderProductPage(
         .on('title', {
             element(e: RewriterElement) {
                 e.setInnerContent(`${productName} | ${businessName}`);
+            }
+        })
+        .on('.logo-text', {
+            element(e: RewriterElement) {
+                if (logoSecondary) {
+                    e.setInnerContent(`<span class="logo-primary">${logoPrimary}</span><span class="logo-secondary">${logoSecondary}</span>`);
+                } else {
+                    e.setInnerContent(`<span class="logo-primary">${logoPrimary}</span>`);
+                }
+            }
+        })
+        .on('.footer-copyright', {
+            element(e: RewriterElement) {
+                const currentYear = new Date().getFullYear();
+                e.setInnerContent(`&copy; ${currentYear} ${businessName}. Todos los derechos reservados.`);
             }
         })
         .on('meta[name="description"]', {
@@ -203,6 +286,25 @@ export async function renderProductPage(
                 e.setAttribute('data-tenant', tenant.id);
                 e.setAttribute('data-business-name', businessName);
                 e.setAttribute('data-template', tenant.template || 'restaurant');
+                try {
+                    const contact = parsedConfig?.contact || {};
+                    const labels = parsedConfig?.labels || {};
+                    if (contact.whatsapp || tenant.whatsapp) {
+                        e.setAttribute('data-whatsapp', contact.whatsapp || tenant.whatsapp);
+                    }
+                    if (labels.deliveryOptionPrice !== undefined) {
+                        e.setAttribute('data-delivery-price', String(labels.deliveryOptionPrice));
+                    }
+                    if (labels.deliveryOptionName) {
+                        e.setAttribute('data-delivery-name', labels.deliveryOptionName);
+                    }
+                    if (labels.pickupOptionName) {
+                        e.setAttribute('data-pickup-name', labels.pickupOptionName);
+                    }
+                    if (parsedConfig.storePrefix) {
+                        e.setAttribute('data-store-prefix', parsedConfig.storePrefix);
+                    }
+                } catch {}
             }
         })
         .on('head', {
@@ -213,6 +315,9 @@ export async function renderProductPage(
                 e.append(`<meta name="vendly-product-id" content="${productId}" />`, { html: true });
                 e.append(`<meta name="ventrina-business" content="${businessName}" />`, { html: true });
                 e.append(`<meta name="vendly-business" content="${businessName}" />`, { html: true });
+                if (paletteCss) {
+                    e.append(`<style id="server-palette-override">${paletteCss}</style>`, { html: true });
+                }
                 if (product?.price) {
                     e.append(`<meta property="product:price:amount" content="${product.price}" />`, { html: true });
                     e.append(`<meta property="product:price:currency" content="USD" />`, { html: true });

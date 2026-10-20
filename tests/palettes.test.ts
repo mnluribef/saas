@@ -70,4 +70,21 @@ describe('Color Palettes Engine (src/config/palettes.ts)', () => {
         expect(custom.theme.primaryColor).toBe('#990000');
         expect(custom.theme.accentPale).toBe('#FEF3C7'); // Heredado de amber-gold
     });
+
+    it('generates complete :root CSS with !important rules in generatePaletteCss()', async () => {
+        const { generatePaletteCss } = await import('../src/config/palettes');
+
+        expect(generatePaletteCss(null)).toBe('');
+        expect(generatePaletteCss('default')).toBe('');
+        expect(generatePaletteCss('inexistente')).toBe('');
+
+        const slateCss = generatePaletteCss('obsidian-slate');
+        expect(slateCss).toContain(':root {');
+        expect(slateCss).toContain('--theme-primary: #0F172A !important;');
+        expect(slateCss).toContain('--theme-accent: #3B82F6 !important;');
+        expect(slateCss).toContain('--rose: #0F172A !important;');
+        expect(slateCss).toContain('--gold: #3B82F6 !important;');
+        expect(slateCss).toContain('--grad-hero:');
+        expect(slateCss).toContain('--grad-cta:');
+    });
 });
