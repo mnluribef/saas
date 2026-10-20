@@ -1,6 +1,6 @@
 // src/scripts/admin.ts
 // Panel Administrativo - Ventrina SaaS
-export {};
+import QRCode from 'qrcode';
 
 declare const lucide: any;
 declare const Chart: any;
@@ -196,6 +196,8 @@ async function checkSession() {
                 if (headerBtn) headerBtn.href = storeUrl;
                 const previewBtn = document.getElementById('btn-preview-store') as HTMLAnchorElement | null;
                 if (previewBtn) previewBtn.href = storeUrl;
+                activeStoreUrl = storeUrl;
+                refreshStoreQrCodes();
             }
             showDashboard();
         } else {
@@ -4213,6 +4215,11 @@ function updateStoreUrls(tenant: any) {
 
     const headerBtn = document.getElementById('btn-header-view-store') as HTMLAnchorElement | null;
     if (headerBtn) headerBtn.href = url;
+
+    activeStoreUrl = url.startsWith('/') ? `${window.location.origin}${url}` : url;
+    activeStoreName = tenant?.name || $val('cfg-business-name') || 'Mi Tienda';
+    activeStoreTagline = tenant?.config?.business?.tagline || $val('cfg-tagline') || 'Escanea con tu cámara y haz tu pedido';
+    refreshStoreQrCodes();
 }
 
         // Actualizar botones de vista previa "Ver Mi Tienda" (en Ajustes y Cabecera)
@@ -4806,6 +4813,142 @@ if (couponForm) {
         }
     });
 }
+
+// ==========================================================================
+// FUNCIONALIDAD DE CÓDIGO QR DE LA TIENDA (CONFIGURACIÓN, MODAL & HABLADOR)
+// ==========================================================================
+let activeStoreUrl = window.location.origin;
+let activeStoreName = 'Mi Tienda';
+let activeStoreTagline = 'Escanea con tu cámara y haz tu pedido';
+
+async function renderQrToCanvas(canvas: HTMLCanvasElement | null, url: string, size = 260) {
+    if (!canvas || !url) return;
+    try {
+        await QRCode.toCanvas(canvas, url, {
+            width: size,
+            margin: 2,
+            color: {
+                dark: '#0f172a',
+                light: '#ffffff'
+            },
+            errorCorrectionLevel: 'H'
+        });
+    } catch (err) {
+        console.error('Error generando QR code:', err);
+    }
+}
+
+function refreshStoreQrCodes() {
+    const finalUrl = activeStoreUrl || (document.getElementById('btn-header-view-store') as HTMLAnchorElement | null)?.href || window.location.origin;
+    const businessName = $val('cfg-business-name') || activeStoreName || 'Mi Tienda';
+    const tagline = $val('cfg-tagline') || activeStoreTagline || 'Escanea con tu cámara y haz tu pedido';
+
+    // 1. Tarjeta en Configuración (Ajustes -> Identidad)
+    const settingsTitle = document.getElementById('settings-qr-store-title');
+    if (settingsTitle) settingsTitle.textContent = businessName;
+    const settingsUrl = document.getElementById('settings-qr-url-text');
+    if (settingsUrl) settingsUrl.textContent = finalUrl;
+    const settingsCanvas = document.getElementById('settings-qr-canvas') as HTMLCanvasElement | null;
+    if (settingsCanvas) renderQrToCanvas(settingsCanvas, finalUrl, 180);
+
+    // 2. Modal Completo / Hablador Imprimible
+    const modalName = document.getElementById('modal-qr-business-name');
+    if (modalName) modalName.textContent = businessName;
+    const modalTagline = document.getElementById('modal-qr-tagline');
+    if (modalTagline) modalTagline.textContent = tagline;
+    const modalUrlLabel = document.getElementById('modal-qr-url-label');
+    if (modalUrlLabel) modalUrlLabel.textContent = finalUrl;
+    const modalCanvas = document.getElementById('modal-qr-canvas') as HTMLCanvasElement | null;
+    if (modalCanvas) renderQrToCanvas(modalCanvas, finalUrl, 260);
+}
+
+const storeQrModal = document.getElementById('store-qr-modal');
+
+function openStoreQrModal() {
+    refreshStoreQrCodes();
+    if (storeQrModal) {
+        storeQrModal.classList.add('active');
+        if (window.lucide) lucide.createIcons();
+    }
+}
+
+function closeStoreQrModal() {
+    if (storeQrModal) storeQrModal.classList.remove('active');
+}
+
+function downloadQrCode(canvas: HTMLCanvasElement | null, filename: string) {
+    if (!canvas) return;
+    try {
+        const dataUrl = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.download = filename || 'codigo-qr-tienda.png';
+        link.href = dataUrl;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast('Código QR descargado con éxito', 'success');
+    } catch (err) {
+        console.error('Error descargando código QR:', err);
+        showToast('No se pudo descargar el código QR', 'error');
+    }
+}
+
+async function copyStoreUrlToClipboard(url: string) {
+    if (!url) return;
+    try {
+        if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(url);
+        } else {
+            const ta = document.createElement('textarea');
+            ta.value = url;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+        }
+        showToast('¡Enlace de la tienda copiado al portapapeles!', 'success');
+    } catch {
+        showToast('No se pudo copiar el enlace', 'error');
+    }
+}
+
+// Triggers para abrir modal QR
+document.getElementById('btn-header-qr')?.addEventListener('click', openStoreQrModal);
+document.getElementById('btn-settings-qr')?.addEventListener('click', openStoreQrModal);
+document.getElementById('btn-settings-open-full-qr')?.addEventListener('click', openStoreQrModal);
+
+// Cierre modal
+document.getElementById('btn-close-qr-modal')?.addEventListener('click', closeStoreQrModal);
+if (storeQrModal) {
+    storeQrModal.addEventListener('click', (e) => {
+        if (e.target === storeQrModal) closeStoreQrModal();
+    });
+}
+
+// Botones de acciones
+document.getElementById('btn-settings-copy-url')?.addEventListener('click', () => {
+    const finalUrl = activeStoreUrl || (document.getElementById('btn-header-view-store') as HTMLAnchorElement | null)?.href || window.location.origin;
+    copyStoreUrlToClipboard(finalUrl);
+});
+document.getElementById('btn-modal-copy-qr-url')?.addEventListener('click', () => {
+    const finalUrl = activeStoreUrl || (document.getElementById('btn-header-view-store') as HTMLAnchorElement | null)?.href || window.location.origin;
+    copyStoreUrlToClipboard(finalUrl);
+});
+
+document.getElementById('btn-settings-download-qr')?.addEventListener('click', () => {
+    const canvas = document.getElementById('settings-qr-canvas') as HTMLCanvasElement | null;
+    const name = ($val('cfg-business-name') || activeStoreName || 'tienda').toLowerCase().replace(/[^a-z0-9]/g, '-');
+    downloadQrCode(canvas, `qr-${name}.png`);
+});
+document.getElementById('btn-modal-download-qr')?.addEventListener('click', () => {
+    const canvas = document.getElementById('modal-qr-canvas') as HTMLCanvasElement | null;
+    const name = ($val('cfg-business-name') || activeStoreName || 'tienda').toLowerCase().replace(/[^a-z0-9]/g, '-');
+    downloadQrCode(canvas, `qr-${name}-mostrador.png`);
+});
+
+document.getElementById('btn-modal-print-qr')?.addEventListener('click', () => {
+    window.print();
+});
 
 
 

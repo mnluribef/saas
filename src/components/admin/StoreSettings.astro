@@ -17,6 +17,10 @@ const palettes = getAllPalettes();
                     <i data-lucide="external-link"></i>
                     <span>Ver Mi Tienda</span>
                 </a>
+                <button type="button" class="btn-preview-store btn-qr-action" id="btn-settings-qr" title="Ver y descargar código QR de la tienda">
+                    <i data-lucide="qr-code"></i>
+                    <span>Código QR</span>
+                </button>
                 <button type="button" class="btn-action secondary" id="btn-reload-settings">
                     <i data-lucide="refresh-cw"></i>
                     <span>Recargar</span>
@@ -207,6 +211,42 @@ const palettes = getAllPalettes();
                                 </div>
                             </button>
                         ))}
+                    </div>
+                </div>
+
+                <!-- Sección de Código QR de la Tienda -->
+                <div class="settings-card settings-qr-section">
+                    <div class="settings-card-header">
+                        <div>
+                            <h3 class="settings-card-title">
+                                <i data-lucide="qr-code"></i> Código QR de tu Tienda
+                            </h3>
+                            <p class="settings-card-subtitle">
+                                Facilita el acceso directo de tus clientes desde su teléfono. Exhibe este código QR en tu mostrador, empaques, cartas o historias de Instagram.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="settings-qr-card-body">
+                        <div class="settings-qr-preview-wrapper">
+                            <canvas id="settings-qr-canvas" class="settings-qr-canvas" width="180" height="180"></canvas>
+                        </div>
+                        <div class="settings-qr-info">
+                            <h4 id="settings-qr-store-title" class="settings-qr-title">Mi Tienda</h4>
+                            <p class="settings-qr-url-text" id="settings-qr-url-text">https://mitienda.ventrina.app</p>
+                            <p class="settings-qr-hint">Tus clientes solo necesitan apuntar la cámara de su teléfono para abrir tu catálogo y hacer sus pedidos directamente por WhatsApp.</p>
+                            <div class="settings-qr-actions">
+                                <button type="button" class="btn-action secondary" id="btn-settings-copy-url">
+                                    <i data-lucide="copy"></i> Copiar Enlace
+                                </button>
+                                <button type="button" class="btn-action secondary" id="btn-settings-download-qr">
+                                    <i data-lucide="download"></i> Descargar QR (.PNG)
+                                </button>
+                                <button type="button" class="btn-action" id="btn-settings-open-full-qr">
+                                    <i data-lucide="printer"></i> Imprimir para Mostrador
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

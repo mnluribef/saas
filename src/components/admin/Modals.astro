@@ -678,3 +678,60 @@
         </form>
     </div>
 </div>
+
+<!-- Modal Código QR de la Tienda -->
+<div class="modal" id="store-qr-modal">
+    <div class="modal-content modal-qr-dialog">
+        <div class="modal-header">
+            <div class="modal-header-info">
+                <h3>
+                    <i data-lucide="qr-code"></i> Código QR de la Tienda
+                </h3>
+                <p class="modal-subtitle">Listo para exhibir en mostrador, mesas o empaques</p>
+            </div>
+            <button type="button" class="modal-close" id="btn-close-qr-modal" title="Cerrar ventana">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+
+        <div class="modal-body modal-qr-body">
+            <!-- Stand / Hablador Imprimible -->
+            <div class="qr-printable-stand" id="qr-printable-stand">
+                <div class="qr-stand-header">
+                    <span class="qr-stand-badge">✨ Catálogo Digital & Pedidos</span>
+                    <h2 class="qr-stand-title" id="modal-qr-business-name">Mi Tienda</h2>
+                    <p class="qr-stand-tagline" id="modal-qr-tagline">Escanea con tu cámara y haz tu pedido</p>
+                </div>
+
+                <div class="qr-canvas-box">
+                    <canvas id="modal-qr-canvas" class="modal-qr-canvas" width="260" height="260"></canvas>
+                </div>
+
+                <div class="qr-stand-footer">
+                    <span class="qr-stand-url" id="modal-qr-url-label">https://mitienda.ventrina.app</span>
+                    <span class="qr-stand-subtext">Menú interactivo · Precios actualizados en Bs y USD</span>
+                </div>
+            </div>
+
+            <div class="qr-tips-banner">
+                <i data-lucide="lightbulb" class="qr-tip-icon"></i>
+                <div class="qr-tip-text">
+                    <strong>Consejo para aumentar ventas:</strong>
+                    Imprime este diseño y colócalo en un hablador acrílico en el mostrador o mesas para que tus clientes pidan directamente a tu WhatsApp.
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer modal-qr-footer">
+            <button type="button" class="btn-action secondary" id="btn-modal-copy-qr-url">
+                <i data-lucide="copy"></i> Copiar Enlace
+            </button>
+            <button type="button" class="btn-action secondary" id="btn-modal-download-qr">
+                <i data-lucide="download"></i> Descargar Imagen (.PNG)
+            </button>
+            <button type="button" class="btn-action" id="btn-modal-print-qr">
+                <i data-lucide="printer"></i> Imprimir Hablador
+            </button>
+        </div>
+    </div>
+</div>
