@@ -1,7 +1,7 @@
 // src/types/store.types.ts
 // Definiciones de tipos para la arquitectura multi-tienda configurable
 
-export type StoreTemplateType = 'restaurant' | 'hardware' | 'fashion' | 'tech' | 'autoparts';
+export type StoreTemplateType = 'restaurant' | 'hardware' | 'fashion' | 'tech' | 'autoparts' | 'grocery';
 
 export type SchemaOrgType =
   | 'Restaurant'
@@ -9,6 +9,7 @@ export type SchemaOrgType =
   | 'ClothingStore'
   | 'ElectronicsStore'
   | 'AutoPartsStore'
+  | 'GroceryStore'
   | 'Store'
   | 'LocalBusiness'
   | 'SoftwareApplication';

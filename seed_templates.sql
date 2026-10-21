@@ -75,3 +75,21 @@ INSERT OR IGNORE INTO products (id, name, type_id, category, price, icon, descri
 ('pastillas-freno-ceramica', 'Pastillas de Freno de Cerámica EBC', 'frenos', 'frenos', 35.00, 'shield-check', 'Juego de pastillas delanteras de cerámica, alto coeficiente de fricción, sin ruido y bajo polvo. Aplica para modelos Sedán 2015-2023.', '/assets/product_frenos.webp', 'Delanteras, Traseras (+30$)', 'autoparts', 1, 'EBC Brakes', 'Ultimax2'),
 ('aceite-sintetico-5w40', 'Aceite 100% Sintético Velocita 5W-40 (4 Litros)', 'lubricantes', 'lubricantes', 42.00, 'droplet', 'Lubricante sintético formulado para máxima protección en motores de alto rendimiento y temperaturas extremas.', '/assets/product_aceite.webp', 'Envase 4 Litros, Cuarto (946ml) (12$)', 'autoparts', 1, 'Velocita', '5W-40 SN'),
 ('amortiguadores-gas', 'Par de Amortiguadores a Gas Heavy Duty', 'suspension', 'suspension', 110.00, 'truck', 'Amortiguadores presurizados con nitrógeno. Mejoran la estabilidad, reducen el rebote y aumentan la seguridad. Incluyen bases.', '/assets/product_suspension.webp', 'Delanteros (Par), Traseros (Par)', 'autoparts', 1, 'Monroe', 'OESpectrum');
+
+-- =====================================================
+-- 5. BODEGÓN Y SUPERMERCADO (grocery)
+-- =====================================================
+-- Categorías Bodegón / Supermercado
+INSERT OR IGNORE INTO product_types (id, name, description, icon, template) VALUES
+('despensa', 'Despensa y Granos', 'Arroz, pastas, harinas, aceites, azúcar y café.', 'package', 'grocery'),
+('charcuteria', 'Charcutería y Lácteos', 'Quesos llaneros y amarillos, jamones, tocineta y embutidos.', 'award', 'grocery'),
+('bebidas', 'Bebidas y Licores', 'Refrescos, jugos, maltas, cervezas y vinos de mesa.', 'coffee', 'grocery'),
+('snacks', 'Snacks y Golosinas', 'Chocolates, papas fritas, galletas y chucherías importadas.', 'sparkles', 'grocery'),
+('combos', 'Combos de Ahorro', 'Packs familiares quincenales con entrega rápida.', 'shopping-bag', 'grocery');
+
+-- Productos de Muestra Bodegón / Supermercado
+INSERT OR IGNORE INTO products (id, name, type_id, category, price, icon, description, image_url, sizes, template, active, brand, model) VALUES
+('combo-despensa-familiar', 'Combo Despensa Familiar Quincenal', 'combos', 'combos', 28.50, 'shopping-bag', 'Pack ahorro con 2 Harina PAN, 2 Arroz blanco, 2 Pasta larga, 1 Aceite 1L, 1 Azúcar y 1 Café 500g.', '/assets/product_combo_despensa.jpg', 'Estándar', 'grocery', 1, 'Varios', 'Pack Quincenal'),
+('queso-blanco-llanero-1kg', 'Queso Blanco Llanero Fresco (1kg)', 'charcuteria', 'charcuteria', 6.80, 'award', 'Queso fresco artesanal de primera calidad, punto justo de sal. Ideal para arepas y cachapas.', '/assets/hero_grocery.jpg', '500g (3.50$), 1kg (6.80$)', 'grocery', 1, 'Artesanal', 'Llanero'),
+('jamon-cocido-superior-500g', 'Jamón Cocido Superior Rebanado (500g)', 'charcuteria', 'charcuteria', 4.50, 'award', 'Jamón tierno bajo en grasa, rebanado fino al vacío al momento de armar tu pedido.', '/assets/hero_grocery.jpg', '250g (2.30$), 500g (4.50$)', 'grocery', 1, 'Plumrose', 'Superior'),
+('cafe-gourmet-500g', 'Café Gourmet Tostado y Molido (500g)', 'despensa', 'despensa', 5.50, 'coffee', 'Café de altura 100% arábica, aroma intenso, tueste medio y notas achocolatadas.', '/assets/product_combo_despensa.jpg', 'Molido 500g, En grano 500g', 'grocery', 1, 'Fama de América', 'Gourmet');

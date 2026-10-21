@@ -15,7 +15,7 @@ import type { Env, PagesHandler } from '../types';
 export const onboardingSchema = z.object({
     tenantName: z.string().min(2, "El nombre del negocio es muy corto").max(100),
     tenantSlug: z.string().min(3).max(60).regex(/^[a-z0-9-]+$/, "El slug solo puede contener minúsculas, números y guiones."),
-    template: z.enum(['restaurant', 'hardware', 'fashion', 'tech', 'autoparts']).default('restaurant'),
+    template: z.enum(['restaurant', 'hardware', 'fashion', 'tech', 'autoparts', 'grocery']).default('restaurant'),
     email: z.email("Formato de correo electrónico inválido"),
     password: strongPasswordSchema,
     whatsapp: z.string().max(30).optional().nullable(),

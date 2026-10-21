@@ -23,6 +23,7 @@ Ventrina implementa motores de plantillas altamente especializados para diversas
 - [Demo Plantilla Moda y Ropa](https://ventrina.app/demo/fashion): Diseñada para boutiques, calzado y accesorios con selección de tallas, colores y variantes visuales.
 - [Demo Plantilla Tecnología](https://ventrina.app/demo/tech): Diseñada para electrónica, informática, telefonía y gadgets, destacando marcas, modelos y especificaciones técnicas.
 - [Demo Plantilla Repuestos y Autopartes](https://ventrina.app/demo/autoparts): Diseñada para talleres mecánicos y venta de repuestos automotrices, con compatibilidad por marca/modelo de vehículo y códigos SKU.
+- [Demo Plantilla Bodegón y Supermercado](https://ventrina.app/demo/grocery): Diseñada para minimarkets, bodegones, charcutería y víveres con combos familiares y pedidos rápidos por WhatsApp.
 
 ## Recursos de API y Especificaciones para IA
 

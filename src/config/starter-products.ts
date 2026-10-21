@@ -124,6 +124,44 @@ export const STARTER_PRODUCTS_BY_TEMPLATE: Record<string, StarterProductItem[]> 
             image_url: '/assets/product_frenos.webp',
             stock: 60
         }
+    ],
+    grocery: [
+        {
+            name: 'Combo Despensa Familiar Quincenal',
+            description: 'Pack ahorro con 2 Harina PAN, 2 Arroz blanco, 2 Pasta larga, 1 Aceite 1L, 1 Azúcar y 1 Café 500g.',
+            price: 28.50,
+            category: 'combos',
+            icon: 'shopping-bag',
+            image_url: '/assets/product_combo_despensa.jpg',
+            stock: 35
+        },
+        {
+            name: 'Queso Blanco Llanero Fresco (1kg)',
+            description: 'Queso fresco artesanal de primera calidad, punto justo de sal. Ideal para arepas y cachapas.',
+            price: 6.80,
+            category: 'charcuteria',
+            icon: 'award',
+            image_url: '/assets/hero_grocery.jpg',
+            stock: 40
+        },
+        {
+            name: 'Jamón Cocido Superior (500g)',
+            description: 'Jamón tierno bajo en grasa, rebanado fino al vacío al momento de armar tu pedido.',
+            price: 4.50,
+            category: 'charcuteria',
+            icon: 'award',
+            image_url: '/assets/hero_grocery.jpg',
+            stock: 50
+        },
+        {
+            name: 'Café Gourmet Tostado y Molido (500g)',
+            description: 'Café de altura 100% arábica, aroma intenso, tueste medio y notas achocolatadas.',
+            price: 5.50,
+            category: 'despensa',
+            icon: 'coffee',
+            image_url: '/assets/product_combo_despensa.jpg',
+            stock: 60
+        }
     ]
 };
 

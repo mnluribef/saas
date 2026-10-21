@@ -1330,6 +1330,14 @@ a {
   box-shadow: 0 20px 45px -10px rgba(16, 185, 129, 0.25);
 }
 
+.demo-card-light.demo-theme-grocery {
+  border-top: 4px solid #16A34A;
+}
+.demo-card-light.demo-theme-grocery:hover {
+  border-color: #16A34A;
+  box-shadow: 0 20px 45px -10px rgba(22, 163, 74, 0.25);
+}
+
 .demo-thumbnail {
   position: relative;
   height: 220px;
@@ -1390,6 +1398,12 @@ a {
   background: #DCFCE7;
   color: #15803D;
   border: 1px solid #BBF7D0;
+}
+
+.demo-badge-tag.tag-grocery {
+  background: #DCFCE7;
+  color: #15803D;
+  border: 1px solid #86EFAC;
 }
 
 .demo-info {

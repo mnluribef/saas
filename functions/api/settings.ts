@@ -166,7 +166,7 @@ export const storeSettingsSchema = z.object({
     landing: landingSettingsSchema.optional(),
     payment: paymentSettingsSchema.optional(),
     labels: labelsSettingsSchema.optional(),
-    template: z.enum(['restaurant', 'hardware', 'fashion', 'tech', 'autoparts']).optional(),
+    template: z.enum(['restaurant', 'hardware', 'fashion', 'tech', 'autoparts', 'grocery']).optional(),
     palette: z.string().max(50).optional().nullable(),
     storePrefix: z.string().min(2).max(6).regex(/^[A-Z0-9]+$/).optional(),
 });

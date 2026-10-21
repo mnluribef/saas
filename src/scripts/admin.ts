@@ -1596,7 +1596,8 @@ const templateDefaultCategory = {
     hardware: 'herramientas-electricas',
     autoparts: 'frenos',
     fashion: 'vestidos',
-    tech: 'laptops-pc'
+    tech: 'laptops-pc',
+    grocery: 'despensa'
 };
 
 const templateBadges = {
@@ -1604,7 +1605,8 @@ const templateBadges = {
     hardware: '<span class="template-badge hardware">🔨 Ferretería</span>',
     autoparts: '<span class="template-badge autoparts">🚗 Repuestos</span>',
     fashion: '<span class="template-badge fashion">👗 Moda</span>',
-    tech: '<span class="template-badge tech">⚡ Tecnología</span>'
+    tech: '<span class="template-badge tech">⚡ Tecnología</span>',
+    grocery: '<span class="template-badge grocery">🛒 Bodegón</span>'
 };
 
 function renderProductsTable() {
@@ -1618,6 +1620,7 @@ function renderProductsTable() {
     const countFash = document.getElementById('count-fashion');
     const countTech = document.getElementById('count-tech');
     const countAuto = document.getElementById('count-autoparts');
+    const countGroc = document.getElementById('count-grocery');
 
     if (countAll) countAll.textContent = String(productsList.length);
     if (countRest) countRest.textContent = String(productsList.filter(p => (p.template || 'restaurant') === 'restaurant').length);
@@ -1625,6 +1628,7 @@ function renderProductsTable() {
     if (countFash) countFash.textContent = String(productsList.filter(p => p.template === 'fashion').length);
     if (countTech) countTech.textContent = String(productsList.filter(p => p.template === 'tech').length);
     if (countAuto) countAuto.textContent = String(productsList.filter(p => p.template === 'autoparts').length);
+    if (countGroc) countGroc.textContent = String(productsList.filter(p => p.template === 'grocery').length);
 
     // Actualizar contadores de stock
     const stockCountAll = document.getElementById('stock-count-all');

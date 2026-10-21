@@ -20,6 +20,20 @@ describe('Onboarding & Account Registration (onboarding.ts)', () => {
             expect(result.success).toBe(true);
         });
 
+        it('accepts registration with grocery template', () => {
+            const validGrocery = {
+                tenantName: 'Bodegón Los Samanes',
+                tenantSlug: 'bodegon-samanes',
+                template: 'grocery' as const,
+                email: 'contacto@bodegon.com',
+                password: 'Password123!',
+                whatsapp: '+584241234567',
+                acceptTerms: true
+            };
+            const result = onboardingSchema.safeParse(validGrocery);
+            expect(result.success).toBe(true);
+        });
+
         it('rejects registration with username instead of email (no backwards compatibility)', () => {
             const legacyData = {
                 tenantName: 'Mi Tienda Express',

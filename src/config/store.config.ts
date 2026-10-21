@@ -8,6 +8,7 @@ import { hardwareTemplate } from './templates/hardware';
 import { autopartsTemplate } from './templates/autoparts';
 import { fashionTemplate } from './templates/fashion';
 import { techTemplate } from './templates/tech';
+import { groceryTemplate } from './templates/grocery';
 
 /**
  * Registro de todas las plantillas disponibles en el sistema.
@@ -18,13 +19,14 @@ export const storeTemplates: Record<StoreTemplateType, StoreConfig> = {
   autoparts: autopartsTemplate,
   fashion: fashionTemplate,
   tech: techTemplate,
+  grocery: groceryTemplate,
 };
 
 /**
  * Plantilla activa actual.
  * 
  * 👉 ¡Para cambiar el tipo de tienda en todo el proyecto, solo cambia este valor!
- * Opciones disponibles: 'restaurant' | 'hardware' | 'fashion' | 'tech' | 'autoparts'
+ * Opciones disponibles: 'restaurant' | 'hardware' | 'fashion' | 'tech' | 'autoparts' | 'grocery'
  */
 export const ACTIVE_TEMPLATE: StoreTemplateType = 'restaurant';
 

@@ -85,6 +85,18 @@
                 "Búsqueda por código SKU/OEM",
                 "Condición (nuevo/remanufacturado)"
             ]
+        },
+        {
+            "id": "grocery",
+            "name": "Bodegón y Supermercado",
+            "description": "Plantilla para minimarkets, bodegones, charcutería y venta de víveres con combos familiares.",
+            "demo_url": "https://ventrina.app/demo/grocery",
+            "features": [
+                "Combos de despensa quincenales",
+                "Charcutería y pesaje por WhatsApp",
+                "Control de productos refrigerados",
+                "Delivery express programado"
+            ]
         }
     ],
     "currencies": {
@@ -145,7 +157,7 @@
                     "category": { "type": "string", "description": "Filtrar por categoría de producto" },
                     "template": {
                         "type": "string",
-                        "enum": ["restaurant", "hardware", "fashion", "tech", "autoparts"]
+                        "enum": ["restaurant", "hardware", "fashion", "tech", "autoparts", "grocery"]
                     },
                     "page": { "type": "integer", "default": 1 },
                     "limit": { "type": "integer", "default": 20 }
