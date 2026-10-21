@@ -18,6 +18,7 @@ export const SYSTEM_PATHS = new Set([
     'p',
     's',
     'producto',
+    'terminos',
     'robots.txt',
     'sitemap.xml',
     'llms.txt',

@@ -1,0 +1,158 @@
+/* src/styles/404.css - Página 404 Institucional de Ventrina */
+:root {
+    --e404-bg: #0b0f19;
+    --e404-card-bg: rgba(17, 24, 39, 0.75);
+    --e404-border: rgba(255, 255, 255, 0.08);
+    --e404-text: #e2e8f0;
+    --e404-text-muted: #94a3b8;
+    --e404-text-heading: #ffffff;
+    --e404-primary: #6366f1;
+    --e404-primary-hover: #4f46e5;
+    --e404-primary-glow: rgba(99, 102, 241, 0.25);
+    --e404-radius: 20px;
+}
+
+body.e404-body {
+    background-color: var(--e404-bg);
+    color: var(--e404-text);
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow-x: hidden;
+}
+
+.e404-bg-glow {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(16, 185, 129, 0.05) 40%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.e404-container {
+    position: relative;
+    z-index: 1;
+    max-width: 580px;
+    width: 90%;
+    margin: 2rem auto;
+    text-align: center;
+}
+
+.e404-card {
+    background: var(--e404-card-bg);
+    border: 1px solid var(--e404-border);
+    border-radius: var(--e404-radius);
+    padding: 3.5rem 2.5rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 40px var(--e404-primary-glow);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+
+.e404-badge {
+    display: inline-block;
+    padding: 0.35rem 1rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #818cf8;
+    background: rgba(99, 102, 241, 0.12);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    border-radius: 9999px;
+    margin-bottom: 1.5rem;
+}
+
+.e404-code {
+    font-size: 6rem;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    background: linear-gradient(135deg, #ffffff 30%, #818cf8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin: 0 0 1rem;
+}
+
+.e404-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--e404-text-heading);
+    margin: 0 0 1rem;
+    letter-spacing: -0.02em;
+}
+
+.e404-desc {
+    font-size: 1.05rem;
+    color: var(--e404-text-muted);
+    line-height: 1.6;
+    margin: 0 0 2.25rem;
+}
+
+.e404-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.e404-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.85rem 1.6rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border-radius: 12px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.e404-btn-primary {
+    background: var(--e404-primary);
+    color: #ffffff;
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+}
+
+.e404-btn-primary:hover {
+    background: var(--e404-primary-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45);
+}
+
+.e404-btn-secondary {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--e404-text);
+    border: 1px solid var(--e404-border);
+}
+
+.e404-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    transform: translateY(-2px);
+}
+
+.e404-footer-brand {
+    margin-top: 2.5rem;
+    font-size: 0.875rem;
+    color: var(--e404-text-muted);
+}
+
+.e404-footer-brand a {
+    color: #818cf8;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.e404-footer-brand a:hover {
+    text-decoration: underline;
+}

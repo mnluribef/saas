@@ -66,13 +66,13 @@ export const onRequest = async (context: PagesContext<Env>): Promise<Response> =
                 return next();
             }
 
-            // Registro de nuevas tiendas se redirige a la plataforma principal
+            // Rutas de plataforma (registro, términos, precios) se redirigen al dominio principal
             const isLocal = host.includes('localhost');
             const mainDomain = isLocal ? `localhost:${url.port || '8788'}` : 'ventrina.app';
             const protocol = url.protocol;
 
-            if (pathname === '/register') {
-                return Response.redirect(`${protocol}//${mainDomain}/register`, 302);
+            if (pathname === '/register' || pathname === '/terminos' || pathname === '/precios') {
+                return Response.redirect(`${protocol}//${mainDomain}${pathname}`, 302);
             }
 
             // Ficha de Producto en subdominio: /p/:id
@@ -88,11 +88,11 @@ export const onRequest = async (context: PagesContext<Env>): Promise<Response> =
                 return renderStorePage(request, env, tenant);
             }
 
-            // En caso de solicitar /producto?id=... en subdominio
+            // Retrocompatibilidad: redirigir /producto?id=... al formato canónico /p/:id
             if (pathname === '/producto') {
                 const pId = url.searchParams.get('id');
                 if (pId) {
-                    return renderProductPage(request, env, tenant, pId, db);
+                    return Response.redirect(`${url.origin}/p/${encodeURIComponent(pId)}`, 301);
                 }
             }
 
@@ -115,11 +115,18 @@ export const onRequest = async (context: PagesContext<Env>): Promise<Response> =
             }
         }
 
-        // 6. Caso C: Petición al Dominio Raíz (ventrina.app o localhost) con ruta de tienda tipo /[store]
-        // Redirigir permanentemente (301) a su nuevo subdominio (ej: mitienda.ventrina.app)
+        // 6. Caso C: Petición al Dominio Raíz (ventrina.app o localhost) con ruta de tienda tipo /[store] o /s/[store]
+        // Redirigir permanentemente (301) a su respectivo subdominio (ej: mitienda.ventrina.app)
         const pathParts = pathname.split('/').filter(Boolean);
         if (pathParts.length > 0) {
-            const storeCandidate = pathParts[0].toLowerCase();
+            let storeCandidate = pathParts[0].toLowerCase();
+            let pIndex = 1;
+
+            if (storeCandidate === 's' && pathParts.length > 1) {
+                storeCandidate = pathParts[1].toLowerCase();
+                pIndex = 2;
+            }
+
             if (!SYSTEM_PATHS.has(storeCandidate) && !storeCandidate.includes('.')) {
                 const tenant = await getTenantByIdCached(db, storeCandidate, env.KV);
                 if (tenant) {
@@ -129,13 +136,13 @@ export const onRequest = async (context: PagesContext<Env>): Promise<Response> =
                         : `${tenant.id}.ventrina.app`;
                     const targetProto = isLocal ? (url.protocol.replace(':', '') || 'http') : 'https';
 
-                    // Si es /[store]/p/:id -> https://[store].ventrina.app/p/:id
-                    if (pathParts.length >= 3 && pathParts[1] === 'p') {
-                        const productId = pathParts.slice(2).join('/');
+                    // Si es /[store]/p/:id o /s/[store]/p/:id -> https://[store].ventrina.app/p/:id
+                    if (pathParts.length >= pIndex + 2 && pathParts[pIndex] === 'p') {
+                        const productId = pathParts.slice(pIndex + 1).join('/');
                         return Response.redirect(`${targetProto}://${targetHost}/p/${productId}${url.search}`, 301);
                     }
 
-                    // Si es /[store] -> https://[store].ventrina.app/
+                    // Si es /[store] o /s/[store] -> https://[store].ventrina.app/
                     return Response.redirect(`${targetProto}://${targetHost}/${url.search}`, 301);
                 }
             }

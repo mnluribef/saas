@@ -8,7 +8,7 @@ import { getDB, jsonResponse } from "./_helpers";
 import { sendWelcomeEmail } from "./_services/email.service";
 import { generateWebhookSignature } from "./_services/order.service";
 import { RateLimitService } from "./_services/rate-limit.service";
-import { invalidateTenantCache } from "./_tenant";
+import { invalidateTenantCache, SYSTEM_PATHS, SYSTEM_SUBDOMAINS } from "./_tenant";
 import { getStarterProducts } from "../../src/config/starter-products";
 import type { Env, PagesHandler } from '../types';
 
@@ -92,6 +92,10 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
         }
 
         // 2. Verificar disponibilidad de Slug y Correo
+        if (SYSTEM_PATHS.has(tenantSlug) || SYSTEM_SUBDOMAINS.has(tenantSlug)) {
+            return jsonResponse({ error: `El subdominio o identificador "${tenantSlug}" está reservado por el sistema.` }, 400);
+        }
+
         const existingTenant = await db.prepare('SELECT id FROM tenants WHERE id = ?').bind(tenantSlug).first();
         if (existingTenant) {
             return jsonResponse({ error: `El subdominio o dirección "${tenantSlug}" ya está en uso.` }, 400);

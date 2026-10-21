@@ -246,14 +246,10 @@ export async function renderProductPage(
     }
 
     const rawHost = request.headers.get('x-forwarded-host') || url.hostname;
-    const host = rawHost.split(':')[0].toLowerCase();
     const effectiveOrigin = request.headers.get('x-forwarded-host') 
         ? `${url.protocol}//${rawHost}` 
         : url.origin;
-    const isSubdomainOrCustom = host.endsWith('.ventrina.app') || host.endsWith('.localhost') || host === tenant.domain;
-    const canonicalUrl = isSubdomainOrCustom
-        ? `${effectiveOrigin}/p/${encodeURIComponent(productId)}`
-        : `${effectiveOrigin}/${tenant.id}/p/${encodeURIComponent(productId)}`;
+    const canonicalUrl = `${effectiveOrigin}/p/${encodeURIComponent(productId)}`;
 
     const rewriter = new HTMLRewriter()
         .on('title', {
@@ -331,7 +327,6 @@ export async function renderProductPage(
         })
         .on('head', {
             element(e: RewriterElement) {
-                e.append(`<meta name="ventrina-tenant" content="${tenant.id}" />`, { html: true });
                 e.append(`<meta name="ventrina-tenant" content="${tenant.id}" />`, { html: true });
                 e.append(`<meta name="ventrina-product-id" content="${productId}" />`, { html: true });
                 e.append(`<meta name="ventrina-business" content="${businessName}" />`, { html: true });

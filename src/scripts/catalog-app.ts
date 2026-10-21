@@ -40,7 +40,7 @@ function resolveActiveTenantId(): string | undefined {
         if (candidate === 's' && pathParts.length > 1) {
             candidate = pathParts[1].toLowerCase();
         }
-        const SYSTEM_PATHS = new Set(['api', 'admin', 'login', 'register', 'precios', 'superadmin', 'demo', 'assets', '_astro']);
+        const SYSTEM_PATHS = new Set(['api', 'admin', 'login', 'register', 'precios', 'superadmin', 'demo', 'assets', '_astro', 'terminos', 'producto']);
         if (candidate && !SYSTEM_PATHS.has(candidate) && !candidate.includes('.')) {
             return candidate;
         }

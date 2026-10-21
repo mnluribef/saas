@@ -39,6 +39,8 @@ describe('Tenant Resolution Logic (_tenant.ts)', () => {
         expect(SYSTEM_PATHS.has('login')).toBe(true);
         expect(SYSTEM_PATHS.has('register')).toBe(true);
         expect(SYSTEM_PATHS.has('precios')).toBe(true);
+        expect(SYSTEM_PATHS.has('terminos')).toBe(true);
+        expect(SYSTEM_PATHS.has('producto')).toBe(true);
         expect(SYSTEM_PATHS.has('fogon')).toBe(false);
     });
 
