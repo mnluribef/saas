@@ -1,0 +1,156 @@
+/* src/styles/template-switcher.css */
+/* Barra flotante para alternar entre plantillas demo de Ventrina SaaS */
+
+.ventrina-template-bar {
+  position: fixed;
+  bottom: 1.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  max-width: 95vw;
+  width: auto;
+  animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 20px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.template-bar-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.5rem 0.8rem;
+  background: rgba(15, 17, 23, 0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 50px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.template-bar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding-left: 0.4rem;
+  padding-right: 0.6rem;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  text-decoration: none;
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10B981;
+  box-shadow: 0 0 8px #10B981;
+  animation: pulseGlow 2s infinite;
+}
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.85); }
+}
+
+.brand-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: -0.01em;
+}
+
+.brand-badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #94A3B8;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 0.15rem 0.45rem;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.template-bar-pills {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.template-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 30px;
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #CBD5E1;
+  background: transparent;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.template-pill:hover {
+  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.template-pill.active {
+  color: #FFFFFF;
+  background: var(--themePrimary, #3B82F6);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+  font-weight: 600;
+}
+
+.pill-icon {
+  font-size: 0.95rem;
+}
+
+.pill-active-indicator {
+  font-size: 0.65rem;
+  background: rgba(255, 255, 255, 0.25);
+  padding: 0.1rem 0.4rem;
+  border-radius: 12px;
+  margin-left: 0.2rem;
+}
+
+/* Ocultar permanentemente en tiendas de tenants */
+[data-is-tenant="true"] .ventrina-template-bar,
+body[data-is-tenant="true"] .ventrina-template-bar,
+html[data-is-tenant="true"] .ventrina-template-bar,
+[data-tenant]:not([data-tenant="demo"]) .ventrina-template-bar {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  .ventrina-template-bar {
+    bottom: 4.8rem;
+  }
+  .template-bar-brand {
+    display: none;
+  }
+  .template-bar-inner {
+    padding: 0.35rem 0.5rem;
+    gap: 0.2rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .template-bar-inner::-webkit-scrollbar {
+    display: none;
+  }
+  .template-pill {
+    padding: 0.35rem 0.6rem;
+    font-size: 0.75rem;
+  }
+  .pill-active-indicator {
+    display: none;
+  }
+}

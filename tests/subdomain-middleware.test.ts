@@ -236,5 +236,7 @@ describe('Root Pages Middleware (_middleware.ts): Subdomains & Routing', () => {
         const html = await res.text();
         expect(html).toContain('El Fogón Criollo | Catálogo & Pedidos');
         expect(html).toContain('data-tenant="fogon"');
+        expect(html).not.toContain('ventrina-template-bar');
+        expect(html).not.toContain('template-switcher');
     });
 });

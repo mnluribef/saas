@@ -159,9 +159,14 @@ export async function renderStorePage(request: Request, env: Env, tenant: Tenant
                 } catch {}
             }
         })
-        .on('.template-switcher', {
+        .on('.ventrina-template-bar, #ventrina-template-bar, .template-switcher', {
             element(e: RewriterElement) {
                 e.remove();
+            }
+        })
+        .on('body', {
+            element(e: RewriterElement) {
+                e.setAttribute('data-is-tenant', 'true');
             }
         })
         .on('head', {
@@ -323,6 +328,16 @@ export async function renderProductPage(
                         e.setAttribute('data-store-prefix', parsedConfig.storePrefix);
                     }
                 } catch {}
+            }
+        })
+        .on('.ventrina-template-bar, #ventrina-template-bar, .template-switcher', {
+            element(e: RewriterElement) {
+                e.remove();
+            }
+        })
+        .on('body', {
+            element(e: RewriterElement) {
+                e.setAttribute('data-is-tenant', 'true');
             }
         })
         .on('head', {

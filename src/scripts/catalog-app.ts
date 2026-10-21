@@ -52,6 +52,10 @@ function resolveActiveTenantId(): string | undefined {
 export function createStoreConfig(): StoreMetaConfig {
     const storeMetaEl = document.getElementById('catalog-store-meta');
     const tenantId = resolveActiveTenantId();
+    if (tenantId && tenantId !== 'demo') {
+        const templateBar = document.getElementById('ventrina-template-bar');
+        if (templateBar) templateBar.remove();
+    }
     return {
         whatsappNumber: storeMetaEl?.dataset.whatsapp || '584241230046',
         defaultCurrency: storeMetaEl?.dataset.currency || '$',
