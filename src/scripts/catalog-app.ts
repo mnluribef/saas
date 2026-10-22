@@ -12,7 +12,11 @@ import { syncStoreWithSettings } from './services/store-sync.service';
 
 function resolveActiveTenantId(): string | undefined {
     const storeMetaEl = document.getElementById('catalog-store-meta');
+    if (storeMetaEl?.dataset.isDemo === 'true') return 'demo';
     if (storeMetaEl?.dataset.tenant) return storeMetaEl.dataset.tenant;
+
+    const isDemoPath = typeof window !== 'undefined' && window.location.pathname.startsWith('/demo/');
+    if (isDemoPath) return 'demo';
 
     const metaTag = document.querySelector('meta[name="ventrina-tenant"]');
     const metaTenant = metaTag?.getAttribute('content');
@@ -51,7 +55,11 @@ function resolveActiveTenantId(): string | undefined {
 
 export function createStoreConfig(): StoreMetaConfig {
     const storeMetaEl = document.getElementById('catalog-store-meta');
-    const tenantId = resolveActiveTenantId();
+    const isDemo = Boolean(
+        storeMetaEl?.dataset.isDemo === 'true' ||
+        (typeof window !== 'undefined' && window.location.pathname.startsWith('/demo/'))
+    );
+    const tenantId = isDemo ? 'demo' : resolveActiveTenantId();
     if (tenantId && tenantId !== 'demo') {
         const templateBar = document.getElementById('ventrina-template-bar');
         if (templateBar) templateBar.remove();
@@ -69,6 +77,7 @@ export function createStoreConfig(): StoreMetaConfig {
         pickupName: storeMetaEl?.dataset.pickupName || 'Retiro en local',
         storePrefix: storeMetaEl?.dataset.storePrefix || 'VEN',
         tenantId,
+        isDemo,
         productDetailViewMode: (storeMetaEl?.dataset.productDetailViewMode as 'modal' | 'page') || 'modal',
         productDetailShareBtn: (storeMetaEl?.dataset.productDetailShareBtn as 'enabled' | 'disabled') || 'enabled',
     };
@@ -79,7 +88,7 @@ export function applyFullTenantConfig(
     config: StoreMetaConfig,
     cartController?: CartUIController
 ): void {
-    if (!cfg) return;
+    if (!cfg || config.isDemo) return;
 
     // Sincronizar DOM de textos, hero, catálogo, beneficios, testimonios, FAQs, footer
     syncStoreWithSettings(cfg);
@@ -198,21 +207,19 @@ export function initCatalogApp(): void {
     catalogController.loadCatalog();
     cartController.render();
 
-    // Sincronizar en vivo configuraciones personalizadas del tenant si existen
-    const settingsUrl = config.tenantId
-        ? `/api/settings?tenant=${encodeURIComponent(config.tenantId)}`
-        : '/api/settings';
+    // Sincronizar en vivo configuraciones personalizadas solo si es una tienda real de tenant (no demo)
+    if (!config.isDemo && config.tenantId && config.tenantId !== 'demo') {
+        const settingsUrl = `/api/settings?tenant=${encodeURIComponent(config.tenantId)}`;
+        const reqHeaders: Record<string, string> = {
+            'X-Tenant-Id': config.tenantId
+        };
 
-    const reqHeaders: Record<string, string> = {};
-    if (config.tenantId) {
-        reqHeaders['X-Tenant-Id'] = config.tenantId;
+        fetch(settingsUrl, { headers: reqHeaders }).then(res => res.json() as Promise<any>).then((data: any) => {
+            if (data.success && data.tenant?.config) {
+                applyFullTenantConfig(data.tenant.config, config, cartController);
+            }
+        }).catch(() => {
+            // En caso de modo offline, conserva los valores por defecto
+        });
     }
-
-    fetch(settingsUrl, { headers: reqHeaders }).then(res => res.json() as Promise<any>).then((data: any) => {
-        if (data.success && data.tenant?.config) {
-            applyFullTenantConfig(data.tenant.config, config, cartController);
-        }
-    }).catch(() => {
-        // En caso de modo offline o demo estático, conserva los valores por defecto
-    });
 }

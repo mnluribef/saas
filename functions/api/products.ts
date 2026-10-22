@@ -5,6 +5,7 @@ import { verifySession, unauthorizedResponse, forbiddenResponse, validateCsrf } 
 import { resolveTenant } from "./_tenant";
 import { getDB, jsonResponse, compressedJsonResponse } from "./_helpers";
 import { ProductService } from "./_services/product.service";
+import { getStarterProducts } from "../../src/config/starter-products";
 import type { Env, PagesHandler } from '../types';
 
 export const productSchema = z.object({
@@ -89,6 +90,7 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
         const typeId = url.searchParams.get("type");
         const category = url.searchParams.get("category");
         const search = url.searchParams.get("q") || url.searchParams.get("search");
+        const template = url.searchParams.get("template");
 
         const page = Math.max(1, parseInt(url.searchParams.get("page") || "1"));
         const limit = Math.max(1, Math.min(100, parseInt(url.searchParams.get("limit") || "100")));
@@ -98,15 +100,46 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
         const isAdminMode = authUser && authUser.role === 'admin';
         const activeOnly = !isAdminMode;
 
-        const { products, total } = await productService.listProducts({
+        const queryTemplate = (tenantId === 'demo' && template) ? template : undefined;
+
+        let { products, total } = await productService.listProducts({
             tenantId,
             typeId,
             category,
             search,
             activeOnly,
             limit,
-            offset
+            offset,
+            template: queryTemplate
         });
+
+        if (tenantId === 'demo' && products.length === 0 && template) {
+            const starterItems = getStarterProducts('demo', template);
+            if (starterItems.length > 0) {
+                products = starterItems.map(item => ({
+                    id: item.id,
+                    name: item.name,
+                    type_id: item.category,
+                    category: item.category,
+                    description: item.description,
+                    price: item.price,
+                    compare_at_price: 0,
+                    icon: item.icon,
+                    badge: '',
+                    image_url: item.image_url,
+                    sizes: null,
+                    template: template,
+                    stock: item.stock,
+                    active: 1,
+                    tenant_id: 'demo',
+                    brand: null,
+                    model: null,
+                    sku: '',
+                    attributes: []
+                }));
+                total = products.length;
+            }
+        }
 
         const cacheControl = isAdminMode
             ? "no-store, no-cache, must-revalidate"

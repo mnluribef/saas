@@ -70,10 +70,11 @@ export class CatalogController {
 
     public async loadCatalog(): Promise<void> {
         try {
-            const tenantParam = this.config.tenantId ? `&tenant=${encodeURIComponent(this.config.tenantId)}` : '';
+            const tenant = this.config.isDemo ? 'demo' : this.config.tenantId;
+            const tenantParam = tenant ? `&tenant=${encodeURIComponent(tenant)}` : '';
             const reqHeaders: Record<string, string> = {};
-            if (this.config.tenantId) {
-                reqHeaders['X-Tenant-Id'] = this.config.tenantId;
+            if (tenant) {
+                reqHeaders['X-Tenant-Id'] = tenant;
             }
             const res = await fetch(`/api/products?template=${encodeURIComponent(this.config.template)}${tenantParam}`, {
                 headers: reqHeaders

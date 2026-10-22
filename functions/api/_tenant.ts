@@ -88,8 +88,28 @@ export async function resolveTenant(request: Request, db: D1Database, kv?: KVNam
     const rawHost = request.headers.get('x-forwarded-host') || url.hostname;
     const host = rawHost.split(':')[0].toLowerCase();
 
-    // 0.1 Query Parameter RESTRINGIDO: solo permitido cuando se acompaña de la clave de super-admin.
+    // 0.0 Aislamiento estricto de Demos: si la petición es para 'demo', proviene de una URL /demo/*,
+    // o tiene el header/param X-Tenant-Id: demo o ?tenant=demo, DEBE resolver como demo y NUNCA
+    // caer en las cookies de sesión del tenant autenticado.
+    const headerTenantId = request.headers.get('X-Tenant-Id');
     const qsTenant = url.searchParams.get('tenant');
+    const referer = request.headers.get('Referer');
+    let isDemoReferer = false;
+    if (referer) {
+        try {
+            const refUrl = new URL(referer);
+            if (refUrl.pathname.startsWith('/demo/')) {
+                isDemoReferer = true;
+            }
+        } catch {}
+    }
+
+    if (headerTenantId === 'demo' || qsTenant === 'demo' || isDemoReferer) {
+        const demoTenant = db ? await getTenantByIdCached(db, 'demo', kv) : null;
+        return { id: 'demo', tenant: demoTenant };
+    }
+
+    // 0.1 Query Parameter RESTRINGIDO: solo permitido cuando se acompaña de la clave de super-admin.
     if (qsTenant) {
         const superadminKey = request.headers.get('X-Superadmin-Key');
         if (superadminKey) {
@@ -99,28 +119,9 @@ export async function resolveTenant(request: Request, db: D1Database, kv?: KVNam
     }
 
     // 0.2 Header explícito (development, testing y super-admin)
-    const headerTenantId = request.headers.get('X-Tenant-Id');
     if (headerTenantId) {
         const tenant = await getTenantByIdCached(db, headerTenantId, kv);
         if (tenant) return { id: headerTenantId, tenant };
-    }
-
-    // 0.3 Cookie de Sesión
-    const cookies = parseCookies(request.headers.get('Cookie'));
-    const sessionToken = cookies['ventrina_session'];
-    if (sessionToken && db) {
-        try {
-            const now = Math.floor(Date.now() / 1000);
-            const sessionRow = await db.prepare(
-                'SELECT tenant_id FROM sessions WHERE token = ? AND expires_at > ?'
-            ).bind(sessionToken, now).first<{ tenant_id: string }>();
-            if (sessionRow && sessionRow.tenant_id) {
-                const tenant = await getTenantByIdCached(db, sessionRow.tenant_id, kv);
-                if (tenant) return { id: sessionRow.tenant_id, tenant };
-            }
-        } catch {
-            // Ignore session errors during tenant lookup
-        }
     }
 
     // 1. Subdominio: fogon.ventrina.app (o en local fogon.localhost)
@@ -149,7 +150,25 @@ export async function resolveTenant(request: Request, db: D1Database, kv?: KVNam
         }
     }
 
-    // 4. Fallback al tenant demo
+    // 4. Cookie de Sesión (solo para llamadas administrativas sin host específico, ej: desde /admin en dominio raíz)
+    const cookies = parseCookies(request.headers.get('Cookie'));
+    const sessionToken = cookies['ventrina_session'];
+    if (sessionToken && db) {
+        try {
+            const now = Math.floor(Date.now() / 1000);
+            const sessionRow = await db.prepare(
+                'SELECT tenant_id FROM sessions WHERE token = ? AND expires_at > ?'
+            ).bind(sessionToken, now).first<{ tenant_id: string }>();
+            if (sessionRow && sessionRow.tenant_id) {
+                const tenant = await getTenantByIdCached(db, sessionRow.tenant_id, kv);
+                if (tenant) return { id: sessionRow.tenant_id, tenant };
+            }
+        } catch {
+            // Ignore session errors during tenant lookup
+        }
+    }
+
+    // 5. Fallback al tenant demo
     return { id: 'demo', tenant: null };
 }
 

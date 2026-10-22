@@ -93,6 +93,73 @@ describe('Tenant Resolution Logic (_tenant.ts)', () => {
         expect(result.id).toBe('demo');
     });
 
+    describe('Demo Isolation Against Authenticated Tenant Sessions', () => {
+        const sessionDb = {
+            prepare: vi.fn().mockReturnValue({
+                bind: vi.fn().mockReturnValue({
+                    first: vi.fn().mockImplementation(async () => {
+                        return { tenant_id: 'tenant-activo', id: 'tenant-activo', active: 1 };
+                    })
+                })
+            })
+        } as unknown as D1Database;
+
+        it('resolves to demo when X-Tenant-Id is demo despite active tenant session cookie', async () => {
+            const req = new Request('https://ventrina.app/api/products', {
+                headers: {
+                    'Cookie': 'ventrina_session=session_token_123',
+                    'X-Tenant-Id': 'demo'
+                }
+            });
+            const result = await resolveTenant(req, sessionDb);
+            expect(result.id).toBe('demo');
+        });
+
+        it('resolves to demo when query param tenant=demo is present despite active tenant session cookie', async () => {
+            const req = new Request('https://ventrina.app/api/products?tenant=demo', {
+                headers: {
+                    'Cookie': 'ventrina_session=session_token_123'
+                }
+            });
+            const result = await resolveTenant(req, sessionDb);
+            expect(result.id).toBe('demo');
+        });
+
+        it('resolves to demo when Referer is a /demo/ page despite active tenant session cookie', async () => {
+            const req = new Request('https://ventrina.app/api/products?template=restaurant', {
+                headers: {
+                    'Cookie': 'ventrina_session=session_token_123',
+                    'Referer': 'https://ventrina.app/demo/restaurant/'
+                }
+            });
+            const result = await resolveTenant(req, sessionDb);
+            expect(result.id).toBe('demo');
+        });
+
+        it('resolves to subdomain tenant despite active session cookie of another tenant', async () => {
+            const subdomainDb = {
+                prepare: vi.fn().mockReturnValue({
+                    bind: vi.fn().mockImplementation((val) => ({
+                        first: vi.fn().mockImplementation(async () => {
+                            if (val === 'fogon') {
+                                return { id: 'fogon', name: 'El Fogón', active: 1 };
+                            }
+                            return { tenant_id: 'otro-tenant', id: 'otro-tenant', active: 1 };
+                        })
+                    }))
+                })
+            } as unknown as D1Database;
+
+            const req = new Request('https://fogon.ventrina.app/api/products', {
+                headers: {
+                    'Cookie': 'ventrina_session=session_token_123'
+                }
+            });
+            const result = await resolveTenant(req, subdomainDb);
+            expect(result.id).toBe('fogon');
+        });
+    });
+
     describe('E-04 & E-06: Progressive KV TTL & Key Namespaces', () => {
         it('assigns progressive TTL based on tenant plan', async () => {
             const { getTenantCacheTtl, TTL_BY_PLAN } = await import('../functions/api/_tenant');

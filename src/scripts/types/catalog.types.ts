@@ -11,6 +11,7 @@ export interface StoreMetaConfig {
     pickupName: string;
     storePrefix: string;
     tenantId?: string;
+    isDemo?: boolean;
     productDetailViewMode?: 'modal' | 'page';
     productDetailShareBtn?: 'enabled' | 'disabled';
 }

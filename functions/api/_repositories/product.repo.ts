@@ -22,6 +22,7 @@ export interface ListProductsQuery {
     activeOnly?: boolean;
     limit: number;
     offset: number;
+    template?: string | null;
 }
 
 export class ProductRepository {
@@ -124,9 +125,14 @@ export class ProductRepository {
      * Lista productos aplicando filtros de tipo, categoría, búsqueda FTS o LIKE y paginación
      */
     async listProducts(query: ListProductsQuery): Promise<{ products: ProductItem[]; total: number }> {
-        const { tenantId, typeId, category, search, activeOnly = true, limit, offset } = query;
+        const { tenantId, typeId, category, search, activeOnly = true, limit, offset, template } = query;
         const conditions: string[] = ["tenant_id = ?"];
         const params: (string | number)[] = [tenantId];
+
+        if (template) {
+            conditions.push("template = ?");
+            params.push(template);
+        }
 
         if (typeId) {
             conditions.push("(type_id = ? OR category = ?)");

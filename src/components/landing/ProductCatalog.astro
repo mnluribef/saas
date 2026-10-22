@@ -7,9 +7,11 @@ import '../../styles/catalog.css';
 
 export interface Props {
   config?: StoreConfig;
+  isDemo?: boolean;
 }
 
-const { config = defaultStoreConfig } = Astro.props;
+const { config = defaultStoreConfig, isDemo = false } = Astro.props;
+const isDemoEffective = isDemo || (Astro.url ? Astro.url.pathname.startsWith('/demo/') : false);
 const { catalog } = config.landing;
 const { business, contact, features } = config;
 ---
@@ -600,6 +602,8 @@ const { business, contact, features } = config;
     data-pickup-name={config.labels?.pickupOptionName || 'Retiro en local'}
     data-product-detail-view-mode={catalog.productDetailViewMode || 'modal'}
     data-product-detail-share-btn={catalog.productDetailShareBtn || 'enabled'}
+    data-is-demo={isDemoEffective ? 'true' : undefined}
+    data-tenant={isDemoEffective ? 'demo' : undefined}
     class="store-meta-hidden"
 ></div>
 <script id="catalog-template-categories" type="application/json" is:inline set:html={JSON.stringify(config.categories || [])} />
