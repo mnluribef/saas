@@ -11,7 +11,7 @@ export const groceryTemplate: StoreConfig = {
     logoTextPrimary: 'BODEGÓN',
     logoTextSecondary: 'EXPRESS',
     siteUrl: 'https://bodegon.pages.dev',
-    ogImage: '/assets/og_image_grocery.jpg',
+    ogImage: '/assets/og_image_grocery.webp',
   },
   contact: {
     whatsapp: '584241230046',
@@ -88,7 +88,7 @@ export const groceryTemplate: StoreConfig = {
       ctaSecondaryLink: 'https://wa.me/584241230046',
       slides: [
         { image: '/assets/hero_grocery.jpg', alt: 'Pasillo Gourmet y Bodegón' },
-        { image: '/assets/product_combo_despensa.jpg', alt: 'Combos de Despensa y Víveres' },
+        { image: '/assets/product_combo_despensa.webp', alt: 'Combos de Despensa y Víveres' },
         { image: '/assets/hero_main.webp', alt: 'Productos Frescos Seleccionados' },
       ],
       stats: [

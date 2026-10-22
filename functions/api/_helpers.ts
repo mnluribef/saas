@@ -78,37 +78,14 @@ export function problemResponse(opts: ProblemDetailsOptions, extraHeaders: Recor
 }
 
 /**
- * Genera una respuesta JSON comprimida con Gzip (P-04)
- * Utiliza CompressionStream disponible en Cloudflare Workers para payloads superiores a 2KB.
+ * Genera una respuesta JSON optimizada.
+ * En Cloudflare Pages/Workers, la compresión Gzip/Brotli es gestionada automáticamente
+ * en el Edge según las cabeceras Accept-Encoding del cliente (P-04).
  */
 export function compressedJsonResponse(
     body: unknown,
     status = 200,
     extraHeaders: Record<string, string> = {}
 ): Response {
-    const json = JSON.stringify(body);
-
-    // Para payloads pequeños (< 2KB) o si no hay soporte de stream, responder JSON estándar
-    if (json.length < 2048 || typeof CompressionStream === 'undefined') {
-        return jsonResponse(body, status, extraHeaders);
-    }
-
-    try {
-        const stream = new CompressionStream('gzip');
-        const writer = stream.writable.getWriter();
-        writer.write(new TextEncoder().encode(json));
-        writer.close();
-
-        return new Response(stream.readable as any, {
-            status,
-            headers: {
-                'Content-Type': 'application/json',
-                'Content-Encoding': 'gzip',
-                'Vary': 'Accept-Encoding',
-                ...extraHeaders,
-            },
-        });
-    } catch {
-        return jsonResponse(body, status, extraHeaders);
-    }
+    return jsonResponse(body, status, extraHeaders);
 }

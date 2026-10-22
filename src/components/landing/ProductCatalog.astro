@@ -3,6 +3,7 @@
 // Carga productos de la API y renderiza el catálogo + carrito dinámico.
 import type { StoreConfig } from '../../types/store.types';
 import defaultStoreConfig from '../../config/store.config';
+import { getStarterProducts } from '../../config/starter-products';
 import '../../styles/catalog.css';
 
 export interface Props {
@@ -12,6 +13,7 @@ export interface Props {
 
 const { config = defaultStoreConfig, isDemo = false } = Astro.props;
 const isDemoEffective = isDemo || (Astro.url ? Astro.url.pathname.startsWith('/demo/') : false);
+const fallbackProducts = isDemoEffective ? getStarterProducts('demo', config.template) : [];
 const { catalog } = config.landing;
 const { business, contact, features } = config;
 ---
@@ -607,6 +609,9 @@ const { business, contact, features } = config;
     class="store-meta-hidden"
 ></div>
 <script id="catalog-template-categories" type="application/json" is:inline set:html={JSON.stringify(config.categories || [])} />
+{isDemoEffective && (
+    <script id="catalog-fallback-products" type="application/json" is:inline set:html={JSON.stringify(fallbackProducts)} />
+)}
 
 
 <!-- Floating WhatsApp -->

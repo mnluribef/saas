@@ -69,6 +69,8 @@ export class CatalogController {
     }
 
     public async loadCatalog(): Promise<void> {
+        let products: CatalogProduct[] = [];
+
         try {
             const tenant = this.config.isDemo ? 'demo' : this.config.tenantId;
             const tenantParam = tenant ? `&tenant=${encodeURIComponent(tenant)}` : '';
@@ -79,35 +81,53 @@ export class CatalogController {
             const res = await fetch(`/api/products?template=${encodeURIComponent(this.config.template)}${tenantParam}`, {
                 headers: reqHeaders
             });
-            if (!res.ok) throw new Error();
-            const responseData: any = await res.json();
-            const products: CatalogProduct[] = Array.isArray(responseData)
-                ? responseData
-                : responseData?.data || [];
+            if (res.ok) {
+                const responseData: any = await res.json();
+                products = Array.isArray(responseData)
+                    ? responseData
+                    : responseData?.data || [];
+            }
+        } catch {
+            // Error de conexión o endpoint no disponible en servidor dev estático
+        }
 
+        // Si la API no devolvió productos y es un demo, utilizar productos de respaldo de la plantilla
+        if (products.length === 0 && this.config.isDemo) {
+            try {
+                const fallbackEl = document.getElementById('catalog-fallback-products');
+                if (fallbackEl && fallbackEl.textContent) {
+                    products = JSON.parse(fallbackEl.textContent);
+                }
+            } catch {
+                products = [];
+            }
+        }
+
+        if (products.length > 0) {
             this.products = products;
             this.renderCategoryFilters();
             this.renderProducts();
             this.checkDirectProductAccess();
-        } catch {
-            const container = document.getElementById('catalog-container');
-            if (container) {
-                container.innerHTML = `
-                    <div class="catalog-error-box">
-                        <div class="catalog-error-icon-wrap">
-                            ${renderIconSvg('alert-circle', { size: 36, class: 'catalog-error-icon' })}
-                        </div>
-                        <h3 class="catalog-error-title">No pudimos cargar el catálogo</h3>
-                        <p class="catalog-error-msg">Hubo un error de conexión con el servidor. Por favor, intenta de nuevo.</p>
-                        <button id="btn-reload-catalog" class="catalog-error-btn" type="button">
-                            ${renderIconSvg('repeat', { size: 16, class: 'catalog-error-btn-icon' })}
-                            <span>Recargar Página</span>
-                        </button>
-                    </div>`;
-                document.getElementById('btn-reload-catalog')?.addEventListener('click', () => {
-                    window.location.reload();
-                });
-            }
+            return;
+        }
+
+        const container = document.getElementById('catalog-container');
+        if (container) {
+            container.innerHTML = `
+                <div class="catalog-error-box">
+                    <div class="catalog-error-icon-wrap">
+                        ${renderIconSvg('alert-circle', { size: 36, class: 'catalog-error-icon' })}
+                    </div>
+                    <h3 class="catalog-error-title">No pudimos cargar el catálogo</h3>
+                    <p class="catalog-error-msg">Hubo un error de conexión con el servidor. Por favor, intenta de nuevo.</p>
+                    <button id="btn-reload-catalog" class="catalog-error-btn" type="button">
+                        ${renderIconSvg('repeat', { size: 16, class: 'catalog-error-btn-icon' })}
+                        <span>Recargar Página</span>
+                    </button>
+                </div>`;
+            document.getElementById('btn-reload-catalog')?.addEventListener('click', () => {
+                window.location.reload();
+            });
         }
     }
 

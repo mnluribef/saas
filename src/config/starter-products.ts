@@ -132,7 +132,7 @@ export const STARTER_PRODUCTS_BY_TEMPLATE: Record<string, StarterProductItem[]> 
             price: 28.50,
             category: 'combos',
             icon: 'shopping-bag',
-            image_url: '/assets/product_combo_despensa.jpg',
+            image_url: '/assets/product_combo_despensa.webp',
             stock: 35
         },
         {
@@ -159,7 +159,7 @@ export const STARTER_PRODUCTS_BY_TEMPLATE: Record<string, StarterProductItem[]> 
             price: 5.50,
             category: 'despensa',
             icon: 'coffee',
-            image_url: '/assets/product_combo_despensa.jpg',
+            image_url: '/assets/product_combo_despensa.webp',
             stock: 60
         }
     ]
