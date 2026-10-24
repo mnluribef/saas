@@ -411,3 +411,235 @@ export async function sendWelcomeEmail(
         };
     }
 }
+
+export interface OrderStatusEmailData {
+    to: string;
+    clientName: string;
+    orderId: string;
+    tenantName: string;
+    newStatus: string;
+    totalPrice: number;
+    totalBs: number;
+    storeUrl?: string;
+    note?: string;
+}
+
+export function getStatusFriendlyLabel(status: string): string {
+    switch (status) {
+        case 'pendiente':
+            return 'Pendiente de confirmación';
+        case 'confirmado':
+            return 'Confirmado y en preparación';
+        case 'en_camino':
+            return 'En camino / Despachado';
+        case 'listo_entrega':
+            return 'Listo para entrega / retiro';
+        case 'completado':
+            return 'Completado con éxito';
+        case 'cancelado':
+            return 'Cancelado';
+        default:
+            return status;
+    }
+}
+
+export function generateOrderStatusEmailText(data: OrderStatusEmailData): string {
+    const statusLabel = getStatusFriendlyLabel(data.newStatus);
+    return `Hola ${data.clientName},
+
+Tu pedido #${data.orderId} en ${data.tenantName} ha actualizado su estado a:
+>> ${statusLabel} <<
+
+Resumen del Pedido:
+- Total: $${data.totalPrice.toFixed(2)} USD (aprox. Bs. ${data.totalBs.toFixed(2)})
+${data.note ? `- Nota del negocio: ${data.note}\n` : ''}${data.storeUrl ? `- Tienda: ${data.storeUrl}\n` : ''}
+Si tienes dudas sobre tu pedido, puedes contactar al negocio directamente por WhatsApp.
+
+Gracias por tu compra en ${data.tenantName}.
+`;
+}
+
+export function generateOrderStatusEmailHtml(data: OrderStatusEmailData): string {
+    const statusLabel = getStatusFriendlyLabel(data.newStatus);
+    return `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Actualización de tu pedido #${data.orderId}</title>
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+    background-color: #f8fafc;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    color: #1e293b;
+  }
+  .order-wrapper {
+    width: 100%;
+    padding: 30px 15px;
+    background-color: #f8fafc;
+  }
+  .order-container {
+    max-width: 580px;
+    margin: 0 auto;
+    background-color: #ffffff;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+  }
+  .order-header {
+    background-color: #4f46e5;
+    padding: 28px 24px;
+    text-align: center;
+    color: #ffffff;
+  }
+  .order-header h1 {
+    margin: 0 0 6px;
+    font-size: 20px;
+    font-weight: 700;
+  }
+  .order-header p {
+    margin: 0;
+    font-size: 14px;
+    opacity: 0.9;
+  }
+  .order-body {
+    padding: 24px;
+  }
+  .status-box {
+    background-color: #f1f5f9;
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  .status-label {
+    font-size: 13px;
+    color: #64748b;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .status-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #4f46e5;
+    margin-top: 4px;
+  }
+  .details-table {
+    width: 100%;
+    margin-bottom: 20px;
+  }
+  .details-row {
+    padding: 8px 0;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .order-footer {
+    background-color: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    padding: 18px;
+    text-align: center;
+    font-size: 12px;
+    color: #94a3b8;
+  }
+</style>
+</head>
+<body>
+<div class="order-wrapper">
+  <div class="order-container">
+    <div class="order-header">
+      <h1>${data.tenantName}</h1>
+      <p>Actualización de tu pedido #${data.orderId}</p>
+    </div>
+    <div class="order-body">
+      <p>Hola <strong>${data.clientName}</strong>,</p>
+      <div class="status-box">
+        <div class="status-label">Nuevo estado de tu orden</div>
+        <div class="status-value">${statusLabel}</div>
+      </div>
+      <table class="details-table">
+        <tr class="details-row">
+          <td><strong>Total USD:</strong></td>
+          <td>$${data.totalPrice.toFixed(2)}</td>
+        </tr>
+        <tr class="details-row">
+          <td><strong>Total Bs:</strong></td>
+          <td>Bs. ${data.totalBs.toFixed(2)}</td>
+        </tr>
+        ${data.note ? `<tr class="details-row"><td><strong>Nota:</strong></td><td>${data.note}</td></tr>` : ''}
+      </table>
+      <p>Si tienes preguntas, puedes contactarnos directamente por WhatsApp.</p>
+    </div>
+    <div class="order-footer">
+      <p>${data.tenantName} · Impulsado por Ventrina SaaS</p>
+    </div>
+  </div>
+</div>
+</body>
+</html>`;
+}
+
+/**
+ * Envía el correo electrónico de cambio de estado de pedido al cliente
+ */
+export async function sendOrderStatusEmail(
+    env: Env,
+    data: OrderStatusEmailData
+): Promise<EmailSendResult> {
+    const statusLabel = getStatusFriendlyLabel(data.newStatus);
+    const subject = `Actualización de pedido #${data.orderId}: ${statusLabel} (${data.tenantName})`;
+    const html = generateOrderStatusEmailHtml(data);
+    const text = generateOrderStatusEmailText(data);
+    const nodeEnv = (globalThis as unknown as { process?: { env?: Record<string, string | undefined> } }).process?.env;
+    const apiKey = env.RESEND_API_KEY || nodeEnv?.RESEND_API_KEY;
+    const from = env.EMAIL_FROM || nodeEnv?.EMAIL_FROM || 'Ventrina <pedidos@ventrina.app>';
+
+    if (!apiKey) {
+        console.log(`[EmailService] Clave RESEND_API_KEY no configurada. Simulando notificación de estado a: ${data.to}`);
+        console.log(`[EmailService] Pedido #${data.orderId} -> Estado: ${statusLabel}`);
+        return {
+            success: true,
+            mocked: true,
+            messageId: `simulated-order-${Date.now()}`
+        };
+    }
+
+    try {
+        const response = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                from,
+                to: [data.to],
+                subject,
+                html,
+                text
+            })
+        });
+
+        if (!response.ok) {
+            const errBody = await response.text();
+            console.error(`[EmailService] Error al enviar email de pedido (${response.status}):`, errBody);
+            return {
+                success: false,
+                error: `Resend error ${response.status}: ${errBody}`
+            };
+        }
+
+        const resData = (await response.json()) as { id?: string };
+        return {
+            success: true,
+            messageId: resData.id
+        };
+    } catch (err: any) {
+        console.error('[EmailService] Excepción al enviar correo de pedido:', err);
+        return {
+            success: false,
+            error: err?.message || String(err)
+        };
+    }
+}
+

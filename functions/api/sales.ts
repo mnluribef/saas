@@ -1,6 +1,6 @@
 // functions/api/sales.ts
-// Controlador de Registro de Ventas - Ventrina SaaS
-import { verifySession, unauthorizedResponse } from "./_auth";
+// Controlador de Registro de Ventas - Ventrina SaaS (Fix #20: Derivado de orders completados)
+import { requireStaffOrAdmin } from "./_guards";
 import { getDB, jsonResponse } from "./_helpers";
 import type { Env, PagesHandler } from '../types';
 
@@ -21,11 +21,12 @@ interface SaleRow {
 }
 
 /**
- * GET /api/sales - Listar ventas registradas (con Paginación o Stats)
+ * GET /api/sales - Listar ventas registradas derivadas de órdenes con status 'completado'
  */
 export const onRequestGet: PagesHandler<Env> = async (context) => {
-    const user = await verifySession(context);
-    if (!user) return unauthorizedResponse();
+    const guard = await requireStaffOrAdmin(context);
+    if (!guard.ok) return guard.response;
+    const { tenantId } = guard;
 
     const { env, request } = context;
     const db = getDB(env);
@@ -35,19 +36,19 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
     
     try {
         if (statsOnly) {
-            // Obtener ingresos de hoy
+            // Ingresos de hoy derivados de órdenes completadas
             const rowToday = await db.prepare(
-                "SELECT SUM(monto) as total_ingresos FROM sales WHERE tenant_id = ? AND DATE(fecha) = DATE('now')"
-            ).bind(user.tenant_id).first<{ total_ingresos: number | null }>();
+                "SELECT COALESCE(SUM(total_price), 0) as total_ingresos FROM orders WHERE tenant_id = ? AND status = 'completado' AND DATE(created_at) = DATE('now')"
+            ).bind(tenantId).first<{ total_ingresos: number | null }>();
             
-            // Obtener datos para la gráfica (últimos 7 días)
+            // Datos para la gráfica (últimos 7 días)
             const { results: chartData } = await db.prepare(`
-                SELECT DATE(fecha) as date, SUM(monto) as total 
-                FROM sales 
-                WHERE tenant_id = ? AND fecha >= date('now', '-7 days') 
-                GROUP BY DATE(fecha) 
+                SELECT DATE(created_at) as date, SUM(total_price) as total 
+                FROM orders 
+                WHERE tenant_id = ? AND status = 'completado' AND created_at >= date('now', '-7 days') 
+                GROUP BY DATE(created_at) 
                 ORDER BY date ASC
-            `).bind(user.tenant_id).all<SaleChartRow>();
+            `).bind(tenantId).all<SaleChartRow>();
 
             return jsonResponse({
                 revenueToday: rowToday?.total_ingresos || 0,
@@ -62,30 +63,37 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
         const dateFrom = url.searchParams.get("date_from");
         const dateTo = url.searchParams.get("date_to");
 
-        const conditions: string[] = ["s.tenant_id = ?"];
-        const params: (string | number)[] = [user.tenant_id];
+        const conditions: string[] = ["o.tenant_id = ?", "o.status = 'completado'"];
+        const params: (string | number)[] = [tenantId];
 
         if (dateFrom) {
-            conditions.push("DATE(s.fecha) >= ?");
+            conditions.push("DATE(o.created_at) >= ?");
             params.push(dateFrom);
         }
         if (dateTo) {
-            conditions.push("DATE(s.fecha) <= ?");
+            conditions.push("DATE(o.created_at) <= ?");
             params.push(dateTo);
         }
 
         const whereClause = "WHERE " + conditions.join(" AND ");
 
-        const countQuery = `SELECT COUNT(*) as total FROM sales s ${whereClause}`;
+        const countQuery = `SELECT COUNT(*) as total FROM orders o ${whereClause}`;
         const countRow = await db.prepare(countQuery).bind(...params).first<{ total: number }>();
         const total = countRow?.total ?? 0;
 
         const dataQuery = `
-            SELECT s.*, COALESCE(o.client_name, 'Cliente Ventrina') as client_name, COALESCE(o.client_phone, '') as client_phone 
-            FROM sales s 
-            LEFT JOIN orders o ON s.order_id = o.id 
+            SELECT 
+                o.id as id,
+                o.id as order_id,
+                o.tenant_id,
+                o.total_price as monto,
+                o.created_at as fecha,
+                o.payment_method as metodo_pago,
+                COALESCE(o.client_name, 'Cliente Ventrina') as client_name, 
+                COALESCE(o.client_phone, '') as client_phone 
+            FROM orders o 
             ${whereClause}
-            ORDER BY s.fecha DESC
+            ORDER BY o.created_at DESC
             LIMIT ? OFFSET ?
         `;
         

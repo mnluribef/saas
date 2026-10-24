@@ -74,6 +74,7 @@ export interface TenantRow {
     domain?: string | null;
     whatsapp?: string | null;
     config_json?: string | null;
+    deleted_at?: string | null;
     created_at?: string;
     updated_at?: string;
 }
@@ -105,6 +106,7 @@ export interface OrderRow {
     id: string;
     client_name: string;
     client_phone: string;
+    client_email?: string | null;
     delivery_type: string;
     delivery_address: string | null;
     delivery_notes: string | null;

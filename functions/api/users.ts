@@ -1,9 +1,10 @@
 // functions/api/users.ts
 // Gestión de usuarios y roles (Admin / Staff) multi-tenant (F-04)
 import { z } from "zod";
-import { verifySession, unauthorizedResponse, forbiddenResponse, validateCsrf, generateSalt, hashPasswordPBKDF2 } from "./_auth";
+import { verifySession, unauthorizedResponse, forbiddenResponse, generateSalt, hashPasswordPBKDF2 } from "./_auth";
 import { resolveTenant } from "./_tenant";
 import { getDB, jsonResponse } from "./_helpers";
+import { requireAdmin } from "./_guards";
 import { strongPasswordSchema } from "./auth";
 import type { Env, PagesHandler } from '../types';
 
@@ -57,15 +58,10 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
 export const onRequestPost: PagesHandler<Env> = async (context) => {
     const { env, request } = context;
     const db = getDB(env);
-    const { id: tenantId, tenant } = await resolveTenant(request, db);
 
-    if (!validateCsrf(request, tenant?.domain)) {
-        return forbiddenResponse("Verificación de seguridad CSRF fallida.");
-    }
-
-    const user = await verifySession(context, tenantId);
-    if (!user) return unauthorizedResponse();
-    if (user.role !== 'admin') return forbiddenResponse();
+    const guard = await requireAdmin(context);
+    if (!guard.ok) return guard.response;
+    const { tenantId } = guard;
 
     try {
         const bodyJson = await request.json();
@@ -111,15 +107,10 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
 export const onRequestDelete: PagesHandler<Env> = async (context) => {
     const { env, request } = context;
     const db = getDB(env);
-    const { id: tenantId, tenant } = await resolveTenant(request, db);
 
-    if (!validateCsrf(request, tenant?.domain)) {
-        return forbiddenResponse("Verificación de seguridad CSRF fallida.");
-    }
-
-    const currentUser = await verifySession(context, tenantId);
-    if (!currentUser) return unauthorizedResponse();
-    if (currentUser.role !== 'admin') return forbiddenResponse();
+    const guard = await requireAdmin(context);
+    if (!guard.ok) return guard.response;
+    const { user: currentUser, tenantId } = guard;
 
     try {
         const url = new URL(request.url);

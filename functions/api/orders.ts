@@ -6,12 +6,14 @@ import { resolveTenant } from "./_tenant";
 import { getDB, jsonResponse, compressedJsonResponse } from "./_helpers";
 import { requireAdmin, requireStaffOrAdmin } from "./_guards";
 import { OrderService, generateWebhookSignature } from "./_services/order.service";
+import { sendOrderStatusEmail } from "./_services/email.service";
 import type { Env, PagesHandler, OrderRow } from '../types';
 
 
 export const createOrderSchema = z.object({
     clientName: z.string().min(2, "El nombre debe tener al menos 2 caracteres").max(100),
     clientPhone: z.string().min(7, "El teléfono debe ser válido").max(25),
+    clientEmail: z.email("Correo electrónico inválido").optional().nullable(),
     deliveryType: z.enum(['delivery', 'pickup']),
     deliveryAddress: z.string().max(250).optional().nullable(),
     deliveryNotes: z.string().max(250).optional().nullable(),
@@ -150,6 +152,7 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
             storePrefix: data.storePrefix || undefined,
             clientName: data.clientName,
             clientPhone: data.clientPhone,
+            clientEmail: data.clientEmail || undefined,
             deliveryType: data.deliveryType,
             deliveryAddress: data.deliveryAddress,
             deliveryNotes: data.deliveryNotes,
@@ -284,6 +287,23 @@ export const onRequestPut: PagesHandler<Env> = async (context) => {
             } catch (whErr) {
                 console.error("Fallo al preparar webhook de actualización:", whErr);
             }
+        }
+
+        // Fix #18: Notificación por correo electrónico automática si el cliente proporcionó email
+        const orderData = updateRes.data.order;
+        if (orderData.client_email) {
+            context.waitUntil?.(
+                sendOrderStatusEmail(env, {
+                    to: orderData.client_email,
+                    clientName: orderData.client_name,
+                    orderId: id,
+                    tenantName: guard.tenant?.name || 'Ventrina',
+                    newStatus: status,
+                    totalPrice: orderData.total_price,
+                    totalBs: orderData.total_bs,
+                    note
+                }).catch(e => console.error("Error al enviar email de estado de pedido:", e))
+            );
         }
 
         return jsonResponse({

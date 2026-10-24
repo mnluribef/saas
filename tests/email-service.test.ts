@@ -3,7 +3,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
     generateWelcomeEmailHtml,
     generateWelcomeEmailText,
-    sendWelcomeEmail
+    sendWelcomeEmail,
+    generateOrderStatusEmailHtml,
+    generateOrderStatusEmailText,
+    sendOrderStatusEmail
 } from '../functions/api/_services/email.service';
 import type { Env } from '../functions/types';
 
@@ -104,6 +107,57 @@ describe('Transactional Email Service & Welcome Template (email.service.ts)', ()
             const result = await sendWelcomeEmail(mockEnv, sampleData);
             expect(result.success).toBe(false);
             expect(result.error).toContain('Resend error 401');
+        });
+    });
+
+    describe('sendOrderStatusEmail (Fix #18)', () => {
+        const orderEmailData = {
+            to: 'cliente@ejemplo.com',
+            clientName: 'María Pérez',
+            orderId: 'ord_998877',
+            tenantName: 'El Fogón Criollo',
+            newStatus: 'listo_entrega',
+            totalPrice: 25.50,
+            totalBs: 930.75,
+            note: 'Retirar por ventanilla 2'
+        };
+
+        it('generates email HTML with order details, status label and totals without inline styles', () => {
+            const html = generateOrderStatusEmailHtml(orderEmailData);
+            expect(html).toContain('María Pérez');
+            expect(html).toContain('ord_998877');
+            expect(html).toContain('Listo para entrega / retiro');
+            expect(html).toContain('$25.50');
+            expect(html).toContain('Bs. 930.75');
+            expect(html).toContain('Retirar por ventanilla 2');
+            expect(html).not.toContain('style=');
+        });
+
+        it('generates email plaintext with order details', () => {
+            const text = generateOrderStatusEmailText(orderEmailData);
+            expect(text).toContain('María Pérez');
+            expect(text).toContain('ord_998877');
+            expect(text).toContain('Listo para entrega / retiro');
+            expect(text).toContain('$25.50');
+        });
+
+        it('simulates order email sending when RESEND_API_KEY is missing', async () => {
+            const mockEnv = {} as Env;
+            const res = await sendOrderStatusEmail(mockEnv, orderEmailData);
+            expect(res.success).toBe(true);
+            expect(res.mocked).toBe(true);
+            expect(res.messageId).toContain('simulated-order-');
+        });
+
+        it('sends order email via Resend when API key is provided', async () => {
+            const mockEnv = { RESEND_API_KEY: 're_valid_key' } as Env;
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+                new Response(JSON.stringify({ id: 'msg_order_12345' }), { status: 200 })
+            );
+
+            const res = await sendOrderStatusEmail(mockEnv, orderEmailData);
+            expect(res.success).toBe(true);
+            expect(res.messageId).toBe('msg_order_12345');
         });
     });
 });

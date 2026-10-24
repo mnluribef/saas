@@ -246,24 +246,24 @@ export class OrderRepository {
             ).bind(orderId, tenantId, order.status, newStatus, actor, note || `Cambio de estado a ${newStatus}`)
         ];
 
-        // Efecto secundario: cuando se completa, registrar venta si no existe
-        if (newStatus === "completado") {
-            const existingSale = await this.db.prepare(
-                "SELECT id FROM sales WHERE order_id = ?"
-            ).bind(orderId).first();
+        // Fix #20: La orden completada es la única fuente de verdad contable (tabla sales eliminada)
+        if (paymentMethod) {
+            statements.push(
+                this.db.prepare(
+                    "UPDATE orders SET payment_method = ? WHERE id = ? AND tenant_id = ?"
+                ).bind(paymentMethod, orderId, tenantId)
+            );
+        }
 
-            if (!existingSale) {
-                const finalMonto = (paymentAmount !== undefined && !Number.isNaN(Number(paymentAmount)) && Number(paymentAmount) >= 0)
-                    ? Number(paymentAmount)
-                    : order.total_price;
+        if (paymentAmount !== undefined && !Number.isNaN(Number(paymentAmount)) && Number(paymentAmount) >= 0) {
+            statements.push(
+                this.db.prepare(
+                    "UPDATE orders SET total_price = ? WHERE id = ? AND tenant_id = ?"
+                ).bind(Number(paymentAmount), orderId, tenantId)
+            );
+        }
 
-                statements.push(
-                    this.db.prepare(
-                        "INSERT INTO sales (order_id, monto, metodo_pago, fecha, tenant_id) VALUES (?, ?, ?, CURRENT_TIMESTAMP, ?)"
-                    ).bind(orderId, finalMonto, paymentMethod || order.payment_method || "WhatsApp / Por acordar", tenantId)
-                );
-            }
-        } else if (newStatus === "cancelado" && order.status !== "cancelado") {
+        if (newStatus === "cancelado" && order.status !== "cancelado") {
             // Efecto secundario: restituir stock de los productos asociados al pedido cancelado
             const items = await this.findItems(orderId);
             for (const item of items) {

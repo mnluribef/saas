@@ -71,9 +71,9 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
                 deliveryTypesResult
             ] = await Promise.all([
                 db.prepare(`
-                    SELECT COALESCE(SUM(monto), 0) as total, COUNT(*) as count 
-                    FROM sales 
-                    WHERE tenant_id = ? AND date(fecha) >= date(?) AND date(fecha) <= date(?)
+                    SELECT COALESCE(SUM(total_price), 0) as total, COUNT(*) as count 
+                    FROM orders 
+                    WHERE tenant_id = ? AND status = 'completado' AND date(created_at) >= date(?) AND date(created_at) <= date(?)
                 `).bind(tenantId, fromDate, toDate).first<{ total: number; count: number }>(),
 
                 db.prepare(`
@@ -140,12 +140,12 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
         ] = await Promise.all([
             db.prepare(`
                 SELECT 
-                    COALESCE(SUM(CASE WHEN strftime('%Y-%m', fecha) = strftime('%Y-%m', 'now') THEN monto ELSE 0 END), 0) as total_this_month,
-                    COUNT(CASE WHEN strftime('%Y-%m', fecha) = strftime('%Y-%m', 'now') THEN 1 END) as count_this_month,
-                    COALESCE(SUM(CASE WHEN strftime('%Y-%m', fecha) = strftime('%Y-%m', 'now', '-1 month') THEN monto ELSE 0 END), 0) as total_last_month,
-                    COUNT(CASE WHEN strftime('%Y-%m', fecha) = strftime('%Y-%m', 'now', '-1 month') THEN 1 END) as count_last_month
-                FROM sales 
-                WHERE tenant_id = ?
+                    COALESCE(SUM(CASE WHEN strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now') THEN total_price ELSE 0 END), 0) as total_this_month,
+                    COUNT(CASE WHEN strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now') THEN 1 END) as count_this_month,
+                    COALESCE(SUM(CASE WHEN strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now', '-1 month') THEN total_price ELSE 0 END), 0) as total_last_month,
+                    COUNT(CASE WHEN strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now', '-1 month') THEN 1 END) as count_last_month
+                FROM orders 
+                WHERE tenant_id = ? AND status = 'completado'
             `).bind(tenantId).first<{
                 total_this_month: number;
                 count_this_month: number;

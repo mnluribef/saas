@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS tenants (
     domain       TEXT UNIQUE,
     whatsapp     TEXT,
     active       INTEGER NOT NULL DEFAULT 1,
+    deleted_at   DATETIME,
     created_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at   DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -108,6 +109,7 @@ CREATE TABLE IF NOT EXISTS orders (
     id TEXT PRIMARY KEY,
     client_name TEXT NOT NULL,
     client_phone TEXT NOT NULL,
+    client_email TEXT,
     delivery_type TEXT NOT NULL DEFAULT 'delivery',
     delivery_address TEXT,
     delivery_notes TEXT,
@@ -139,16 +141,6 @@ CREATE TABLE IF NOT EXISTS order_items (
     FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
 );
 
--- 9. Tabla de Ventas Registradas
-CREATE TABLE IF NOT EXISTS sales (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    order_id TEXT NOT NULL,
-    monto REAL NOT NULL DEFAULT 0.0,
-    metodo_pago TEXT NOT NULL,
-    fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
-    tenant_id TEXT NOT NULL DEFAULT 'demo',
-    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
-);
 
 -- 10. Tabla de Usuarios (Aislados por Tenant)
 CREATE TABLE IF NOT EXISTS users (
@@ -256,7 +248,6 @@ CREATE INDEX IF NOT EXISTS idx_order_events_order    ON order_events(order_id);
 CREATE INDEX IF NOT EXISTS idx_order_events_tenant   ON order_events(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_order_items_order     ON order_items(order_id);
 CREATE INDEX IF NOT EXISTS idx_order_items_product   ON order_items(product_id);
-CREATE INDEX IF NOT EXISTS idx_sales_tenant          ON sales(tenant_id, fecha DESC);
 CREATE INDEX IF NOT EXISTS idx_users_tenant          ON users(tenant_id, username);
 CREATE INDEX IF NOT EXISTS idx_users_email           ON users(email);
 CREATE INDEX IF NOT EXISTS idx_sessions_expires      ON sessions(expires_at);

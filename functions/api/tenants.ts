@@ -176,8 +176,8 @@ export const onRequestPut: PagesHandler<Env> = async (context) => {
         }
 
         await db.prepare(
-            'UPDATE tenants SET name = ?, plan = ?, template = ?, config_json = ?, domain = ?, whatsapp = ?, active = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
-        ).bind(name, plan, template, config_json, domain || null, whatsapp || null, active, id).run();
+            'UPDATE tenants SET name = ?, plan = ?, template = ?, config_json = ?, domain = ?, whatsapp = ?, active = ?, deleted_at = CASE WHEN ? = 0 THEN CURRENT_TIMESTAMP ELSE NULL END, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+        ).bind(name, plan, template, config_json, domain || null, whatsapp || null, active, active, id).run();
 
         // Fix #3: Invalidar caché KV tras actualizar tenant
         await invalidateTenantCache(env.KV, id, domain || undefined);
@@ -211,7 +211,6 @@ export const onRequestDelete: PagesHandler<Env> = async (context) => {
             await db.batch([
                 db.prepare('DELETE FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE tenant_id = ?)').bind(id),
                 db.prepare('DELETE FROM orders WHERE tenant_id = ?').bind(id),
-                db.prepare('DELETE FROM sales WHERE tenant_id = ?').bind(id),
                 db.prepare('DELETE FROM product_attributes WHERE tenant_id = ?').bind(id),
                 db.prepare('DELETE FROM product_variants WHERE tenant_id = ?').bind(id),
                 db.prepare('DELETE FROM products WHERE tenant_id = ?').bind(id),
@@ -225,8 +224,8 @@ export const onRequestDelete: PagesHandler<Env> = async (context) => {
             return jsonResponse({ success: true, message: `Tenant "${id}" eliminado permanentemente.` });
         }
 
-        // Soft delete: solo desactivar
-        await db.prepare('UPDATE tenants SET active = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?').bind(id).run();
+        // Soft delete: solo desactivar registrando auditoría en deleted_at (Fix #13)
+        await db.prepare('UPDATE tenants SET active = 0, deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?').bind(id).run();
         // Fix #3: Invalidar caché KV tras suspender tenant
         await invalidateTenantCache(env.KV, id);
         return jsonResponse({ success: true, message: `Tenant "${id}" suspendido.` });

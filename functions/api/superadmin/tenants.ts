@@ -39,7 +39,7 @@ export const onRequest: PagesHandler<Env> = async (context) => {
                     t.id, t.name, t.plan, t.active, t.created_at, t.template,
                     (SELECT COUNT(*) FROM products p WHERE p.tenant_id = t.id) as product_count,
                     (SELECT COUNT(*) FROM orders o WHERE o.tenant_id = t.id AND strftime('%Y-%m', o.created_at) = strftime('%Y-%m', 'now')) as order_count_month,
-                    (SELECT COALESCE(SUM(s.monto), 0) FROM sales s WHERE s.tenant_id = t.id AND strftime('%Y-%m', s.fecha) = strftime('%Y-%m', 'now')) as revenue_month
+                    (SELECT COALESCE(SUM(o.total_price), 0) FROM orders o WHERE o.tenant_id = t.id AND o.status = 'completado' AND strftime('%Y-%m', o.created_at) = strftime('%Y-%m', 'now')) as revenue_month
                 FROM tenants t
                 ORDER BY t.created_at DESC
             `).all();
@@ -77,8 +77,8 @@ export const onRequest: PagesHandler<Env> = async (context) => {
 
             if (action === 'toggle_status') {
                 const newStatus = Number(value) === 1 ? 1 : 0;
-                await db.prepare('UPDATE tenants SET active = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
-                    .bind(newStatus, tenantId).run();
+                await db.prepare('UPDATE tenants SET active = ?, deleted_at = CASE WHEN ? = 0 THEN CURRENT_TIMESTAMP ELSE NULL END, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+                    .bind(newStatus, newStatus, tenantId).run();
                 // Fix #3: Invalidar caché KV inmediatamente para que el cambio de estado sea efectivo al instante
                 await invalidateTenantCache(env.KV, tenantId);
                 return jsonResponse({ success: true, message: `Estado actualizado a ${newStatus === 1 ? 'Activo' : 'Suspendido'}.` });

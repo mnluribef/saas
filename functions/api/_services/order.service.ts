@@ -159,6 +159,7 @@ export interface CreateOrderServiceInput {
     storePrefix?: string;
     clientName: string;
     clientPhone: string;
+    clientEmail?: string | null;
     deliveryType: string;
     deliveryAddress?: string | null;
     deliveryNotes?: string | null;
@@ -247,6 +248,7 @@ export class OrderService {
             storePrefix,
             clientName,
             clientPhone,
+            clientEmail,
             deliveryType,
             deliveryAddress,
             deliveryNotes,
@@ -349,9 +351,9 @@ export class OrderService {
         // Insert inicial del pedido (totales temporales 0, luego actualizados)
         statements.push(
             this.db.prepare(
-                "INSERT INTO orders (id, client_name, client_phone, delivery_type, delivery_address, delivery_notes, payment_method, payment_reference, payment_receipt_url, bcv_rate, total_bs, status, total_items, total_price, template, tenant_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                "INSERT INTO orders (id, client_name, client_phone, client_email, delivery_type, delivery_address, delivery_notes, payment_method, payment_reference, payment_receipt_url, bcv_rate, total_bs, status, total_items, total_price, template, tenant_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
             ).bind(
-                orderId, clientName, clientPhone, deliveryType,
+                orderId, clientName, clientPhone, clientEmail || null, deliveryType,
                 deliveryAddress || null, deliveryNotes || null, paymentMethod || null,
                 paymentReference || null, paymentReceiptUrl || null,
                 finalBcvRate, 0.0, "pendiente", 0, 0.0, template || tenant?.template || 'restaurant', tenantId
@@ -469,7 +471,7 @@ export class OrderService {
         note?: string,
         paymentMethod?: string,
         paymentAmount?: number
-    ): Promise<Result<{ whatsappNotificationUrl: string | null }, string>> {
+    ): Promise<Result<{ whatsappNotificationUrl: string | null; order: OrderRow }, string>> {
         const order = await this.repo.findById(orderId, tenantId);
         if (!order) {
             return err("Pedido no encontrado.", 404);
@@ -486,12 +488,16 @@ export class OrderService {
             paymentAmount
         );
 
-        const whatsappNotificationUrl = buildOrderStatusWhatsAppUrl({
+        const updatedOrder: OrderRow = {
             ...order,
-            status: newStatus
-        });
+            status: newStatus,
+            payment_method: paymentMethod || order.payment_method,
+            total_price: (paymentAmount !== undefined && !Number.isNaN(Number(paymentAmount)) && Number(paymentAmount) >= 0) ? Number(paymentAmount) : order.total_price
+        };
 
-        return ok({ whatsappNotificationUrl });
+        const whatsappNotificationUrl = buildOrderStatusWhatsAppUrl(updatedOrder);
+
+        return ok({ whatsappNotificationUrl, order: updatedOrder });
     }
 
     /**

@@ -254,4 +254,55 @@ describe('Audit Plan Improvements Verification', () => {
             expect(data.upgradeRequired).toBe(true);
         });
     });
+
+    describe('Fix #20: Sales Derived Directly From Orders (sales.ts)', () => {
+        it('queries completed orders instead of redundant sales table', async () => {
+            const { onRequestGet } = await import('../functions/api/sales');
+
+            let capturedQuery = '';
+            const mockDb = {
+                prepare: vi.fn().mockImplementation((query: string) => {
+                    capturedQuery += query + ' ';
+                    return {
+                        bind: vi.fn().mockReturnValue({
+                            first: vi.fn().mockImplementation(async () => {
+                                if (query.includes('FROM sessions') || query.includes('sessions s')) {
+                                    return {
+                                        username: 'admin@tienda.com',
+                                        role: 'admin',
+                                        tenant_id: 'mitienda',
+                                        expires_at: Math.floor(Date.now() / 1000) + 100000
+                                    };
+                                }
+                                if (query.includes('FROM tenants')) {
+                                    return { id: 'mitienda', name: 'Mi Tienda', active: 1 };
+                                }
+                                if (query.includes('SUM(total_price)')) {
+                                    return { total_ingresos: 150.00 };
+                                }
+                                return null;
+                            }),
+                            all: vi.fn().mockResolvedValue({ results: [{ date: '2026-10-23', total: 150 }] })
+                        })
+                    };
+                })
+            };
+
+            const mockContext: any = {
+                request: new Request('https://ventrina.app/api/sales?stats=true&tenant=mitienda', {
+                    headers: { 'Cookie': 'ventrina_session=dummy-token' }
+                }),
+                env: { DB: mockDb }
+            };
+
+            const res = await onRequestGet(mockContext);
+            expect(res.status).toBe(200);
+            const data = await res.json() as any;
+            expect(data.revenueToday).toBe(150);
+            expect(capturedQuery).toContain("FROM orders");
+            expect(capturedQuery).toContain("status = 'completado'");
+            expect(capturedQuery).not.toContain("FROM sales");
+        });
+    });
 });
+
