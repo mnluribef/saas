@@ -79,6 +79,21 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
         );
     }
 
+    const cookies = parseCookies(context.request.headers.get("Cookie"));
+    const hadSessionCookie = Boolean(cookies["ventrina_session"]);
+
+    if (hadSessionCookie) {
+        const clearCookie = buildSessionCookie('', context.request, 0);
+        return jsonResponse(
+            { authenticated: false, expired: true },
+            200,
+            {
+                "Cache-Control": "no-store, no-cache, must-revalidate",
+                "Set-Cookie": clearCookie
+            }
+        );
+    }
+
     return jsonResponse(
         { authenticated: false },
         200,

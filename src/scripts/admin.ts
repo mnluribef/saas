@@ -13,6 +13,16 @@ declare global {
 
 // Variables de estado
 let currentAdmin: string | null = null;
+let activeTenantId = '';
+const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutos de inactividad
+const IDLE_CHECK_INTERVAL_MS = 10 * 1000; // Verificación periódica cada 10s
+const LAST_ACTIVITY_KEY = 'ventrina_last_activity';
+
+let isSessionExpiring = false;
+let inactivityTimer: any = null;
+let ordersPollingTimer: any = null;
+let lastRecordedActivity = Date.now();
+
 let ordersList: any[] = [];
 let productsList: any[] = [];
 let salesList: any[] = [];
@@ -173,14 +183,164 @@ function getStoreUrl(tenantId: string, customDomain?: string | null): string {
     return `https://${tenantId}.ventrina.app`;
 }
 
+// --- CONTROL DE INACTIVIDAD Y EXPIRACIÓN DE SESIÓN ---
+
+/**
+ * Registra actividad del usuario en memoria y en localStorage para sincronización entre pestañas
+ */
+function recordUserActivity(force = false) {
+    const now = Date.now();
+    if (force || now - lastRecordedActivity > 5000) {
+        lastRecordedActivity = now;
+        try {
+            localStorage.setItem(LAST_ACTIVITY_KEY, String(now));
+        } catch {}
+    }
+}
+
+/**
+ * Obtiene la última marca de tiempo de actividad registrada (de memoria o localStorage)
+ */
+function getLastActivity(): number {
+    try {
+        const stored = localStorage.getItem(LAST_ACTIVITY_KEY);
+        if (stored) {
+            const parsed = parseInt(stored, 10);
+            if (!isNaN(parsed) && parsed > 0) {
+                return parsed;
+            }
+        }
+    } catch {}
+    return lastRecordedActivity;
+}
+
+/**
+ * Verifica si se ha superado el tiempo máximo de inactividad (30 min)
+ */
+function checkInactivity() {
+    if (!currentAdmin || isSessionExpiring) return;
+    const last = Math.max(lastRecordedActivity, getLastActivity());
+    if (Date.now() - last >= IDLE_TIMEOUT_MS) {
+        handleSessionExpired('inactivity');
+    }
+}
+
+/**
+ * Inicia el monitoreo de eventos de interacción del usuario para auto-expiración por inactividad
+ */
+function startInactivityMonitor() {
+    if (inactivityTimer) clearInterval(inactivityTimer);
+
+    const activityEvents = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart', 'click'];
+    activityEvents.forEach((evt) => {
+        window.addEventListener(evt, () => recordUserActivity(), { passive: true });
+    });
+
+    // Sincronización entre pestañas: si otra pestaña registra actividad, actualizar timestamp local
+    window.addEventListener('storage', (e) => {
+        if (e.key === LAST_ACTIVITY_KEY && e.newValue) {
+            const val = parseInt(e.newValue, 10);
+            if (!isNaN(val) && val > lastRecordedActivity) {
+                lastRecordedActivity = val;
+            }
+        }
+    });
+
+    // Al volver a la pestaña o enfocar ventana, verificar inactividad de inmediato
+    window.addEventListener('focus', checkInactivity);
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            checkInactivity();
+        }
+    });
+
+    inactivityTimer = setInterval(checkInactivity, IDLE_CHECK_INTERVAL_MS);
+}
+
+/**
+ * Cierra la sesión activa y redirige a login con mensaje de sesión expirada
+ */
+async function handleSessionExpired(reason: 'inactivity' | 'unauthorized' | 'server' = 'inactivity') {
+    if (isSessionExpiring) return;
+    isSessionExpiring = true;
+    currentAdmin = null;
+
+    if (inactivityTimer) {
+        clearInterval(inactivityTimer);
+        inactivityTimer = null;
+    }
+    if (ordersPollingTimer) {
+        clearInterval(ordersPollingTimer);
+        ordersPollingTimer = null;
+    }
+
+    try {
+        localStorage.removeItem(LAST_ACTIVITY_KEY);
+    } catch {}
+
+    try {
+        await fetch('/api/auth', { method: 'DELETE' });
+    } catch {}
+
+    showToast(
+        reason === 'inactivity'
+            ? 'Tu sesión ha expirado por inactividad (30 min). Redirigiendo...'
+            : 'Tu sesión ha expirado. Redirigiendo...',
+        'warning'
+    );
+
+    setTimeout(() => {
+        showLogin('expired');
+    }, 800);
+}
+
+// --- INTERCEPTOR GLOBAL PARA ERRORES 401 UNAUTHORIZED ---
+const originalFetch = window.fetch;
+window.fetch = async function(...args: Parameters<typeof originalFetch>) {
+    const response = await originalFetch.apply(this, args);
+
+    if (response.status === 401 && !isSessionExpiring) {
+        const firstArg = args[0];
+        const url = typeof firstArg === 'string' ? firstArg : (firstArg instanceof Request ? firstArg.url : '');
+        const options = args[1];
+        const method = (options?.method || (firstArg instanceof Request ? firstArg.method : 'GET')).toUpperCase();
+
+        // No interceptar llamadas iniciales a /api/auth GET o DELETE de cierre voluntario
+        const isAuthCheck = url.includes('/api/auth') && (method === 'GET' || method === 'DELETE');
+
+        if (!isAuthCheck && currentAdmin) {
+            handleSessionExpired('unauthorized');
+        }
+    }
+
+    return response;
+};
+
 // --- VERIFICACIÓN DE SESIÓN INICIAL ---
 async function checkSession() {
     try {
         const urlParams = new URLSearchParams(window.location.search);
+        const urlTenant = urlParams.get('tenant');
+        if (urlTenant) {
+            activeTenantId = urlTenant;
+        }
+
         if (urlParams.get('dev') === 'true' || urlParams.get('preview') === 'true') {
             currentAdmin = 'demo_admin';
             window.currentUserRole = 'admin';
             showDashboard();
+            return;
+        }
+
+        // Si ya pasaron más de 30 minutos desde la última actividad registrada en localStorage
+        const lastActivity = getLastActivity();
+        const storedActivity = localStorage.getItem(LAST_ACTIVITY_KEY);
+        if (storedActivity && (Date.now() - lastActivity >= IDLE_TIMEOUT_MS)) {
+            try {
+                localStorage.removeItem(LAST_ACTIVITY_KEY);
+                await fetch('/api/auth', { method: 'DELETE' });
+            } catch {}
+            showLogin('expired');
             return;
         }
 
@@ -191,6 +351,7 @@ async function checkSession() {
             currentAdmin = data.email || data.username;
             window.currentUserRole = data.role || 'viewer';
             if (data.tenantId && data.tenantId !== 'demo') {
+                activeTenantId = data.tenantId;
                 const storeUrl = getStoreUrl(data.tenantId);
                 const headerBtn = document.getElementById('btn-header-view-store') as HTMLAnchorElement | null;
                 if (headerBtn) headerBtn.href = storeUrl;
@@ -198,10 +359,14 @@ async function checkSession() {
                 if (previewBtn) previewBtn.href = storeUrl;
                 activeStoreUrl = storeUrl;
                 refreshStoreQrCodes();
+            } else if (data.tenantId) {
+                activeTenantId = data.tenantId;
             }
+            recordUserActivity(true);
+            startInactivityMonitor();
             showDashboard();
         } else {
-            showLogin();
+            showLogin(data.expired ? 'expired' : undefined);
         }
     } catch (err) {
         console.error("Error verificando sesión inicial:", err);
@@ -211,12 +376,16 @@ async function checkSession() {
     }
 }
 
-function showLogin() {
+function showLogin(reason?: string) {
     if (loginContainer) {
         loginContainer.classList.remove('d-none');
         if (dashboardContainer) dashboardContainer.classList.add('d-none');
     } else {
-        window.location.href = '/login';
+        const errorParam = reason === 'expired' ? '?error=expired' : '';
+        const tenantParam = activeTenantId && activeTenantId !== 'demo'
+            ? `${errorParam ? '&' : '?'}tenant=${encodeURIComponent(activeTenantId)}`
+            : '';
+        window.location.href = `/login${errorParam}${tenantParam}`;
     }
 }
 
@@ -280,6 +449,9 @@ if (loginForm) {
 
             if (res.ok && data.success) {
                 currentAdmin = data.email || data.username;
+                activeTenantId = data.tenantId || data.tenant || activeTenantId;
+                recordUserActivity(true);
+                startInactivityMonitor();
                 showToast(`¡Bienvenido de vuelta, ${currentAdmin}! 👋`, 'success');
                 showDashboard();
                 loginForm.reset();
@@ -305,13 +477,18 @@ if (btnLogout) {
         try {
             await fetch('/api/auth', { method: 'DELETE' });
             currentAdmin = null;
+            try {
+                localStorage.removeItem(LAST_ACTIVITY_KEY);
+            } catch {}
             showToast('Sesión cerrada correctamente.', 'info');
             setTimeout(() => {
-                window.location.href = '/login';
+                const tenantParam = activeTenantId && activeTenantId !== 'demo' ? `?tenant=${encodeURIComponent(activeTenantId)}` : '';
+                window.location.href = `/login${tenantParam}`;
             }, 600);
         } catch (err) {
             console.error("Error en logout:", err);
-            window.location.href = '/login';
+            const tenantParam = activeTenantId && activeTenantId !== 'demo' ? `?tenant=${encodeURIComponent(activeTenantId)}` : '';
+            window.location.href = `/login${tenantParam}`;
         }
     });
 }
@@ -3754,8 +3931,8 @@ function setupProductsCSVImport() {
 setupProductsCSVImport();
 
 // --- POLLING AUTOMÁTICO EN TIEMPO REAL (CADA 15s) ---
-setInterval(() => {
-    if (currentAdmin && document.visibilityState === 'visible' && navigator.onLine) {
+ordersPollingTimer = setInterval(() => {
+    if (currentAdmin && document.visibilityState === 'visible' && navigator.onLine && !isSessionExpiring) {
         loadOrders();
     }
 }, 15000);

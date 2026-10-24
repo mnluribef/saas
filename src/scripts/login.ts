@@ -50,6 +50,9 @@ form.addEventListener('submit', async (e) => {
         });
         const data = await res.json() as { success: boolean; tenant?: string; error?: string };
         if (data.success) {
+            try {
+                localStorage.setItem('ventrina_last_activity', String(Date.now()));
+            } catch {}
             const redirectTenant = data.tenant || tenant;
             const currentHost = window.location.hostname.toLowerCase();
             const isSubdomain = (currentHost.endsWith('.ventrina.app') && currentHost !== 'ventrina.app' && !currentHost.startsWith('www.')) ||
