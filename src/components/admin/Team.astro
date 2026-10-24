@@ -1,0 +1,171 @@
+---
+// src/components/admin/Team.astro
+// Gestión de Miembros del Equipo y Roles (Admin / Staff) - Ventrina SaaS
+---
+<div id="section-team" class="dashboard-section">
+    <!-- Resumen de Miembros / Quick Stats -->
+    <div class="team-summary-grid">
+        <div class="team-summary-card">
+            <div class="team-summary-info">
+                <span class="team-summary-label">Total Miembros</span>
+                <p id="stat-team-total" class="team-summary-value">0</p>
+            </div>
+            <div class="team-summary-icon purple">
+                <i data-lucide="users"></i>
+            </div>
+        </div>
+        <div class="team-summary-card">
+            <div class="team-summary-info">
+                <span class="team-summary-label">Administradores</span>
+                <p id="stat-team-admins" class="team-summary-value">0</p>
+            </div>
+            <div class="team-summary-icon cyan">
+                <i data-lucide="shield-check"></i>
+            </div>
+        </div>
+        <div class="team-summary-card">
+            <div class="team-summary-info">
+                <span class="team-summary-label">Personal / Staff</span>
+                <p id="stat-team-staff" class="team-summary-value">0</p>
+            </div>
+            <div class="team-summary-icon blue">
+                <i data-lucide="user-check"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-card">
+        <div class="card-header">
+            <div>
+                <h2>Mi Equipo y Permisos</h2>
+                <p class="section-desc">
+                    Administra a los usuarios que tienen acceso al panel de control de tu tienda
+                </p>
+            </div>
+            <div class="card-actions">
+                <button class="btn-action" id="btn-toggle-team-form">
+                    <i data-lucide="user-plus"></i> Nuevo Miembro
+                </button>
+                <button class="btn-action secondary" id="btn-refresh-team">
+                    <i data-lucide="refresh-cw"></i> Actualizar
+                </button>
+            </div>
+        </div>
+
+        <!-- Formulario Crear Usuario (colapsable) -->
+        <div id="team-form-collapse" class="collapsible-content form-collapsible-padded">
+            <div class="form-collapsible-inner">
+                <h3 class="form-collapsible-title">
+                    Registrar Nuevo Miembro
+                </h3>
+                <form id="team-user-form">
+                    <div class="form-grid-auto">
+                        <div class="form-group">
+                            <label for="team-user-email">Correo Electrónico</label>
+                            <input
+                                type="email"
+                                id="team-user-email"
+                                class="form-control"
+                                placeholder="colaborador@mitienda.com"
+                                required
+                            />
+                            <span class="field-hint">
+                                Se usará para iniciar sesión en el panel administrativo.
+                            </span>
+                        </div>
+                        <div class="form-group">
+                            <label for="team-user-role">Rol y Permisos</label>
+                            <select id="team-user-role" class="form-control" required>
+                                <option value="staff" selected>Personal / Staff (Gestión de Pedidos y Catálogo)</option>
+                                <option value="admin">Administrador (Acceso total, Equipo y Configuración)</option>
+                            </select>
+                            <span class="field-hint">
+                                Define el nivel de atribuciones dentro del panel.
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="form-grid-auto">
+                        <div class="form-group">
+                            <label for="team-user-password">Contraseña Inicial</label>
+                            <input
+                                type="password"
+                                id="team-user-password"
+                                class="form-control"
+                                placeholder="Mínimo 8 caracteres"
+                                minlength="8"
+                                required
+                            />
+                            <span class="field-hint">
+                                Mínimo 8 caracteres. Evita contraseñas sencillas o comunes.
+                            </span>
+                        </div>
+                        <div class="form-group">
+                            <label for="team-user-password-confirm">Confirmar Contraseña</label>
+                            <input
+                                type="password"
+                                id="team-user-password-confirm"
+                                class="form-control"
+                                placeholder="Repite la contraseña"
+                                minlength="8"
+                                required
+                            />
+                            <span class="field-hint">
+                                Debe coincidir exactamente con la contraseña inicial.
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Roles Info Guide -->
+                    <div class="team-roles-guide">
+                        <div class="team-role-card">
+                            <div class="team-role-header">
+                                <span class="status-badge staff">Staff</span>
+                                <strong>Operativo</strong>
+                            </div>
+                            <p>Gestión de pedidos diarios, cambio de estados, control de stock y catálogo de productos.</p>
+                        </div>
+                        <div class="team-role-card">
+                            <div class="team-role-header">
+                                <span class="status-badge admin">Admin</span>
+                                <strong>Control Total</strong>
+                            </div>
+                            <p>Acceso integral: métricas, planes, pagos, cupones, configuración de tienda y administración de equipo.</p>
+                        </div>
+                    </div>
+
+                    <div class="form-actions-row">
+                        <button type="submit" class="btn-action" id="btn-submit-team-user">
+                            <i data-lucide="user-plus"></i> Guardar Miembro
+                        </button>
+                        <button type="button" class="btn-action secondary" id="btn-cancel-team-user">
+                            Cancelar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tabla de Miembros -->
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Usuario / Email</th>
+                        <th>Rol</th>
+                        <th>Fecha de Ingreso</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="table-team-members">
+                    <tr>
+                        <td colspan="5" class="table-empty-row">
+                            Cargando miembros del equipo...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

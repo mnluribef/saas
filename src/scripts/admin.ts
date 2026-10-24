@@ -605,6 +605,10 @@ sidebarLinks.forEach(link => {
             if (dashboardTitle) dashboardTitle.textContent = 'Plan y Facturación';
             if (dashboardSubtitle) dashboardSubtitle.textContent = 'Gestiona los límites de tu cuenta y pagos de suscripción.';
             loadBillingData();
+        } else if (targetId === 'section-team') {
+            if (dashboardTitle) dashboardTitle.textContent = 'Mi Equipo y Accesos';
+            if (dashboardSubtitle) dashboardSubtitle.textContent = 'Administra los administradores y personal con acceso al panel de tu tienda.';
+            loadTeamMembers();
         } else if (targetId === 'section-settings') {
             if (dashboardTitle) dashboardTitle.textContent = 'Configuración de Tienda';
             if (dashboardSubtitle) dashboardSubtitle.textContent = 'Personaliza el nombre, contacto, WhatsApp, métodos de pago y delivery.';
@@ -721,7 +725,8 @@ async function refreshAllData() {
         loadSales(),
         loadStats(),
         loadCoupons(),
-        loadCategories()
+        loadCategories(),
+        loadTeamMembers()
     ]);
     renderMetrics();
 }
@@ -5357,6 +5362,244 @@ document.getElementById('btn-modal-download-qr')?.addEventListener('click', () =
 document.getElementById('btn-modal-print-qr')?.addEventListener('click', () => {
     window.print();
 });
+
+// ==========================================================================
+// GESTIÓN DE EQUIPO Y ROLES (ADMIN / STAFF) - MULTI-TENANT (F-04)
+// ==========================================================================
+interface TeamMemberItem {
+    id: number;
+    username: string;
+    email: string | null;
+    role: string;
+    created_at: string;
+    tenant_id: string;
+}
+
+let teamMembersList: TeamMemberItem[] = [];
+
+async function loadTeamMembers() {
+    const tableEl = document.getElementById('table-team-members');
+    try {
+        const res = await fetch('/api/users');
+        if (res.status === 403) {
+            if (tableEl) {
+                tableEl.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="table-empty-row">
+                            <div class="team-empty-state">
+                                <i data-lucide="shield-alert" class="team-empty-icon"></i>
+                                <p>Solo los usuarios con rol <strong>Administrador</strong> tienen permisos para ver y gestionar el equipo.</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                if (window.lucide) lucide.createIcons();
+            }
+            const btnToggle = document.getElementById('btn-toggle-team-form') as HTMLButtonElement | null;
+            if (btnToggle) btnToggle.disabled = true;
+            return;
+        }
+
+        if (!res.ok) {
+            throw new Error('Error al consultar usuarios');
+        }
+
+        const data = (await res.json()) as any;
+        teamMembersList = data.users || [];
+        updateTeamStats();
+        renderTeamTable();
+    } catch (err) {
+        console.error("Error al cargar miembros del equipo:", err);
+        if (tableEl) {
+            tableEl.innerHTML = '<tr><td colspan="5" class="table-empty-row text-danger">No se pudieron cargar los miembros del equipo.</td></tr>';
+        }
+    }
+}
+
+function updateTeamStats() {
+    const totalEl = document.getElementById('stat-team-total');
+    const adminsEl = document.getElementById('stat-team-admins');
+    const staffEl = document.getElementById('stat-team-staff');
+
+    const total = teamMembersList.length;
+    const admins = teamMembersList.filter(u => u.role === 'admin').length;
+    const staff = teamMembersList.filter(u => u.role === 'staff').length;
+
+    if (totalEl) totalEl.textContent = String(total);
+    if (adminsEl) adminsEl.textContent = String(admins);
+    if (staffEl) staffEl.textContent = String(staff);
+}
+
+function renderTeamTable() {
+    const tableEl = document.getElementById('table-team-members');
+    if (!tableEl) return;
+
+    if (teamMembersList.length === 0) {
+        tableEl.innerHTML = '<tr><td colspan="5" class="table-empty-row">No hay miembros registrados aún. Haz clic en "Nuevo Miembro" para invitar al equipo.</td></tr>';
+        return;
+    }
+
+    const activeUserEmail = (currentAdmin || '').toLowerCase();
+    const adminCount = teamMembersList.filter(u => u.role === 'admin').length;
+
+    tableEl.innerHTML = teamMembersList.map(member => {
+        const memberEmail = (member.email || member.username || '').toLowerCase();
+        const isSelf = memberEmail === activeUserEmail;
+        const isLastAdmin = member.role === 'admin' && adminCount <= 1;
+        const createdDate = member.created_at ? new Date(member.created_at).toLocaleDateString('es-VE', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        }) : 'Registrado';
+
+        const roleBadge = member.role === 'admin'
+            ? '<span class="status-badge admin"><i data-lucide="shield" class="table-badge-icon"></i> Admin</span>'
+            : '<span class="status-badge staff"><i data-lucide="user" class="table-badge-icon"></i> Staff</span>';
+
+        const selfBadge = isSelf ? '<span class="badge-current-user">Tú</span>' : '';
+
+        let actionButtons = '';
+        if (isSelf) {
+            actionButtons = `<span class="table-text-secondary table-self-note" title="No puedes eliminar tu propia cuenta activa">Sesión actual</span>`;
+        } else if (isLastAdmin) {
+            actionButtons = `<span class="table-text-secondary table-self-note" title="No es posible eliminar al único administrador">Único Admin</span>`;
+        } else {
+            actionButtons = `
+                <div class="table-actions-group">
+                    <button class="action-icon-btn delete" data-action="delete-team-member" data-id="${member.id}" data-email="${escapeHtml(member.email || member.username)}" title="Eliminar Acceso">
+                        <i data-lucide="trash-2" class="table-action-icon-sm"></i>
+                    </button>
+                </div>
+            `;
+        }
+
+        return `
+            <tr>
+                <td>
+                    <div class="team-user-cell">
+                        <div class="team-user-avatar">
+                            <i data-lucide="user"></i>
+                        </div>
+                        <div class="team-user-details">
+                            <strong class="team-user-email">${escapeHtml(member.email || member.username)}</strong>
+                            ${selfBadge}
+                        </div>
+                    </div>
+                </td>
+                <td>${roleBadge}</td>
+                <td><span class="table-text-secondary">${createdDate}</span></td>
+                <td><span class="status-badge completado">Activo</span></td>
+                <td>${actionButtons}</td>
+            </tr>
+        `;
+    }).join('');
+
+    if (window.lucide) lucide.createIcons();
+}
+
+async function deleteTeamMember(id: number, email: string) {
+    if (!confirm(`¿Estás seguro de que deseas revocar el acceso a "${email}"? No podrá volver a ingresar al panel.`)) {
+        return;
+    }
+
+    try {
+        const res = await fetch(`/api/users?id=${id}`, {
+            method: 'DELETE'
+        });
+        const data = (await res.json()) as any;
+        if (!res.ok) {
+            throw new Error(data.error || 'Error al eliminar usuario');
+        }
+
+        showToast(data.message || `Usuario "${email}" eliminado exitosamente.`, 'success');
+        loadTeamMembers();
+    } catch (err: any) {
+        showToast(err.message || 'Error al eliminar miembro del equipo.', 'error');
+    }
+}
+
+// Toggle formulario de nuevo miembro
+const btnToggleTeamForm = document.getElementById('btn-toggle-team-form');
+const teamFormCollapse = document.getElementById('team-form-collapse');
+const btnCancelTeamUser = document.getElementById('btn-cancel-team-user');
+const teamUserForm = document.getElementById('team-user-form') as HTMLFormElement | null;
+
+if (btnToggleTeamForm && teamFormCollapse) {
+    btnToggleTeamForm.addEventListener('click', () => {
+        teamFormCollapse.classList.toggle('expanded');
+    });
+}
+
+if (btnCancelTeamUser && teamFormCollapse) {
+    btnCancelTeamUser.addEventListener('click', () => {
+        teamFormCollapse.classList.remove('expanded');
+        if (teamUserForm) teamUserForm.reset();
+    });
+}
+
+// Refresh miembros del equipo
+const btnRefreshTeam = document.getElementById('btn-refresh-team');
+if (btnRefreshTeam) {
+    btnRefreshTeam.addEventListener('click', loadTeamMembers);
+}
+
+// Submit crear miembro
+if (teamUserForm) {
+    teamUserForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = $val('team-user-email').trim().toLowerCase();
+        const role = $val('team-user-role');
+        const password = $val('team-user-password');
+        const passwordConfirm = $val('team-user-password-confirm');
+
+        if (password.length < 8) {
+            showToast('La contraseña debe tener al menos 8 caracteres.', 'error');
+            return;
+        }
+
+        if (password !== passwordConfirm) {
+            showToast('Las contraseñas no coinciden. Por favor verifícalas.', 'error');
+            return;
+        }
+
+        const btnSubmit = $btn('btn-submit-team-user');
+        if (btnSubmit) btnSubmit.disabled = true;
+
+        try {
+            const res = await fetch('/api/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password, role })
+            });
+
+            const data = (await res.json()) as any;
+            if (!res.ok) {
+                throw new Error(data.error || 'Error al registrar miembro del equipo');
+            }
+
+            showToast(data.message || '¡Miembro registrado exitosamente!', 'success');
+            teamUserForm.reset();
+            if (teamFormCollapse) teamFormCollapse.classList.remove('expanded');
+            loadTeamMembers();
+        } catch (err: any) {
+            showToast(err.message || 'Error al crear usuario.', 'error');
+        } finally {
+            if (btnSubmit) btnSubmit.disabled = false;
+        }
+    });
+}
+
+// Delegación de eventos para eliminar miembros
+document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement | null;
+    const deleteBtn = target?.closest('[data-action="delete-team-member"]') as HTMLElement | null;
+    if (deleteBtn) {
+        const id = parseInt(deleteBtn.getAttribute('data-id') || '0', 10);
+        const email = deleteBtn.getAttribute('data-email') || '';
+        if (id) deleteTeamMember(id, email);
+    }
+});
+
 
 
 
