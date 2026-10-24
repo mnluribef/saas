@@ -3,6 +3,7 @@
 // Protegido por variable de entorno SUPERADMIN_KEY (no usa el sistema de sesiones de tenant)
 import { z } from "zod";
 import { getDB, jsonResponse } from "./_helpers";
+import { invalidateTenantCache } from "./_tenant";
 import type { Env, PagesHandler, TenantRow } from '../types';
 
 /**
@@ -178,6 +179,9 @@ export const onRequestPut: PagesHandler<Env> = async (context) => {
             'UPDATE tenants SET name = ?, plan = ?, template = ?, config_json = ?, domain = ?, whatsapp = ?, active = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
         ).bind(name, plan, template, config_json, domain || null, whatsapp || null, active, id).run();
 
+        // Fix #3: Invalidar caché KV tras actualizar tenant
+        await invalidateTenantCache(env.KV, id, domain || undefined);
+
         return jsonResponse({ success: true, message: 'Tenant actualizado.' });
 
     } catch (err) {
@@ -216,11 +220,15 @@ export const onRequestDelete: PagesHandler<Env> = async (context) => {
                 db.prepare('DELETE FROM settings WHERE tenant_id = ?').bind(id),
                 db.prepare('DELETE FROM tenants WHERE id = ?').bind(id),
             ]);
+            // Fix #3: Invalidar caché KV tras eliminar tenant
+            await invalidateTenantCache(env.KV, id);
             return jsonResponse({ success: true, message: `Tenant "${id}" eliminado permanentemente.` });
         }
 
         // Soft delete: solo desactivar
         await db.prepare('UPDATE tenants SET active = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?').bind(id).run();
+        // Fix #3: Invalidar caché KV tras suspender tenant
+        await invalidateTenantCache(env.KV, id);
         return jsonResponse({ success: true, message: `Tenant "${id}" suspendido.` });
 
     } catch (err) {

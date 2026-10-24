@@ -1,12 +1,14 @@
 // functions/api/products.ts
 // Controlador HTTP de Productos - Ventrina SaaS (M-01: Capa Controller)
 import { z } from "zod";
-import { verifySession, unauthorizedResponse, forbiddenResponse, validateCsrf } from "./_auth";
+import { verifySession } from "./_auth";
 import { resolveTenant } from "./_tenant";
 import { getDB, jsonResponse, compressedJsonResponse } from "./_helpers";
+import { requireAdmin } from "./_guards";
 import { ProductService } from "./_services/product.service";
 import { getStarterProducts } from "../../src/config/starter-products";
 import type { Env, PagesHandler } from '../types';
+
 
 export const productSchema = z.object({
     id: z.string().min(2).max(100).regex(/^[a-z0-9_-]+$/, "ID inválido. Solo minúsculas, números y guiones."),
@@ -163,26 +165,18 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
  * POST /api/products - Admin only: Crear nuevo producto
  */
 export const onRequestPost: PagesHandler<Env> = async (context) => {
-    const { env, request } = context;
-    const db = getDB(env);
-    const { id: tenantId, tenant } = await resolveTenant(request, db, env.KV);
-
-    if (!validateCsrf(request, tenant?.domain)) {
-        return forbiddenResponse("Verificación de seguridad CSRF fallida.");
-    }
-
-    const user = await verifySession(context, tenantId);
-    if (!user) return unauthorizedResponse();
-    if (user.role !== 'admin') return forbiddenResponse();
+    const guard = await requireAdmin(context);
+    if (!guard.ok) return guard.response;
+    const { tenantId, tenant } = guard;
 
     try {
-        const rawData = await request.json();
+        const rawData = await context.request.json();
         const result = productSchema.safeParse(rawData);
         if (!result.success) {
             return jsonResponse({ error: "Datos inválidos", details: result.error.issues }, 400);
         }
 
-        const productService = new ProductService(db);
+        const productService = new ProductService(getDB(context.env));
         const createRes = await productService.createProduct(result.data, tenant, tenantId);
 
         if (!createRes.ok) {
@@ -196,30 +190,23 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
     }
 };
 
+
 /**
  * PUT /api/products - Admin only: Actualizar producto existente
  */
 export const onRequestPut: PagesHandler<Env> = async (context) => {
-    const { env, request } = context;
-    const db = getDB(env);
-    const { id: tenantId, tenant } = await resolveTenant(request, db, env.KV);
-
-    if (!validateCsrf(request, tenant?.domain)) {
-        return forbiddenResponse("Verificación de seguridad CSRF fallida.");
-    }
-
-    const user = await verifySession(context, tenantId);
-    if (!user) return unauthorizedResponse();
-    if (user.role !== 'admin') return forbiddenResponse();
+    const guard = await requireAdmin(context);
+    if (!guard.ok) return guard.response;
+    const { tenantId } = guard;
 
     try {
-        const rawData = await request.json();
+        const rawData = await context.request.json();
         const result = productSchema.safeParse(rawData);
         if (!result.success) {
             return jsonResponse({ error: "Datos inválidos", details: result.error.issues }, 400);
         }
 
-        const productService = new ProductService(db);
+        const productService = new ProductService(getDB(context.env));
         const updateRes = await productService.updateProduct(result.data, tenantId);
 
         if (!updateRes.ok) {
@@ -233,29 +220,22 @@ export const onRequestPut: PagesHandler<Env> = async (context) => {
     }
 };
 
+
 /**
  * DELETE /api/products - Admin only: Eliminación o archivado masivo o individual
  */
 export const onRequestDelete: PagesHandler<Env> = async (context) => {
-    const { env, request } = context;
-    const db = getDB(env);
-    const { id: tenantId, tenant } = await resolveTenant(request, db, env.KV);
-
-    if (!validateCsrf(request, tenant?.domain)) {
-        return forbiddenResponse("Verificación de seguridad CSRF fallida.");
-    }
-
-    const user = await verifySession(context, tenantId);
-    if (!user) return unauthorizedResponse();
-    if (user.role !== 'admin') return forbiddenResponse();
+    const guard = await requireAdmin(context);
+    if (!guard.ok) return guard.response;
+    const { tenantId } = guard;
 
     try {
-        const url = new URL(request.url);
+        const url = new URL(context.request.url);
         const id = url.searchParams.get("id");
         const ids = url.searchParams.get("ids");
         const permanent = url.searchParams.get("permanent") === "true";
 
-        const productService = new ProductService(db);
+        const productService = new ProductService(getDB(context.env));
         const deleteRes = await productService.deleteProducts({ id, ids, permanent }, tenantId);
 
         if (!deleteRes.ok) {
@@ -269,29 +249,22 @@ export const onRequestDelete: PagesHandler<Env> = async (context) => {
     }
 };
 
+
 /**
  * PATCH /api/products - Admin only: Archivar o reactivar producto (F-08)
  */
 export const onRequestPatch: PagesHandler<Env> = async (context) => {
-    const { env, request } = context;
-    const db = getDB(env);
-    const { id: tenantId, tenant } = await resolveTenant(request, db, env.KV);
+    const guard = await requireAdmin(context);
+    if (!guard.ok) return guard.response;
+    const { tenantId } = guard;
 
-    if (!validateCsrf(request, tenant?.domain)) {
-        return forbiddenResponse("Verificación de seguridad CSRF fallida.");
-    }
-
-    const user = await verifySession(context, tenantId);
-    if (!user) return unauthorizedResponse();
-    if (user.role !== 'admin') return forbiddenResponse();
-
-    const url = new URL(request.url);
+    const url = new URL(context.request.url);
     const id = url.searchParams.get("id");
     const action = (url.searchParams.get("action") || "archive") as 'archive' | 'restore';
 
     if (!id) return jsonResponse({ error: "ID de producto requerido." }, 400);
 
-    const productService = new ProductService(db);
+    const productService = new ProductService(getDB(context.env));
     const toggleRes = await productService.toggleActive(id, action, tenantId);
 
     if (!toggleRes.ok) {
@@ -303,3 +276,4 @@ export const onRequestPatch: PagesHandler<Env> = async (context) => {
         message: toggleRes.data
     });
 };
+

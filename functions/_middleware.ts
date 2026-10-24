@@ -13,6 +13,8 @@ export const onRequest = async (context: PagesContext<Env>): Promise<Response> =
     const rawHost = request.headers.get('x-forwarded-host') || url.hostname;
     const host = rawHost.split(':')[0].toLowerCase();
     const pathname = url.pathname;
+    // Fix #11: Generar Correlation ID único por request para trazabilidad en logs distribuidos
+    const requestId = crypto.randomUUID();
 
     // 1. Descartar archivos estáticos del sistema y bundles compilados
     if (
@@ -155,10 +157,11 @@ export const onRequest = async (context: PagesContext<Env>): Promise<Response> =
     const response = await routeRequest();
     const durationMs = Math.round(performance.now() - startTime);
 
-    // NF-02: Telemetría de latencia y logging estructurado
+    // NF-02: Telemetría de latencia y logging estructurado con Correlation ID (Fix #11)
     try {
         console.log(JSON.stringify({
             type: 'root_routing_timing',
+            requestId,
             method: request.method,
             path: pathname,
             host,
@@ -174,6 +177,20 @@ export const onRequest = async (context: PagesContext<Env>): Promise<Response> =
     try {
         const newHeaders = new Headers(response.headers);
         newHeaders.set('X-Response-Time', `${durationMs}ms`);
+        newHeaders.set('X-Request-Id', requestId);
+
+        // Fix #14: Headers de seguridad en todas las respuestas no-redirect
+        const contentType = response.headers.get('Content-Type') || '';
+        if (!contentType.includes('application/json')) {
+            // CSP permisivo pero seguro: permite assets propios, CDNs conocidos y eval desactivado
+            newHeaders.set('Content-Security-Policy',
+                "default-src 'self'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https:; frame-src https://challenges.cloudflare.com;"
+            );
+            newHeaders.set('X-Frame-Options', 'SAMEORIGIN');
+            newHeaders.set('X-Content-Type-Options', 'nosniff');
+            newHeaders.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+        }
+
         return new Response(response.body, {
             status: response.status,
             statusText: response.statusText,

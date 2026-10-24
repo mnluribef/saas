@@ -2,7 +2,9 @@
 // Gestión de Tenants desde el panel Super-Admin integrado
 import { z } from 'zod';
 import { getDB, jsonResponse } from "../_helpers";
+import { invalidateTenantCache } from '../_tenant';
 import type { Env, PagesHandler } from '../../types';
+
 
 export const superadminTenantActionSchema = z.object({
     tenantId: z.string().min(1),
@@ -68,6 +70,8 @@ export const onRequest: PagesHandler<Env> = async (context) => {
                 }
                 await db.prepare('UPDATE tenants SET plan = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
                     .bind(planValue, tenantId).run();
+                // Fix #3: Invalidar caché KV para que el nuevo plan y sus TTLs sean efectivos de inmediato
+                await invalidateTenantCache(env.KV, tenantId);
                 return jsonResponse({ success: true, message: `Plan actualizado a ${planValue}.` });
             }
 
@@ -75,6 +79,8 @@ export const onRequest: PagesHandler<Env> = async (context) => {
                 const newStatus = Number(value) === 1 ? 1 : 0;
                 await db.prepare('UPDATE tenants SET active = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
                     .bind(newStatus, tenantId).run();
+                // Fix #3: Invalidar caché KV inmediatamente para que el cambio de estado sea efectivo al instante
+                await invalidateTenantCache(env.KV, tenantId);
                 return jsonResponse({ success: true, message: `Estado actualizado a ${newStatus === 1 ? 'Activo' : 'Suspendido'}.` });
             }
 

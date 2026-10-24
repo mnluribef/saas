@@ -1,11 +1,12 @@
 // functions/api/settings.ts
 // Controlador HTTP de Configuración de la Tienda (M-01: Capa Controller)
 import { z } from "zod";
-import { verifySession, unauthorizedResponse, forbiddenResponse, validateCsrf } from "./_auth";
 import { resolveTenant } from "./_tenant";
 import { getDB, jsonResponse } from "./_helpers";
+import { requireAdmin } from "./_guards";
 import { SettingsService } from "./_services/settings.service";
 import type { Env, PagesHandler } from '../types';
+
 
 // Validador estricto para evitar inflar SQLite D1 con DataURLs Base64 gigantes
 const safeImageString = z.string().max(2000000).refine((val) => {
@@ -211,20 +212,13 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
  * PUT /api/settings - Actualiza la configuración de la tienda por namespaces (Admin Only)
  */
 export const onRequestPut: PagesHandler<Env> = async (context) => {
-    const { request, env } = context;
-    const db = getDB(env);
-    const { id: tenantId, tenant } = await resolveTenant(request, db, env.KV);
-
-    if (!validateCsrf(request, tenant?.domain)) {
-        return forbiddenResponse("Verificación de seguridad CSRF fallida.");
-    }
-
-    const user = await verifySession(context, tenantId);
-    if (!user) return unauthorizedResponse();
-    if (user.role !== 'admin') return forbiddenResponse();
+    // Fix #7: Usar guard centralizado
+    const guard = await requireAdmin(context);
+    if (!guard.ok) return guard.response;
+    const { tenantId, tenant } = guard;
 
     try {
-        const body = await request.json();
+        const body = await context.request.json();
         const parsed = storeSettingsSchema.safeParse(body);
 
         if (!parsed.success) {
@@ -234,12 +228,12 @@ export const onRequestPut: PagesHandler<Env> = async (context) => {
             }, 400);
         }
 
-        const settingsService = new SettingsService(db);
+        const settingsService = new SettingsService(getDB(context.env));
         const saveRes = await settingsService.updateStoreSettings(
             tenantId,
             parsed.data,
             tenant?.domain,
-            env.KV
+            context.env.KV
         );
 
         if (!saveRes.ok) {
@@ -256,3 +250,4 @@ export const onRequestPut: PagesHandler<Env> = async (context) => {
         return jsonResponse({ error: "Error al guardar la configuración de la tienda." }, 500);
     }
 };
+

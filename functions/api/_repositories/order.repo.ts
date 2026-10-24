@@ -148,7 +148,22 @@ export class OrderRepository {
     }
 
     /**
-     * Obtiene los productos básicos del tenant para cálculo y validación de stock
+     * Obtiene los productos básicos del tenant filtrando solo los IDs referenciados en un pedido (Fix #10)
+     * Evita cargar todo el catálogo en memoria al procesar cada pedido.
+     */
+    async findTenantProductsByIds(tenantId: string, ids: string[]): Promise<ProductShortRow[]> {
+        if (ids.length === 0) return [];
+        // D1 no soporta arrays nativos en bind; usamos placeholders dinámicos
+        const placeholders = ids.map(() => '?').join(',');
+        const { results } = await this.db.prepare(
+            `SELECT id, name, price, stock FROM products WHERE tenant_id = ? AND id IN (${placeholders})`
+        ).bind(tenantId, ...ids).all<ProductShortRow>();
+        return results || [];
+    }
+
+    /**
+     * Obtiene todos los productos básicos del tenant (uso legado/admin).
+     * Preferir findTenantProductsByIds en el flujo de checkout.
      */
     async findTenantProducts(tenantId: string): Promise<ProductShortRow[]> {
         const { results } = await this.db.prepare(

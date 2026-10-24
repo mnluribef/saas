@@ -8,6 +8,7 @@ import { getDB, parseCookies, jsonResponse } from "./_helpers";
 import { RateLimitService } from "./_services/rate-limit.service";
 import type { Env, PagesHandler } from '../types';
 
+
 export const COMMON_PASSWORDS = new Set([
     '12345678', 'password', 'qwerty123', 'admin123', '123456789', '1234567890',
     'password123', 'ventrina123', 'contraseña', 'welcome1', 'admin1234', '11111111',
@@ -48,9 +49,11 @@ interface UserDbRow {
     tenant_id: string;
 }
 
-export async function purgeExpiredRateLimits(db: D1Database): Promise<number> {
-    return new RateLimitService(db).purgeExpired(LOCKOUT_TIME_MS);
+export async function purgeExpiredRateLimits(_db: D1Database): Promise<number> {
+    // KV expira los registros automáticamente via TTL, no se requiere purga manual.
+    return 0;
 }
+
 
 /**
  * GET /api/auth - Verifica el estado de la sesión actual
@@ -91,9 +94,8 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
     const db = getDB(env);
     const clientIp = request.headers.get("CF-Connecting-IP") || request.headers.get("x-real-ip") || "unknown";
 
-    // 1. Verificar Rate Limit (S-03 & P-04: Purga asíncrona sin bloquear)
-    const rateLimitService = new RateLimitService(db);
-    context.waitUntil?.(rateLimitService.purgeExpired(LOCKOUT_TIME_MS).catch(() => {}));
+    // 1. Verificar Rate Limit via KV (S-03 — Fix #1: migrado de D1 a KV para soportar alta concurrencia)
+    const rateLimitService = new RateLimitService(env.KV);
 
     const rateCheck = await rateLimitService.checkRateLimit(clientIp, {
         maxAttempts: MAX_ATTEMPTS,
@@ -241,8 +243,7 @@ export const onRequestPut: PagesHandler<Env> = async (context) => {
     const clientIp = request.headers.get("CF-Connecting-IP") || request.headers.get("x-real-ip") || "unknown";
 
     // Protección contra fuerza bruta en cambio de contraseña (Fix #4, S-03)
-    const rateLimitService = new RateLimitService(db);
-    context.waitUntil?.(rateLimitService.purgeExpired(LOCKOUT_TIME_MS).catch(() => {}));
+    const rateLimitService = new RateLimitService(env.KV);
 
     const rateCheck = await rateLimitService.checkRateLimit(clientIp, {
         maxAttempts: MAX_ATTEMPTS,

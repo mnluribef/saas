@@ -6,7 +6,7 @@ import { getStarterProducts } from '../src/config/starter-products';
 import { checkProductLimit } from '../functions/api/_plans';
 import { resolveBcvRate } from '../functions/api/_services/order.service';
 import { generateSessionToken, buildSessionCookie, validateCsrf } from '../functions/api/_auth';
-import type { D1Database } from '@cloudflare/workers-types';
+import type { D1Database, KVNamespace } from '@cloudflare/workers-types';
 import type { TenantRow } from '../functions/types';
 
 describe('Audit Plan Improvements Verification', () => {
@@ -119,41 +119,34 @@ describe('Audit Plan Improvements Verification', () => {
 
     describe('S-03 & P-04: RateLimitService (rate-limit.service.ts)', () => {
         it('allows request when within attempt limit and blocks when exceeded', async () => {
-            const mockDb = {
-                prepare: vi.fn().mockReturnValue({
-                    bind: vi.fn().mockReturnValue({
-                        first: vi.fn().mockResolvedValue({
-                            ip: '127.0.0.1',
-                            count: 5,
-                            first_attempt: Date.now() - 5000,
-                            lockout_until: 0
-                        }),
-                        run: vi.fn().mockResolvedValue({ success: true })
-                    })
-                })
-            } as unknown as D1Database;
+            const mockKv = {
+                get: vi.fn().mockResolvedValue({
+                    count: 5,
+                    firstAttempt: Date.now() - 5000,
+                    lockoutUntil: 0
+                }),
+                put: vi.fn().mockResolvedValue(undefined),
+                delete: vi.fn().mockResolvedValue(undefined)
+            } as unknown as KVNamespace;
 
-            const service = new RateLimitService(mockDb);
+            const service = new RateLimitService(mockKv);
             const check = await service.checkRateLimit('127.0.0.1', { maxAttempts: 5, windowMs: 60000 });
             expect(check.allowed).toBe(false);
             expect(check.remaining).toBe(0);
         });
 
         it('enforces lockout_until when lockout is active', async () => {
-            const mockDb = {
-                prepare: vi.fn().mockReturnValue({
-                    bind: vi.fn().mockReturnValue({
-                        first: vi.fn().mockResolvedValue({
-                            ip: '127.0.0.1',
-                            count: 5,
-                            first_attempt: Date.now() - 5000,
-                            lockout_until: Date.now() + 10 * 60 * 1000 // 10 mins lockout
-                        })
-                    })
-                })
-            } as unknown as D1Database;
+            const mockKv = {
+                get: vi.fn().mockResolvedValue({
+                    count: 5,
+                    firstAttempt: Date.now() - 5000,
+                    lockoutUntil: Date.now() + 10 * 60 * 1000 // 10 mins lockout
+                }),
+                put: vi.fn().mockResolvedValue(undefined),
+                delete: vi.fn().mockResolvedValue(undefined)
+            } as unknown as KVNamespace;
 
-            const service = new RateLimitService(mockDb);
+            const service = new RateLimitService(mockKv);
             const check = await service.checkRateLimit('127.0.0.1', { maxAttempts: 5, windowMs: 60000 });
             expect(check.allowed).toBe(false);
             expect(check.remainingMinutes).toBeGreaterThan(0);

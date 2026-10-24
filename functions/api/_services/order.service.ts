@@ -306,11 +306,17 @@ export class OrderService {
             }
         }
 
-        // 4. Cargar productos del tenant para validación de precio y stock
-        const dbProducts = await this.repo.findTenantProducts(tenantId);
+        // 4. Cargar solo los productos referenciados en el carrito (Fix #10: evita cargar todo el catálogo en memoria)
+        // Intentamos resolver por id, key o nombre; priorizamos id/key para la query.
+        const requestedIds = items
+            .flatMap(item => [item.id, item.key].filter(Boolean) as string[]);
+        const dbProducts = requestedIds.length > 0
+            ? await this.repo.findTenantProductsByIds(tenantId, requestedIds)
+            : await this.repo.findTenantProducts(tenantId); // fallback si solo vienen nombres
         const productMap = new Map(dbProducts.map(p => [p.id, p]));
 
-        // Pre-validar stock disponible
+        // Pre-validación de stock (Fix #4: es una optimización de UX, no una garantía atómica.
+        // La garantía real la provee el WHERE stock >= ? en el batch de D1).
         for (const item of items) {
             let matchedProduct: ProductShortRow | undefined;
             if (item.id && productMap.has(item.id)) matchedProduct = productMap.get(item.id);

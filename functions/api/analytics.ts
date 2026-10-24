@@ -157,7 +157,7 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
                 SELECT oi.product_name, SUM(oi.quantity) as total_qty, SUM(oi.quantity * oi.unit_price) as total_revenue
                 FROM order_items oi
                 JOIN orders o ON oi.order_id = o.id
-                WHERE o.tenant_id = ?
+                WHERE o.tenant_id = ? AND strftime('%Y', o.created_at) = strftime('%Y', 'now')
                 GROUP BY oi.product_name
                 ORDER BY total_qty DESC
                 LIMIT ?
@@ -166,23 +166,24 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
             db.prepare(`
                 SELECT status, COUNT(*) as count
                 FROM orders
-                WHERE tenant_id = ?
+                WHERE tenant_id = ? AND strftime('%Y', created_at) = strftime('%Y', 'now')
                 GROUP BY status
             `).bind(tenantId).all<StatusCountRow>(),
 
             db.prepare(`
                 SELECT COALESCE(payment_method, 'No especificado') as payment_method, COUNT(*) as count, COALESCE(SUM(total_price), 0) as total
                 FROM orders
-                WHERE tenant_id = ?
+                WHERE tenant_id = ? AND strftime('%Y', created_at) = strftime('%Y', 'now')
                 GROUP BY payment_method
             `).bind(tenantId).all<PaymentBreakdownRow>(),
 
             db.prepare(`
                 SELECT delivery_type, COUNT(*) as count
                 FROM orders
-                WHERE tenant_id = ?
+                WHERE tenant_id = ? AND strftime('%Y', created_at) = strftime('%Y', 'now')
                 GROUP BY delivery_type
             `).bind(tenantId).all<DeliveryBreakdownRow>()
+
         ]);
 
         const revThisMonth = salesComparisonRow?.total_this_month ?? 0;

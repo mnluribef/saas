@@ -1,11 +1,13 @@
 // functions/api/orders.ts
 // Controlador HTTP de Pedidos - Ventrina SaaS (M-01: Capa Controller)
 import { z } from "zod";
-import { verifySession, unauthorizedResponse, forbiddenResponse, validateCsrf } from "./_auth";
+import { verifySession, unauthorizedResponse } from "./_auth";
 import { resolveTenant } from "./_tenant";
 import { getDB, jsonResponse, compressedJsonResponse } from "./_helpers";
+import { requireAdmin, requireStaffOrAdmin } from "./_guards";
 import { OrderService, generateWebhookSignature } from "./_services/order.service";
 import type { Env, PagesHandler, OrderRow } from '../types';
+
 
 export const createOrderSchema = z.object({
     clientName: z.string().min(2, "El nombre debe tener al menos 2 caracteres").max(100),
@@ -105,12 +107,28 @@ export const onRequestGet: PagesHandler<Env> = async (context) => {
 
 /**
  * POST /api/orders - Checkout público con validación Zod, Turnstile y stock atómico
+ * Fix #5: Soporta el header Idempotency-Key para evitar pedidos duplicados por doble click.
  */
 export const onRequestPost: PagesHandler<Env> = async (context) => {
     const { env, request } = context;
     const db = getDB(env);
     const clientIp = request.headers.get("CF-Connecting-IP") || "unknown";
     const { id: tenantId, tenant } = await resolveTenant(request, db, env.KV);
+
+    // Fix #5: Idempotencia — si viene Idempotency-Key, verificar si ya existe un pedido reciente con esa clave
+    const idempotencyKey = request.headers.get('Idempotency-Key');
+    if (idempotencyKey && env.KV) {
+        try {
+            const existingOrderId = await env.KV.get(`idem:${tenantId}:${idempotencyKey}`);
+            if (existingOrderId) {
+                const orderService = new OrderService(db);
+                const existing = await orderService.getOrderDetails(existingOrderId, tenantId);
+                if (existing.ok) {
+                    return jsonResponse({ success: true, orderId: existingOrderId, idempotent: true }, 200);
+                }
+            }
+        } catch {}
+    }
 
     try {
         const rawData = await request.json();
@@ -150,10 +168,16 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
 
         const orderData = createRes.data;
 
-        // Disparo asíncrono de webhook si está configurado (Fix #19)
-        if (env.WEBHOOK_URL) {
+        // Fix #5: Guardar clave de idempotencia en KV con TTL de 24h
+        if (idempotencyKey && env.KV) {
             try {
-                const webhookSecret = env.JWT_SECRET || env.SUPERADMIN_KEY || 'ventrina-webhook-key';
+                await env.KV.put(`idem:${tenantId}:${idempotencyKey}`, orderData.orderId, { expirationTtl: 86400 });
+            } catch {}
+        }
+
+        // Disparo asíncrono de webhook si está configurado
+        if (env.WEBHOOK_URL && env.WEBHOOK_SECRET) {
+            try {
                 const webhookPayload = JSON.stringify({
                     event: 'new_order_created',
                     orderId: orderData.orderId,
@@ -165,7 +189,7 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
                     appliedCoupon: orderData.appliedCoupon,
                     timestamp: new Date().toISOString()
                 });
-                const signature = await generateWebhookSignature(webhookPayload, webhookSecret);
+                const signature = await generateWebhookSignature(webhookPayload, env.WEBHOOK_SECRET);
 
                 context.waitUntil?.(
                     fetch(env.WEBHOOK_URL, {
@@ -200,33 +224,26 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
     }
 };
 
+
 /**
  * PUT /api/orders - Actualización de estado de pedido (Admin / Staff)
  */
 export const onRequestPut: PagesHandler<Env> = async (context) => {
-    const { env, request } = context;
-    const db = getDB(env);
-    const { id: tenantId, tenant } = await resolveTenant(request, db, env.KV);
-
-    // S-02: Protección CSRF en mutaciones desde el navegador
-    if (!validateCsrf(request, tenant?.domain)) {
-        return forbiddenResponse("Verificación de seguridad CSRF fallida.");
-    }
-
-    const user = await verifySession(context, tenantId);
-    if (!user) return unauthorizedResponse();
-    // F-04: Soporte para rol staff y admin en gestión de pedidos
-    if (!['admin', 'staff'].includes(user.role)) return forbiddenResponse();
+    const { env } = context;
+    // Fix #7: Usar guard centralizado para admin/staff
+    const guard = await requireStaffOrAdmin(context);
+    if (!guard.ok) return guard.response;
+    const { user, tenantId } = guard;
 
     try {
-        const bodyJson = await request.json();
+        const bodyJson = await context.request.json();
         const parseResult = updateOrderStatusSchema.safeParse(bodyJson);
         if (!parseResult.success) {
             return jsonResponse({ error: "Datos de estado inválidos", details: parseResult.error.issues }, 400);
         }
 
         const { id, status, paymentMethod, paymentAmount, note } = parseResult.data;
-        const orderService = new OrderService(db);
+        const orderService = new OrderService(getDB(env));
 
         const updateRes = await orderService.updateOrderStatus(
             id,
@@ -242,10 +259,9 @@ export const onRequestPut: PagesHandler<Env> = async (context) => {
             return jsonResponse({ error: updateRes.error }, updateRes.code || 404);
         }
 
-        // Webhook de cambio de estado
-        if (env.WEBHOOK_URL) {
+        // Fix #16: Webhook solo si WEBHOOK_SECRET está configurado explícitamente
+        if (env.WEBHOOK_URL && env.WEBHOOK_SECRET) {
             try {
-                const webhookSecret = env.JWT_SECRET || env.SUPERADMIN_KEY || 'ventrina-webhook-key';
                 const webhookPayload = JSON.stringify({
                     event: 'order_status_updated',
                     orderId: id,
@@ -253,7 +269,7 @@ export const onRequestPut: PagesHandler<Env> = async (context) => {
                     tenantId,
                     timestamp: new Date().toISOString()
                 });
-                const signature = await generateWebhookSignature(webhookPayload, webhookSecret);
+                const signature = await generateWebhookSignature(webhookPayload, env.WEBHOOK_SECRET);
 
                 context.waitUntil?.(
                     fetch(env.WEBHOOK_URL, {
@@ -281,6 +297,7 @@ export const onRequestPut: PagesHandler<Env> = async (context) => {
     }
 };
 
+
 /**
  * PATCH /api/orders - Alias para actualizar estado
  */
@@ -290,24 +307,16 @@ export const onRequestPatch: PagesHandler<Env> = onRequestPut;
  * DELETE /api/orders - Cancelación y borrado de pedido (Admin only)
  */
 export const onRequestDelete: PagesHandler<Env> = async (context) => {
-    const { env, request } = context;
-    const db = getDB(env);
-    const { id: tenantId, tenant } = await resolveTenant(request, db, env.KV);
-
-    // S-02: Protección CSRF en mutaciones desde el navegador
-    if (!validateCsrf(request, tenant?.domain)) {
-        return forbiddenResponse("Verificación de seguridad CSRF fallida.");
-    }
-
-    const user = await verifySession(context, tenantId);
-    if (!user) return unauthorizedResponse();
-    if (user.role !== 'admin') return forbiddenResponse();
+    // Fix #7: Usar guard centralizado
+    const guard = await requireAdmin(context);
+    if (!guard.ok) return guard.response;
+    const { tenantId } = guard;
 
     try {
-        const id = new URL(request.url).searchParams.get("id");
+        const id = new URL(context.request.url).searchParams.get("id");
         if (!id) return jsonResponse({ error: "ID requerido." }, 400);
 
-        const orderService = new OrderService(db);
+        const orderService = new OrderService(getDB(context.env));
         const deleteRes = await orderService.deleteOrder(id, tenantId);
 
         if (!deleteRes.ok) {
@@ -320,3 +329,4 @@ export const onRequestDelete: PagesHandler<Env> = async (context) => {
         return jsonResponse({ error: "Error interno al eliminar pedido." }, 500);
     }
 };
+

@@ -1,6 +1,6 @@
 // functions/api/onboarding.ts
 // Registro de nuevos clientes (Creación de Tenant + Admin)
-import type { D1Database, D1PreparedStatement } from '@cloudflare/workers-types';
+
 import { z } from "zod";
 import { generateSalt, hashPasswordPBKDF2, generateSessionToken, buildSessionCookie } from "./_auth";
 import { strongPasswordSchema } from "./auth";
@@ -27,29 +27,6 @@ export type OnboardingInput = z.infer<typeof onboardingSchema>;
 const MAX_REGISTRATIONS_PER_HOUR = 5;
 const REGISTRATION_WINDOW_MS = 60 * 60 * 1000; // 1 hora
 
-/**
- * Asegura que la columna 'email' exista en la tabla 'users' de forma defensiva y autosanadora.
- */
-async function ensureUsersEmailColumn(db: D1Database): Promise<boolean> {
-    try {
-        const tableInfo = await db.prepare("PRAGMA table_info(users)").all<{ name: string }>();
-        const hasEmail = tableInfo?.results?.some(col => col.name === 'email');
-        if (!hasEmail) {
-            await db.prepare("ALTER TABLE users ADD COLUMN email TEXT").run();
-            try {
-                await db.prepare("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)").run();
-            } catch {}
-        }
-        return true;
-    } catch {
-        try {
-            await db.prepare("ALTER TABLE users ADD COLUMN email TEXT").run();
-            return true;
-        } catch {
-            return false;
-        }
-    }
-}
 
 export const onRequestPost: PagesHandler<Env> = async (context) => {
     const { request, env } = context;
@@ -57,8 +34,8 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
 
     const clientIp = request.headers.get("CF-Connecting-IP") || request.headers.get("x-real-ip") || "unknown";
 
-    // 1. S-03: Verificar rate limit mediante RateLimitService compartido
-    const rateLimitService = new RateLimitService(db);
+    // 1. S-03: Verificar rate limit mediante RateLimitService en KV (Fix #1)
+    const rateLimitService = new RateLimitService(env.KV);
     const rateCheck = await rateLimitService.checkRateLimit(`reg_${clientIp}`, {
         maxAttempts: MAX_REGISTRATIONS_PER_HOUR,
         windowMs: REGISTRATION_WINDOW_MS
@@ -101,13 +78,9 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
             return jsonResponse({ error: `El subdominio o dirección "${tenantSlug}" ya está en uso.` }, 400);
         }
 
-        const hasEmailCol = await ensureUsersEmailColumn(db);
-
-        const existingUser = hasEmailCol
-            ? await db.prepare('SELECT id FROM users WHERE email = ? AND tenant_id = ?')
-                .bind(cleanEmail, tenantSlug).first()
-            : await db.prepare('SELECT id FROM users WHERE username = ? AND tenant_id = ?')
-                .bind(cleanEmail, tenantSlug).first();
+        // La columna email está garantizada por la migración 0008_users_email.sql
+        const existingUser = await db.prepare('SELECT id FROM users WHERE email = ? AND tenant_id = ?')
+            .bind(cleanEmail, tenantSlug).first();
 
         if (existingUser) {
             return jsonResponse({ error: `El correo "${cleanEmail}" ya está registrado en esta tienda.` }, 400);
@@ -131,22 +104,28 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
             }
         };
 
-        const userInsertStmt = hasEmailCol
-            ? db.prepare(
-                'INSERT INTO users (username, email, password_hash, password_salt, role, tenant_id) VALUES (?, ?, ?, ?, ?, ?)'
-            ).bind(cleanEmail, cleanEmail, finalHash, salt, 'admin', tenantSlug)
-            : db.prepare(
-                'INSERT INTO users (username, password_hash, password_salt, role, tenant_id) VALUES (?, ?, ?, ?, ?)'
-            ).bind(cleanEmail, finalHash, salt, 'admin', tenantSlug);
+        const userInsertStmt = db.prepare(
+            'INSERT INTO users (username, email, password_hash, password_salt, role, tenant_id) VALUES (?, ?, ?, ?, ?, ?)'
+        ).bind(cleanEmail, cleanEmail, finalHash, salt, 'admin', tenantSlug);
 
-        const statements: D1PreparedStatement[] = [
+        // 4. Leer tasa BCV actual desde el tenant demo para inicializar el nuevo tenant (Fix #12)
+        let initialBcvRate = '0';
+        try {
+            const demoBcv = await db.prepare("SELECT value FROM settings WHERE key = 'bcv_rate' AND tenant_id = 'demo'")
+                .first<{ value: string }>();
+            if (demoBcv?.value && parseFloat(demoBcv.value) > 0) {
+                initialBcvRate = demoBcv.value;
+            }
+        } catch {}
+
+        const statements = [
             db.prepare(
                 'INSERT INTO tenants (id, name, plan, template, config_json, whatsapp, active) VALUES (?, ?, ?, ?, ?, ?, ?)'
             ).bind(tenantSlug, tenantName, 'basic', template, JSON.stringify(legalMetadata), cleanWhatsApp || null, 1),
             
             db.prepare(
-                "INSERT INTO settings (key, value, tenant_id) VALUES ('bcv_rate', '853.50', ?)"
-            ).bind(tenantSlug),
+                "INSERT INTO settings (key, value, tenant_id) VALUES ('bcv_rate', ?, ?)"
+            ).bind(initialBcvRate, tenantSlug),
 
             db.prepare(
                 "INSERT INTO settings (key, value, tenant_id) VALUES ('bcv_auto_update', '1', ?)"
@@ -161,15 +140,16 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
 
         // 5. Sembrar productos iniciales de ejemplo (OCP - configuración desacoplada)
         const starterProducts = getStarterProducts(tenantSlug, template);
+        const stmtsWithProducts = [...statements];
         for (const p of starterProducts) {
-            statements.push(
+            stmtsWithProducts.push(
                 db.prepare(
                     'INSERT INTO products (id, name, description, price, category, icon, image_url, template, stock, active, tenant_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
                 ).bind(p.id, p.name, p.description, p.price, p.category, p.icon, p.image_url, template, p.stock, 1, tenantSlug)
             );
         }
 
-        await db.batch(statements);
+        await db.batch(stmtsWithProducts);
 
         // 6. Registrar el intento exitoso en el rate limiter
         await rateLimitService.recordAttempt(`reg_${clientIp}`);
@@ -187,17 +167,21 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
                     email: cleanEmail,
                     timestamp: new Date().toISOString()
                 });
-                const webhookSecret = (env.WEBHOOK_SECRET as string) || (env.JWT_SECRET as string) || 'ventrina-webhook-secret-salt';
-                const signature = await generateWebhookSignature(webhookPayload, webhookSecret);
+                const webhookSecret = (env.WEBHOOK_SECRET as string) || (env.JWT_SECRET as string);
+                if (webhookSecret) {
+                    const signature = await generateWebhookSignature(webhookPayload, webhookSecret);
 
-                context.waitUntil?.(fetch(env.WEBHOOK_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Ventrina-Signature': `sha256=${signature}`
-                    },
-                    body: webhookPayload
-                }).catch(e => console.error("Webhook error:", e)));
+                    context.waitUntil?.(fetch(env.WEBHOOK_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Ventrina-Signature': `sha256=${signature}`
+                        },
+                        body: webhookPayload
+                    }).catch(e => console.error("Webhook error:", e)));
+                } else {
+                    console.warn('[Security] Webhook URL configurado pero sin WEBHOOK_SECRET ni JWT_SECRET disponible para firmar.');
+                }
             } catch (e) {
                 console.error("Webhook signature/dispatch error:", e);
             }
@@ -240,9 +224,8 @@ export const onRequestPost: PagesHandler<Env> = async (context) => {
         }, 201, { "Set-Cookie": cookie });
 
     } catch (err: unknown) {
-        // S-02: Eliminar exposición de detalles internos o constraints de BD
+        // S-02: No exponer detalles internos de BD ni constraints de SQLite (Fix #2)
         console.error('Error en POST /api/onboarding:', err);
-        const message = err instanceof Error ? err.message : 'Error interno al registrar el negocio.';
-        return jsonResponse({ error: message }, 500);
+        return jsonResponse({ error: 'Error interno al registrar el negocio. Por favor intenta nuevamente.' }, 500);
     }
 };
