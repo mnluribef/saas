@@ -184,7 +184,7 @@ export const onRequest = async (context: PagesContext<Env>): Promise<Response> =
         if (!contentType.includes('application/json')) {
             // CSP permisivo pero seguro: permite assets propios, CDNs conocidos y eval desactivado
             newHeaders.set('Content-Security-Policy',
-                "default-src 'self'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https:; frame-src https://challenges.cloudflare.com;"
+                "default-src 'self'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://unpkg.com https://cdn.jsdelivr.net https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://unpkg.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https:; frame-src https://challenges.cloudflare.com;"
             );
             newHeaders.set('X-Frame-Options', 'SAMEORIGIN');
             newHeaders.set('X-Content-Type-Options', 'nosniff');
