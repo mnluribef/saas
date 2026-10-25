@@ -45,3 +45,13 @@ const templates = [
     </div>
   </div>
 </div>
+
+<script>
+  // En vistas móviles/tablets con scroll horizontal, centrar la plantilla activa
+  const activePill = document.querySelector('.template-pill.active');
+  if (activePill) {
+    requestAnimationFrame(() => {
+      activePill.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'instant' });
+    });
+  }
+</script>
