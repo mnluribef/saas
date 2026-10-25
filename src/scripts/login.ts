@@ -17,14 +17,6 @@ if (host.endsWith('.ventrina.app') && host !== 'ventrina.app' && !host.startsWit
 }
 
 if (detectedTenant) {
-    const tenantInput = document.getElementById('tenant') as HTMLInputElement | null;
-    if (tenantInput) {
-        tenantInput.value = detectedTenant;
-        const tenantField = tenantInput.closest('.field');
-        if (tenantField) {
-            tenantField.classList.add('hidden');
-        }
-    }
     const storeBadge = document.querySelector('.store-badge');
     if (storeBadge) {
         storeBadge.innerHTML = `<span>Tienda activa: <strong>${detectedTenant}</strong></span>`;
@@ -39,7 +31,7 @@ form.addEventListener('submit', async (e) => {
 
     const email = (document.getElementById('email') as HTMLInputElement).value.trim();
     const password = (document.getElementById('password') as HTMLInputElement).value;
-    const tenant = (document.getElementById('tenant') as HTMLInputElement)?.value.trim() || detectedTenant || undefined;
+    const tenant = detectedTenant || undefined;
 
     try {
         const res = await fetch('/api/auth', {

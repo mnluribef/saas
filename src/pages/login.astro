@@ -1,10 +1,8 @@
 ---
 // src/pages/login.astro - Página de inicio de sesión del panel admin Ventrina
-import storeConfig from '../config/store.config';
 import '../styles/login.css';
 
 const error = Astro.url.searchParams.get('error');
-const tenantParam = Astro.url.searchParams.get('tenant') || '';
 const errorMsg: Record<string, string> = {
   expired: 'Tu sesión ha expirado. Inicia sesión de nuevo.',
   server: 'Error interno. Intenta de nuevo.',
@@ -31,9 +29,9 @@ const errorMsg: Record<string, string> = {
       <span>Vent<span>rina</span></span>
     </div>
     <p class="subtitle">Panel de Control &middot; Acceso Restringido</p>
-    <div class="store-badge">
-      <span>{tenantParam ? `Tienda: ` : `Entorno activo: `}<strong>{tenantParam || storeConfig.business.name}</strong></span>
-    </div>
+    <!-- <div class="store-badge">
+      <span>Plataforma: <strong>Ventrina SaaS</strong></span>
+    </div> -->
 
     {error && <div class="error-msg">{errorMsg[error] || 'Credenciales incorrectas. Intenta de nuevo.'}</div>}
     <div id="login-error" class="error-msg hidden"></div>
@@ -46,10 +44,6 @@ const errorMsg: Record<string, string> = {
       <div class="field">
         <label for="password">Contraseña</label>
         <input type="password" id="password" name="password" autocomplete="current-password" required placeholder="••••••••">
-      </div>
-      <div class="field">
-        <label for="tenant">Tienda o Slug (Opcional si tu correo es único)</label>
-        <input type="text" id="tenant" name="tenant" placeholder="ej: mi-tienda" value={tenantParam}>
       </div>
       <button type="submit" class="login-btn" id="login-btn">Iniciar Sesión</button>
     </form>
