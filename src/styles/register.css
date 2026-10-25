@@ -1,16 +1,19 @@
+/* Ventrina Register — Identidad: Violet × Amber */
+@import './tokens.css';
+
 :root {
-        --primary: #4f46e5;
-        --primary-hover: #4338ca;
-        --surface: #ffffff;
-        --surface-border: #e2e8f0;
-        --text: #0f172a;
-        --text-muted: #64748b;
+        --primary:       var(--color-primary);      /* #7c3aed */
+        --primary-hover: var(--color-primary-hover);
+        --surface:       var(--light-bg-card);
+        --surface-border:var(--light-border);
+        --text:          var(--light-text-heading);
+        --text-muted:    var(--light-text-muted);
     }
 
     body {
-        background-color: #f8fafc;
+        background-color: var(--light-bg);
         margin: 0;
-        font-family: 'Inter', 'Outfit', sans-serif;
+        font-family: var(--font-body);
         color: var(--text);
         overflow-x: hidden;
     }

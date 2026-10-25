@@ -1,0 +1,143 @@
+/* =====================================================
+   VENTRINA — Design System Tokens
+   Archivo: src/styles/tokens.css
+   Identidad visual unificada — Violet × Amber Premium
+   ===================================================== */
+
+/* ── Fuentes ─────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+  /* ── Marca: Violet profundo ──────────────────────── */
+  --brand-50:  #f5f3ff;
+  --brand-100: #ede9fe;
+  --brand-200: #ddd6fe;
+  --brand-300: #c4b5fd;
+  --brand-400: #a78bfa;
+  --brand-500: #8b5cf6;
+  --brand-600: #7c3aed;   /* ← primario */
+  --brand-700: #6d28d9;   /* ← hover */
+  --brand-800: #5b21b6;
+  --brand-900: #4c1d95;
+
+  /* ── Acento: Amber dorado ────────────────────────── */
+  --gold-300: #fcd34d;
+  --gold-400: #fbbf24;
+  --gold-500: #f59e0b;   /* ← acento principal */
+  --gold-600: #d97706;   /* ← hover acento */
+  --gold-700: #b45309;
+
+  /* ── Primarios semánticos ────────────────────────── */
+  --color-primary:       var(--brand-600);
+  --color-primary-hover: var(--brand-700);
+  --color-primary-light: rgba(124, 58, 237, 0.10);
+  --color-primary-glow:  rgba(124, 58, 237, 0.25);
+  --color-primary-soft:  rgba(124, 58, 237, 0.06);
+
+  --color-accent:        var(--gold-500);
+  --color-accent-hover:  var(--gold-600);
+  --color-accent-light:  rgba(245, 158, 11, 0.12);
+  --color-accent-glow:   rgba(245, 158, 11, 0.30);
+
+  /* WhatsApp (mantener) */
+  --color-wa:       #25D366;
+  --color-wa-dark:  #128C7E;
+  --color-wa-light: rgba(37, 211, 102, 0.12);
+
+  /* ── Estados ─────────────────────────────────────── */
+  --color-success:  #10b981;
+  --color-warning:  #f59e0b;
+  --color-danger:   #ef4444;
+  --color-info:     #3b82f6;
+
+  --color-success-bg: rgba(16, 185, 129, 0.08);
+  --color-warning-bg: rgba(245, 158, 11, 0.08);
+  --color-danger-bg:  rgba(239, 68, 68, 0.08);
+  --color-info-bg:    rgba(59, 130, 246, 0.08);
+
+  /* ── Gradientes de marca ─────────────────────────── */
+  --grad-primary:      linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
+  --grad-primary-soft: linear-gradient(135deg, rgba(124,58,237,0.15) 0%, rgba(91,33,182,0.08) 100%);
+  --grad-accent:       linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  --grad-violet-amber: linear-gradient(135deg, #7c3aed 0%, #a855f7 40%, #f59e0b 100%);
+  --grad-glow-violet:  radial-gradient(ellipse at 30% 0%, rgba(124,58,237,0.18) 0%, rgba(124,58,237,0.06) 45%, transparent 70%);
+  --grad-glow-amber:   radial-gradient(ellipse at 70% 100%, rgba(245,158,11,0.12) 0%, transparent 60%);
+
+  /* ── Tipografía ──────────────────────────────────── */
+  --font-heading: 'Outfit', system-ui, sans-serif;
+  --font-body:    'Inter', system-ui, sans-serif;
+
+  /* ── Radios ──────────────────────────────────────── */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-pill: 9999px;
+
+  /* ── Transiciones ────────────────────────────────── */
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out:    cubic-bezier(0, 0, 0.2, 1);
+  --transition:  all 0.3s var(--ease-smooth);
+
+
+  /* ══════════════════════════════════════════════════
+     MODO CLARO — Landing, Register, páginas públicas
+     ══════════════════════════════════════════════════ */
+
+  /* Fondos */
+  --light-bg:          #FAFAF9;
+  --light-bg-subtle:   #F5F3FF;
+  --light-bg-card:     #FFFFFF;
+  --light-bg-elevated: #F0EDFA;
+
+  /* Texto */
+  --light-text-heading: #1C1917;
+  --light-text-body:    #3D3744;
+  --light-text-muted:   #6B7280;
+  --light-text-light:   #9CA3AF;
+
+  /* Bordes */
+  --light-border:        #E4E1EF;
+  --light-border-subtle: rgba(124, 58, 237, 0.10);
+
+  /* Sombras */
+  --light-shadow-sm:    0 1px 3px rgba(124, 58, 237, 0.06);
+  --light-shadow-md:    0 4px 20px -2px rgba(124, 58, 237, 0.08), 0 2px 6px -1px rgba(28,25,23, 0.04);
+  --light-shadow-lg:    0 20px 40px -15px rgba(124, 58, 237, 0.12), 0 0 0 1px rgba(124,58,237,0.06);
+  --light-shadow-hover: 0 25px 50px -12px rgba(124, 58, 237, 0.20), 0 0 0 1px rgba(124, 58, 237, 0.25);
+
+
+  /* ══════════════════════════════════════════════════
+     MODO OSCURO — Admin, Precios, Legal, Login, Superadmin
+     ══════════════════════════════════════════════════ */
+
+  /* Fondos */
+  --dark-bg:          #09090B;
+  --dark-bg-subtle:   #111113;
+  --dark-bg-card:     rgba(20, 19, 26, 0.80);
+  --dark-bg-elevated: rgba(30, 27, 42, 0.90);
+  --dark-bg-glass:    rgba(18, 16, 28, 0.75);
+
+  /* Texto */
+  --dark-text-heading: #FAF9FF;
+  --dark-text-body:    #C4BDD8;
+  --dark-text-muted:   #8B82A5;
+  --dark-text-light:   #5C5473;
+
+  /* Bordes */
+  --dark-border:        rgba(255, 255, 255, 0.07);
+  --dark-border-subtle: rgba(124, 58, 237, 0.15);
+  --dark-border-active: rgba(124, 58, 237, 0.40);
+
+  /* Sombras */
+  --dark-shadow-sm:    0 1px 3px rgba(0, 0, 0, 0.30);
+  --dark-shadow-md:    0 4px 20px -2px rgba(0, 0, 0, 0.40);
+  --dark-shadow-lg:    0 20px 60px -15px rgba(0, 0, 0, 0.50), 0 0 0 1px rgba(255,255,255,0.04);
+  --dark-shadow-hover: 0 25px 50px -12px rgba(124, 58, 237, 0.25), 0 0 0 1px rgba(124, 58, 237, 0.30);
+
+  --dark-grad-bg:
+    radial-gradient(ellipse at 0% 0%, rgba(124, 58, 237, 0.12) 0px, transparent 50%),
+    radial-gradient(ellipse at 100% 100%, rgba(245, 158, 11, 0.07) 0px, transparent 50%);
+}

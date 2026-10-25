@@ -1,25 +1,27 @@
 /* =====================================================
    VENTRINA — Legal Pages Stylesheet
    Archivo: src/styles/legal.css
-   Estilos para Términos, Condiciones y Políticas Legales
+   Identidad: Violet × Amber — Design System Centralizado
    ===================================================== */
 
+@import './tokens.css';
+
 :root {
-    --legal-bg: #0b0f19;
-    --legal-card-bg: rgba(17, 24, 39, 0.75);
-    --legal-border: rgba(255, 255, 255, 0.08);
-    --legal-text: #e2e8f0;
-    --legal-text-muted: #94a3b8;
-    --legal-text-heading: #ffffff;
-    --legal-primary: #6366f1;
-    --legal-primary-glow: rgba(99, 102, 241, 0.2);
-    --legal-danger: #ef4444;
-    --legal-danger-bg: rgba(239, 68, 68, 0.08);
-    --legal-warning: #f59e0b;
-    --legal-warning-bg: rgba(245, 158, 11, 0.08);
-    --legal-success: #10b981;
-    --legal-success-bg: rgba(16, 185, 129, 0.08);
-    --legal-radius: 16px;
+    --legal-bg:           var(--light-bg);
+    --legal-card-bg:      var(--light-bg-card);
+    --legal-border:       var(--light-border);
+    --legal-text:         var(--light-text-body);
+    --legal-text-muted:   var(--light-text-muted);
+    --legal-text-heading: var(--light-text-heading);
+    --legal-primary:      var(--color-primary);
+    --legal-primary-glow: var(--color-primary-glow);
+    --legal-danger:       var(--color-danger);
+    --legal-danger-bg:    var(--color-danger-bg);
+    --legal-warning:      var(--color-warning);
+    --legal-warning-bg:   var(--color-warning-bg);
+    --legal-success:      var(--color-success);
+    --legal-success-bg:   var(--color-success-bg);
+    --legal-radius: var(--radius-md);
 }
 
 body.legal-body {
@@ -47,7 +49,7 @@ body.legal-body {
     transform: translateX(-50%);
     width: 1000px;
     height: 500px;
-    background: radial-gradient(ellipse at top, rgba(99, 102, 241, 0.15) 0%, rgba(16, 185, 129, 0.05) 45%, transparent 70%);
+    background: radial-gradient(ellipse at top, rgba(124, 58, 237, 0.10) 0%, rgba(245, 158, 11, 0.04) 45%, transparent 70%);
     pointer-events: none;
     z-index: 0;
 }
@@ -58,7 +60,7 @@ body.legal-body {
     z-index: 100;
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    background: rgba(11, 15, 25, 0.85);
+    background: rgba(255, 255, 255, 0.85);
     border-bottom: 1px solid var(--legal-border);
     padding: 1rem 0;
 }
@@ -93,7 +95,7 @@ body.legal-body {
     gap: 0.5rem;
     padding: 0.5rem 1rem;
     border-radius: 10px;
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--light-bg-card);
     border: 1px solid var(--legal-border);
     color: var(--legal-text);
     font-size: 0.88rem;
@@ -103,9 +105,9 @@ body.legal-body {
 }
 
 .legal-back-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #ffffff;
-    border-color: rgba(255, 255, 255, 0.2);
+    background: var(--light-bg-elevated);
+    color: var(--legal-primary);
+    border-color: var(--legal-primary);
     transform: translateX(-2px);
 }
 
@@ -130,9 +132,9 @@ body.legal-body {
     gap: 0.5rem;
     padding: 0.4rem 1rem;
     border-radius: 50px;
-    background: rgba(99, 102, 241, 0.12);
-    border: 1px solid rgba(99, 102, 241, 0.3);
-    color: #818cf8;
+    background: var(--color-primary-light);
+    border: 1px solid rgba(124, 58, 237, 0.3);
+    color: var(--color-primary);
     font-size: 0.82rem;
     font-weight: 600;
     text-transform: uppercase;
@@ -182,8 +184,8 @@ body.legal-body {
 }
 
 .legal-callout-safeharbor {
-    background: rgba(99, 102, 241, 0.08);
-    border: 1px solid rgba(99, 102, 241, 0.25);
+    background: var(--color-primary-soft);
+    border: 1px solid rgba(124, 58, 237, 0.25);
 }
 
 .legal-callout-warning {
@@ -222,14 +224,14 @@ body.legal-body {
     border: 1px solid var(--legal-border);
     border-radius: 24px;
     padding: 3rem 3.5rem;
-    box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+    box-shadow: var(--light-shadow-lg);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
 }
 
 /* Tabla de Contenidos Rápida */
 .legal-toc {
-    background: rgba(0, 0, 0, 0.25);
+    background: var(--light-bg-subtle);
     border: 1px solid var(--legal-border);
     border-radius: 14px;
     padding: 1.5rem;
@@ -258,7 +260,7 @@ body.legal-body {
 }
 
 .legal-toc-grid a {
-    color: #93c5fd;
+    color: var(--legal-primary);
     text-decoration: none;
     font-size: 0.9rem;
     transition: color 0.2s;
@@ -266,7 +268,7 @@ body.legal-body {
 }
 
 .legal-toc-grid a:hover {
-    color: #ffffff;
+    color: var(--color-primary-hover);
     text-decoration: underline;
 }
 
@@ -294,11 +296,11 @@ body.legal-body {
     font-family: monospace;
     font-size: 0.85rem;
     font-weight: 700;
-    background: rgba(255, 255, 255, 0.08);
-    color: #cbd5e1;
+    background: var(--light-bg-elevated);
+    color: var(--legal-primary);
     padding: 0.25rem 0.6rem;
     border-radius: 6px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--legal-border);
 }
 
 .legal-clause-title {
@@ -333,7 +335,7 @@ body.legal-body {
 
 /* Caja de Denuncias Notice & Takedown */
 .legal-notice-box {
-    background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(99, 102, 241, 0.08) 100%);
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.06) 0%, rgba(124, 58, 237, 0.06) 100%);
     border: 1.5px solid rgba(239, 68, 68, 0.35);
     border-radius: var(--legal-radius);
     padding: 2rem;
@@ -342,7 +344,7 @@ body.legal-body {
 }
 
 .legal-notice-box h3 {
-    color: #ffffff;
+    color: var(--legal-text-heading);
     font-size: 1.35rem;
     margin: 0 0 0.75rem;
 }
@@ -379,7 +381,7 @@ body.legal-body {
 .legal-footer {
     border-top: 1px solid var(--legal-border);
     padding: 2.5rem 0;
-    background: rgba(11, 15, 25, 0.95);
+    background: var(--light-bg-card);
     text-align: center;
     font-size: 0.88rem;
     color: var(--legal-text-muted);
@@ -399,7 +401,7 @@ body.legal-body {
 }
 
 .legal-footer-links a:hover {
-    color: #ffffff;
+    color: var(--legal-primary);
 }
 
 /* Responsive */

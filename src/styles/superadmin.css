@@ -1,19 +1,23 @@
 /* Premium SuperAdmin SaaS Styles */
+/* Identidad: Violet × Amber — Design System Centralizado */
+
+@import './tokens.css';
+
 :root {
-  --color-brand-500: #3b82f6;
-  --color-brand-600: #2563eb;
-  --color-dark-900: #050505;
-  --color-dark-800: #0a0a0a;
-  --color-dark-card: rgba(20, 20, 20, 0.6);
-  --color-text-main: #FFFFFF;
-  --color-text-muted: #A1A1AA;
-  --color-border: rgba(255, 255, 255, 0.08);
-  --color-danger: #ef4444;
-  --color-success: #10b981;
+  --color-brand-500: var(--brand-500);
+  --color-brand-600: var(--color-primary);
+  --color-dark-900:  var(--light-bg);
+  --color-dark-800:  var(--light-bg-subtle);
+  --color-dark-card: var(--light-bg-card);
+  --color-text-main: var(--light-text-heading);
+  --color-text-muted:var(--light-text-muted);
+  --color-border:    var(--light-border);
+  --color-danger:    var(--color-danger);
+  --color-success:   var(--color-success);
 }
 
 body {
-  background-color: var(--color-dark-900) !important;
+  background-color: var(--light-bg) !important;
 }
 
 .superadmin-container {
@@ -28,22 +32,21 @@ body {
 .sa-card {
     max-width: 450px;
     margin: 4rem auto;
-    background: var(--color-dark-card);
+    background: var(--light-bg-card);
     padding: 3rem 2.5rem;
     border-radius: 24px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    box-shadow: var(--light-shadow-lg);
     text-align: center;
-    border: 1px solid var(--color-border);
-    backdrop-filter: blur(20px);
+    border: 1px solid var(--light-border);
 }
 
 .sa-title {
     font-size: 2rem;
-    color: #FFFFFF;
+    color: var(--light-text-heading);
     margin-bottom: 0.5rem;
     font-weight: 800;
     letter-spacing: -0.03em;
-    font-family: 'Outfit', sans-serif;
+    font-family: var(--font-heading);
 }
 
 .sa-subtitle {
@@ -60,22 +63,22 @@ body {
 
 .sa-input {
     padding: 1rem 1.25rem;
-    background: rgba(0,0,0,0.5);
-    border: 1px solid var(--color-border);
+    background: var(--light-bg);
+    border: 1px solid var(--light-border);
     border-radius: 12px;
     font-size: 1rem;
-    color: #FFFFFF;
+    color: var(--light-text-heading);
     outline: none;
     transition: all 0.3s ease;
 }
 
 .sa-input:focus {
     border-color: var(--color-brand-500);
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    box-shadow: 0 0 0 2px var(--color-primary-light);
 }
 
 .sa-btn-primary {
-    background: linear-gradient(135deg, var(--color-brand-500) 0%, var(--color-brand-600) 100%);
+    background: var(--grad-primary);
     color: white;
     border: none;
     padding: 1.1rem;
@@ -84,20 +87,20 @@ body {
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(59,130,246,0.3);
+    box-shadow: 0 4px 15px var(--color-primary-glow);
 }
 
 .sa-btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(59,130,246,0.5);
+    box-shadow: 0 8px 25px var(--color-primary-glow);
 }
 
 .sa-error {
-    color: #fca5a5;
+    color: var(--color-danger);
     font-size: 0.95rem;
     margin-top: 1rem;
     padding: 0.75rem;
-    background: rgba(239, 68, 68, 0.1);
+    background: var(--color-danger-bg);
     border: 1px solid rgba(239, 68, 68, 0.2);
     border-radius: 8px;
 }
@@ -110,7 +113,7 @@ body {
 }
 
 .sa-btn-outline {
-    background: rgba(255,255,255,0.03);
+    background: var(--light-bg-elevated);
     color: var(--color-text-main);
     border: 1px solid var(--color-border);
     padding: 0.6rem 1.2rem;
@@ -121,8 +124,8 @@ body {
 }
 
 .sa-btn-outline:hover {
-    background: rgba(255,255,255,0.08);
-    border-color: rgba(255,255,255,0.2);
+    background: var(--light-bg-subtle);
+    border-color: var(--light-border-subtle);
 }
 
 .sa-stats-row {
@@ -133,12 +136,11 @@ body {
 }
 
 .sa-stat-card {
-    background: var(--color-dark-card);
+    background: var(--light-bg-card);
     padding: 1.5rem 2rem;
     border-radius: 16px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    border: 1px solid var(--color-border);
-    backdrop-filter: blur(10px);
+    box-shadow: var(--light-shadow-md);
+    border: 1px solid var(--light-border);
 }
 
 .sa-stat-card h3 {
@@ -153,8 +155,8 @@ body {
 .stat-number {
     font-size: 2.5rem;
     font-weight: 800;
-    color: #FFFFFF;
-    font-family: 'Outfit', sans-serif;
+    color: var(--light-text-heading);
+    font-family: var(--font-heading);
     letter-spacing: -0.02em;
 }
 
@@ -162,12 +164,11 @@ body {
 .stat-red { color: var(--color-danger); }
 
 .sa-table-container {
-    background: var(--color-dark-card);
+    background: var(--light-bg-card);
     border-radius: 16px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.4);
-    border: 1px solid var(--color-border);
+    box-shadow: var(--light-shadow-md);
+    border: 1px solid var(--light-border);
     overflow-x: auto;
-    backdrop-filter: blur(10px);
 }
 
 .sa-table {
@@ -178,20 +179,20 @@ body {
 }
 
 .sa-table th {
-    background: rgba(0,0,0,0.3);
-    color: var(--color-text-muted);
+    background: var(--light-bg-elevated);
+    color: var(--light-text-muted);
     font-size: 0.85rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     padding: 1.2rem 1.5rem;
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--light-border);
 }
 
 .sa-table td {
     padding: 1.2rem 1.5rem;
-    border-bottom: 1px solid rgba(255,255,255,0.03);
-    color: #E4E4E7;
+    border-bottom: 1px solid var(--light-border);
+    color: var(--light-text-body);
     font-size: 0.95rem;
     vertical-align: middle;
 }
@@ -201,7 +202,7 @@ body {
 }
 
 .sa-table tr:hover td {
-    background: rgba(255,255,255,0.02);
+    background: var(--light-bg-elevated);
 }
 
 .badge {
@@ -213,33 +214,33 @@ body {
     text-transform: uppercase;
 }
 
-.badge-basic { background: rgba(56, 189, 248, 0.1); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.2); }
-.badge-pro { background: rgba(250, 204, 21, 0.1); color: #facc15; border: 1px solid rgba(250, 204, 21, 0.2); }
-.badge-enterprise { background: rgba(192, 132, 252, 0.1); color: #c084fc; border: 1px solid rgba(192, 132, 252, 0.2); }
+.badge-basic { background: rgba(56, 189, 248, 0.12); color: #0284c7; border: 1px solid rgba(56, 189, 248, 0.3); }
+.badge-pro { background: var(--color-warning-bg); color: #b45309; border: 1px solid rgba(245, 158, 11, 0.35); }
+.badge-enterprise { background: var(--brand-100); color: var(--brand-700); border: 1px solid var(--brand-300); }
 
-.badge-active { background: rgba(52, 211, 153, 0.1); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.2); }
-.badge-suspended { background: rgba(248, 113, 113, 0.1); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.2); }
+.badge-active { background: var(--color-success-bg); color: #059669; border: 1px solid rgba(16, 185, 129, 0.3); }
+.badge-suspended { background: var(--color-danger-bg); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.3); }
 
 .action-select {
     padding: 0.5rem;
     border-radius: 8px;
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--light-border);
     font-size: 0.85rem;
-    color: #FFFFFF;
+    color: var(--light-text-heading);
     outline: none;
-    background: rgba(0,0,0,0.5);
+    background: var(--light-bg);
     cursor: pointer;
 }
 
 .action-select option {
-    background: var(--color-dark-900);
-    color: #FFFFFF;
+    background: var(--light-bg-card);
+    color: var(--light-text-heading);
 }
 
 .btn-suspend {
-    background: rgba(239, 68, 68, 0.1);
+    background: var(--color-danger-bg);
     border: 1px solid rgba(239, 68, 68, 0.3);
-    color: #f87171;
+    color: #dc2626;
     padding: 0.4rem 0.8rem;
     border-radius: 8px;
     font-size: 0.8rem;
@@ -250,17 +251,17 @@ body {
 }
 
 .btn-suspend.activate {
-    background: rgba(16, 185, 129, 0.1);
+    background: var(--color-success-bg);
     border-color: rgba(16, 185, 129, 0.3);
-    color: #34d399;
+    color: #059669;
 }
 
 .btn-suspend:hover {
-    background: rgba(239, 68, 68, 0.2);
+    background: rgba(239, 68, 68, 0.18);
 }
 
 .btn-suspend.activate:hover {
-    background: rgba(16, 185, 129, 0.2);
+    background: rgba(16, 185, 129, 0.18);
 }
 
 .hidden { display: none !important; }
@@ -276,16 +277,16 @@ body {
     font-size: 0.8rem;
     font-weight: 600;
     color: var(--color-text-main);
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--light-bg-elevated);
     padding: 0.25rem 0.6rem;
     border-radius: 6px;
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--light-border);
 }
 
 .sa-usage-badge.limit-warning {
-    background: rgba(239, 68, 68, 0.15);
+    background: var(--color-danger-bg);
     border-color: rgba(239, 68, 68, 0.35);
-    color: #fca5a5;
+    color: #dc2626;
 }
 
 .sa-usage-sub {

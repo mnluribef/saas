@@ -2,6 +2,7 @@
 // Header.astro - Navegación principal configurable
 import type { StoreConfig } from '../../types/store.types';
 import defaultStoreConfig from '../../config/store.config';
+import '../../styles/navbar.css';
 
 export interface Props {
   config?: StoreConfig;
@@ -12,12 +13,13 @@ const { business, nav } = config;
 
 // Separar enlaces de contenido y enlaces de acción (login / registro)
 const isSaas = business.logoTextPrimary === 'VENTRINA' || business.name === 'Ventrina';
+const currentPath = Astro.url.pathname;
 const mainLinks = nav.links.filter(l => l.href !== '/login' && l.href !== '/register');
 const loginLink = nav.links.find(l => l.href === '/login') || (isSaas ? { label: 'Iniciar Sesión', href: '/login' } : null);
 const ctaLink = nav.links.find(l => l.href === '/register') || (isSaas ? { label: 'Crear Tienda', href: '/register' } : null);
 ---
 
-<header class="glass-nav">
+<header class={`glass-nav ${isSaas ? 'saas-nav' : ''}`}>
     <div class="container">
         <nav>
             <a href="/" class="logo">
@@ -71,11 +73,14 @@ const ctaLink = nav.links.find(l => l.href === '/register') || (isSaas ? { label
             </a>
 
             <ul class="nav-links">
-                {mainLinks.map((link) => (
-                    <li>
-                        <a href={link.href}>{link.label}</a>
-                    </li>
-                ))}
+                {mainLinks.map((link) => {
+                    const isActive = currentPath === link.href || (link.href !== '/' && currentPath.startsWith(link.href));
+                    return (
+                        <li>
+                            <a href={link.href} class={isActive ? 'active' : ''}>{link.label}</a>
+                        </li>
+                    );
+                })}
                 {loginLink && (
                     <li class="mobile-only-action">
                         <a href={loginLink.href} class="mobile-login-link">{loginLink.label}</a>
@@ -154,21 +159,32 @@ const ctaLink = nav.links.find(l => l.href === '/register') || (isSaas ? { label
         );
     }
 
-    // Smooth scroll
+    // Smooth scroll para anclas y navegación
     document
-        .querySelectorAll<HTMLAnchorElement>('a[href^="#"]')
+        .querySelectorAll<HTMLAnchorElement>('.nav-links a, a[href^="#"]')
         .forEach((anchor) => {
             anchor.addEventListener("click", (e) => {
-                const targetId = anchor.getAttribute("href");
-                if (targetId && targetId !== '#') {
-                    e.preventDefault();
-                    const target = document.querySelector(targetId);
+                const href = anchor.getAttribute("href");
+                if (!href) return;
+
+                if (href.startsWith("#") && href.length > 1) {
+                    const target = document.querySelector<HTMLElement>(href);
                     if (target) {
+                        e.preventDefault();
+                        const navHeight = header ? header.offsetHeight : 80;
+                        const targetPosition = target.getBoundingClientRect().top + window.scrollY - navHeight;
                         window.scrollTo({
-                            top: (target as HTMLElement).offsetTop - 80,
+                            top: Math.max(0, targetPosition),
                             behavior: "smooth",
                         });
+                        history.pushState(null, '', href);
                     }
+                } else if (href === window.location.pathname) {
+                    e.preventDefault();
+                    window.scrollTo({
+                        top: 0,
+                        behavior: "smooth",
+                    });
                 }
             });
         });

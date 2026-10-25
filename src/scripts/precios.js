@@ -1,5 +1,5 @@
-// Intersection Observer for reveal animations
-document.addEventListener("DOMContentLoaded", () => {
+// Intersection Observer for reveal animations on /precios
+function initPreciosReveals() {
     const reveals = document.querySelectorAll(".reveal");
 
     const revealObserver = new IntersectionObserver(
@@ -11,10 +11,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             });
         },
-        { rootMargin: "0px 0px -50px 0px" }
+        { rootMargin: "0px 0px -40px 0px" }
     );
 
     if (reveals.length > 0) {
         reveals.forEach((reveal) => revealObserver.observe(reveal));
     }
-});
+}
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initPreciosReveals);
+} else {
+    initPreciosReveals();
+}
