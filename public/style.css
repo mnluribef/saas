@@ -862,10 +862,6 @@ section { padding: 5rem 0; }
 /* ===================== RESPONSIVE ===================== */
 @media (max-width: 992px) {
     .benefits-grid { grid-template-columns: 1fr; }
-    .footer-content { grid-template-columns: 1fr; gap: 2.5rem; text-align: center; }
-    .footer-logo { justify-content: center; }
-    .footer-social { justify-content: center; }
-    .footer-info > p { max-width: 100%; }
     .hero-content h1 { font-size: clamp(2.8rem, 7vw, 4.5rem); }
     .stats-grid { grid-template-columns: 1fr; }
     .stat-item:not(:last-child)::after { display: none; }
@@ -935,7 +931,6 @@ section { padding: 5rem 0; }
     .hero-buttons { flex-direction: column; }
     .cta-btn, .btn-secondary { width: 100%; text-align: center; justify-content: center; }
     .cart-drawer { width: 96%; max-height: 94vh; }
-    .footer-bottom { flex-direction: column; text-align: center; }
     .stats-grid { grid-template-columns: 1fr; }
 }
 
