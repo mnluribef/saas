@@ -7,10 +7,11 @@ import '../../styles/superadmin.css';
     <div class="superadmin-container">
         <!-- Login Step -->
         <div id="sa-login-step" class="sa-card">
-            <h2 class="sa-title">Acceso Restringido</h2>
-            <p class="sa-subtitle">Solo para fundadores y administradores maestros de Ventrina.</p>
+            <div class="sa-badge-brand">Ventrina HQ</div>
+            <h2 class="sa-title">Acceso Maestro</h2>
+            <p class="sa-subtitle">Control de operaciones, métricas globales y soporte de tiendas.</p>
             <div class="sa-form">
-                <input type="password" id="sa-password" placeholder="Contraseña Maestra..." class="sa-input">
+                <input type="password" id="sa-password" placeholder="Ingresa la Contraseña Maestra..." class="sa-input" autocomplete="current-password">
                 <button id="sa-login-btn" class="sa-btn-primary">Ingresar al Backoffice</button>
             </div>
             <p id="sa-error" class="sa-error hidden"></p>
@@ -20,49 +21,190 @@ import '../../styles/superadmin.css';
         <div id="sa-dashboard-step" class="hidden">
             <div class="sa-header">
                 <div>
-                    <h2 class="sa-title">Backoffice de Operaciones</h2>
-                    <p class="sa-subtitle">Gestiona clientes, pagos y suspensiones.</p>
+                    <div class="sa-badge-brand">Backoffice Central</div>
+                    <h1 class="sa-title">Consola de Operaciones SaaS</h1>
+                    <p class="sa-subtitle">Supervisión en tiempo real de clientes, métricas, facturación y soporte.</p>
                 </div>
-                <button id="sa-logout-btn" class="sa-btn-outline">Cerrar Sesión</button>
+                <div class="sa-header-actions">
+                    <button id="sa-cleanup-btn" class="sa-btn-outline" title="Purgar sesiones inactivas y limpiar caché">
+                        <span class="btn-icon">🧹</span> Mantenimiento
+                    </button>
+                    <button id="sa-refresh-btn" class="sa-btn-outline" title="Refrescar datos del sistema">
+                        <span class="btn-icon">🔄</span> Refrescar
+                    </button>
+                    <button id="sa-logout-btn" class="sa-btn-outline sa-btn-logout">
+                        <span class="btn-icon">🚪</span> Salir
+                    </button>
+                </div>
             </div>
 
+            <!-- Executive KPI Row -->
             <div class="sa-stats-row">
                 <div class="sa-stat-card">
-                    <h3>Total Tiendas</h3>
+                    <div class="stat-header">
+                        <h3>Tiendas Totales</h3>
+                        <span class="stat-pill stat-pill-blue" id="stat-active-ratio">0 activas</span>
+                    </div>
                     <p id="stat-total" class="stat-number">0</p>
+                    <div class="stat-footer">
+                        <span class="stat-sub-green" id="stat-active">0 activas</span> · <span class="stat-sub-red" id="stat-suspended">0 suspendidas</span>
+                    </div>
                 </div>
+
                 <div class="sa-stat-card">
-                    <h3>Activas</h3>
-                    <p id="stat-active" class="stat-number stat-green">0</p>
+                    <div class="stat-header">
+                        <h3>MRR Estimado</h3>
+                        <span class="stat-pill stat-pill-green">Recurrente</span>
+                    </div>
+                    <p id="stat-mrr" class="stat-number stat-purple">$0</p>
+                    <div class="stat-footer">
+                        <span>Ingresos mensuales proyectados por suscripciones</span>
+                    </div>
                 </div>
+
                 <div class="sa-stat-card">
-                    <h3>Suspendidas</h3>
-                    <p id="stat-suspended" class="stat-number stat-red">0</p>
+                    <div class="stat-header">
+                        <h3>GMV Mensual (Plataforma)</h3>
+                        <span class="stat-pill stat-pill-amber">Mes actual</span>
+                    </div>
+                    <p id="stat-gmv" class="stat-number stat-green">$0.00</p>
+                    <div class="stat-footer">
+                        <span>Total transaccionado en catálogo este mes</span>
+                    </div>
+                </div>
+
+                <div class="sa-stat-card">
+                    <div class="stat-header">
+                        <h3>Pedidos del Mes</h3>
+                        <span class="stat-pill stat-pill-purple">Órdenes</span>
+                    </div>
+                    <p id="stat-orders" class="stat-number">0</p>
+                    <div class="stat-footer">
+                        <span>Volumen total de pedidos completados</span>
+                    </div>
                 </div>
             </div>
 
+            <!-- Templates Breakdown Pills -->
+            <div class="sa-templates-bar">
+                <span class="sa-filter-label">Distribución de Plantillas:</span>
+                <div id="sa-template-chips" class="sa-chips-container">
+                    <!-- Dinámico: chips de restaurante, ferretería, moda, etc. -->
+                </div>
+            </div>
+
+            <!-- Search, Filter & Actions Toolbar -->
+            <div class="sa-toolbar">
+                <div class="sa-search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="sa-search-input" placeholder="Buscar por subdominio, negocio, WhatsApp o email..." class="sa-search-input">
+                    <button id="sa-search-clear" class="sa-search-clear hidden" title="Limpiar búsqueda">✕</button>
+                </div>
+
+                <div class="sa-filters-group">
+                    <select id="sa-filter-status" class="sa-select">
+                        <option value="all">Todos los estados</option>
+                        <option value="active">Solo Activos</option>
+                        <option value="suspended">Solo Suspendidos</option>
+                    </select>
+
+                    <select id="sa-filter-plan" class="sa-select">
+                        <option value="all">Todos los planes</option>
+                        <option value="basic">Plan Básico ($15)</option>
+                        <option value="pro">Plan PRO ($30)</option>
+                        <option value="enterprise">Plan Enterprise ($99)</option>
+                    </select>
+
+                    <select id="sa-filter-billing" class="sa-select">
+                        <option value="all">Toda la facturación</option>
+                        <option value="active">Al día</option>
+                        <option value="warning">Por vencer (&le; 5 días)</option>
+                        <option value="overdue">Vencidos</option>
+                    </select>
+
+                    <button id="sa-export-csv-btn" class="sa-btn-secondary" title="Descargar reporte en formato CSV compatible con Excel">
+                        <span class="btn-icon">📥</span> Exportar CSV
+                    </button>
+                </div>
+            </div>
+
+            <div class="sa-meta-row">
+                <span id="sa-visible-count" class="sa-visible-counter">Cargando tiendas...</span>
+            </div>
+
+            <!-- Main Stores Table -->
             <div class="sa-table-container">
                 <table class="sa-table">
                     <thead>
                         <tr>
-                            <th>Subdominio</th>
-                            <th>Negocio</th>
-                            <th>Plan</th>
-                            <th>Uso & Catálogo</th>
+                            <th>Tienda & Subdominio</th>
+                            <th>Negocio & Dueño</th>
+                            <th>Plantilla</th>
+                            <th>Plan & Catálogo</th>
+                            <th>Facturación & Vencimiento</th>
+                            <th>Rendimiento Mes</th>
                             <th>Estado</th>
-                            <th>Registro</th>
-                            <th>Acciones</th>
+                            <th class="sa-table-right">Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="sa-tenants-list">
-                        <tr><td colspan="7" class="sa-table-center">Cargando clientes...</td></tr>
+                        <tr><td colspan="8" class="sa-table-center">Cargando clientes...</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
+
+        <!-- Modal: Facturación y Expiración -->
+        <div id="sa-billing-modal" class="sa-modal-overlay hidden" role="dialog" aria-modal="true">
+            <div class="sa-modal-card">
+                <div class="sa-modal-header">
+                    <div>
+                        <h3 class="sa-modal-title">Gestión de Facturación</h3>
+                        <p id="modal-tenant-name" class="sa-modal-subtitle">Tienda</p>
+                    </div>
+                    <button id="sa-modal-close" class="sa-modal-close-btn" aria-label="Cerrar modal">✕</button>
+                </div>
+
+                <div class="sa-modal-body">
+                    <input type="hidden" id="modal-tenant-id">
+                    
+                    <div class="sa-form-group">
+                        <label for="modal-expires-date" class="sa-label">Fecha de Vencimiento del Plan:</label>
+                        <div class="sa-input-row">
+                            <input type="date" id="modal-expires-date" class="sa-input">
+                            <button type="button" id="modal-btn-plus30" class="sa-btn-inline">+30 Días</button>
+                            <button type="button" id="modal-btn-plus365" class="sa-btn-inline">+1 Año</button>
+                        </div>
+                    </div>
+
+                    <div class="sa-form-group">
+                        <label for="modal-payment-status" class="sa-label">Estado de Cobro:</label>
+                        <select id="modal-payment-status" class="sa-select sa-select-full">
+                            <option value="active">Al día / Pagado</option>
+                            <option value="pending">Pendiente de pago</option>
+                            <option value="overdue">Vencido / En mora</option>
+                        </select>
+                    </div>
+
+                    <div class="sa-form-group">
+                        <label for="modal-billing-notes" class="sa-label">Notas Internas de Pago / Referencia:</label>
+                        <textarea id="modal-billing-notes" class="sa-textarea" rows="3" placeholder="Ej: Pagó $30 vía Binance Tx #94821 el 25/10. Próxima cuota en 30 días."></textarea>
+                    </div>
+                </div>
+
+                <div class="sa-modal-footer">
+                    <button type="button" id="modal-btn-cancel" class="sa-btn-outline">Cancelar</button>
+                    <button type="button" id="modal-btn-save" class="sa-btn-primary">Guardar Facturación</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Notification Alert -->
+        <div id="sa-toast" class="sa-toast hidden" role="status" aria-live="polite">
+            <span id="sa-toast-icon" class="sa-toast-icon">ℹ️</span>
+            <span id="sa-toast-msg" class="sa-toast-msg">Mensaje</span>
+        </div>
     </div>
 </Layout>
-
-
 
 <script src="../../scripts/superadmin.ts"></script>
