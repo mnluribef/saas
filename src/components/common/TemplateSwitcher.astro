@@ -11,18 +11,21 @@ export interface Props {
 const { activeTemplate } = Astro.props;
 
 const templates = [
-  { id: 'restaurant', name: 'Restaurante', icon: '🍽️', url: '/demo/restaurant', brand: 'FOGÓN' },
-  { id: 'hardware', name: 'Ferretería', icon: '🔨', url: '/demo/hardware', brand: 'FERROMAX' },
-  { id: 'fashion', name: 'Moda & Ropa', icon: '👗', url: '/demo/fashion', brand: 'AURA' },
-  { id: 'tech', name: 'Tecnología', icon: '⚡', url: '/demo/tech', brand: 'NEXUS' },
-  { id: 'autoparts', name: 'Repuestos', icon: '🚗', url: '/demo/autoparts', brand: 'MOTOPARTS' },
-  { id: 'grocery', name: 'Bodegón', icon: '🛒', url: '/demo/grocery', brand: 'BODEGÓN' },
+  { id: 'restaurant', name: 'Restaurante', icon: '🍽️', url: '/demo/restaurant', brand: 'FOGÓN', desc: 'Gastronomía y Delivery' },
+  { id: 'hardware', name: 'Ferretería', icon: '🔨', url: '/demo/hardware', brand: 'FERROMAX', desc: 'Ferretería y Herramientas' },
+  { id: 'fashion', name: 'Moda & Ropa', icon: '👗', url: '/demo/fashion', brand: 'AURA', desc: 'Boutique y Colecciones' },
+  { id: 'tech', name: 'Tecnología', icon: '⚡', url: '/demo/tech', brand: 'NEXUS', desc: 'Gadgets y Electrónica' },
+  { id: 'autoparts', name: 'Repuestos', icon: '🚗', url: '/demo/autoparts', brand: 'MOTOPARTS', desc: 'Repuestos y Accesorios' },
+  { id: 'grocery', name: 'Bodegón', icon: '🛒', url: '/demo/grocery', brand: 'BODEGÓN', desc: 'Víveres y Delicatessen' },
 ];
+
+const currentTemplate = templates.find((t) => t.id === activeTemplate) || templates[0];
 ---
 
 <div class="ventrina-template-bar template-switcher" id="ventrina-template-bar">
-  <div class="template-bar-inner">
-    <a href="/" class="template-bar-brand">
+  <!-- 1. Barra Flotante para Escritorio (Desktop) -->
+  <div class="template-bar-desktop">
+    <a href="/" class="template-bar-brand" title="Volver a Ventrina SaaS">
       <span class="pulse-dot"></span>
       <span class="brand-title">Ventrina SaaS</span>
     </a>
@@ -44,14 +47,99 @@ const templates = [
       })}
     </div>
   </div>
+
+  <!-- 2. Botón Flotante Discreto en Móvil (Bottom-Left, libre de carrito y WhatsApp) -->
+  <button
+    type="button"
+    class="template-mobile-trigger"
+    id="template-mobile-trigger"
+    aria-label="Abrir selector de plantillas demo"
+    aria-expanded="false"
+  >
+    <span class="mobile-trigger-icon">{currentTemplate.icon}</span>
+    <span class="mobile-trigger-label">{currentTemplate.name}</span>
+    <svg class="mobile-trigger-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="18 15 12 9 6 15"></polyline>
+    </svg>
+  </button>
+
+  <!-- 3. Bottom Sheet Modal para Móvil -->
+  <div class="template-sheet-overlay" id="template-sheet-overlay" aria-hidden="true"></div>
+  <div class="template-sheet-drawer" id="template-sheet-drawer" role="dialog" aria-modal="true" aria-labelledby="template-sheet-title">
+    <div class="template-sheet-handle"></div>
+    
+    <div class="template-sheet-header">
+      <div>
+        <div class="template-sheet-tag">Demo Ventrina SaaS</div>
+        <h3 class="template-sheet-title" id="template-sheet-title">Cambiar Plantilla</h3>
+      </div>
+      <button type="button" class="template-sheet-close" id="template-sheet-close" aria-label="Cerrar selector">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <div class="template-sheet-grid">
+      {templates.map((t) => {
+        const isActive = activeTemplate === t.id;
+        return (
+          <a
+            href={t.url}
+            class={`template-sheet-card ${isActive ? 'active' : ''}`}
+          >
+            <div class="sheet-card-top">
+              <span class="sheet-card-icon">{t.icon}</span>
+              {isActive && <span class="sheet-card-badge">Activo</span>}
+            </div>
+            <div class="sheet-card-body">
+              <span class="sheet-card-name">{t.name}</span>
+              <span class="sheet-card-brand">{t.brand} · {t.desc}</span>
+            </div>
+          </a>
+        );
+      })}
+    </div>
+  </div>
 </div>
 
 <script>
-  // En vistas móviles/tablets con scroll horizontal, centrar la plantilla activa
-  const activePill = document.querySelector('.template-pill.active');
-  if (activePill) {
-    requestAnimationFrame(() => {
-      activePill.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'instant' });
-    });
+  // Control de apertura y cierre del Bottom Sheet en móvil
+  const trigger = document.getElementById('template-mobile-trigger');
+  const overlay = document.getElementById('template-sheet-overlay');
+  const drawer = document.getElementById('template-sheet-drawer');
+  const closeBtn = document.getElementById('template-sheet-close');
+
+  function openSheet() {
+    overlay?.classList.add('is-open');
+    drawer?.classList.add('is-open');
+    trigger?.setAttribute('aria-expanded', 'true');
+    document.body.classList.add('template-sheet-lock');
   }
+
+  function closeSheet() {
+    overlay?.classList.remove('is-open');
+    drawer?.classList.remove('is-open');
+    trigger?.setAttribute('aria-expanded', 'false');
+    document.body.classList.remove('template-sheet-lock');
+  }
+
+  trigger?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (drawer?.classList.contains('is-open')) {
+      closeSheet();
+    } else {
+      openSheet();
+    }
+  });
+
+  closeBtn?.addEventListener('click', closeSheet);
+  overlay?.addEventListener('click', closeSheet);
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && drawer?.classList.contains('is-open')) {
+      closeSheet();
+    }
+  });
 </script>
