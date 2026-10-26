@@ -1,5 +1,6 @@
 // src/scripts/landing.ts
 // Lógica de interacción para la Landing Page de Ventrina (FAQ accordion, smooth scroll, etc.)
+import { BcvCurrencyService, formatBsCurrency } from './services/bcv.service';
 
 document.addEventListener('DOMContentLoaded', () => {
     // 1. FAQ Accordion Interactivo
@@ -33,5 +34,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 navbar.classList.remove('scrolled');
             }
         }, { passive: true });
+    }
+
+    // 3. Sincronización en vivo de la Tasa Oficial BCV para mockups interactivos
+    const heroWaTotal = document.getElementById('hero-wa-total');
+    const dashBcvRate = document.getElementById('dash-bcv-rate');
+
+    if (heroWaTotal || dashBcvRate) {
+        const currencyService = new BcvCurrencyService();
+
+        const updateLandingRates = (rate: number) => {
+            if (rate <= 0) return;
+            if (heroWaTotal) {
+                const totalBs = 45.00 * rate;
+                heroWaTotal.textContent = `Total: $45.00 ≈ Bs. ${formatBsCurrency(totalBs)}`;
+            }
+            if (dashBcvRate) {
+                dashBcvRate.textContent = `${formatBsCurrency(rate)} Bs`;
+            }
+        };
+
+        currencyService.onRateChange(updateLandingRates);
+        currencyService.fetchRate().then(rate => {
+            updateLandingRates(rate);
+        }).catch(() => {
+            // Preservar valores pre-renderizados
+        });
     }
 });

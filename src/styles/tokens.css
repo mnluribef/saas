@@ -1,124 +1,126 @@
 /* =====================================================
    VENTRINA — Design System Tokens
    Archivo: src/styles/tokens.css
-   Identidad visual unificada — Violet × Amber Premium
+   Identidad visual artesanal — Ventrina Atelier
+   Royal Iris × Burnished Bronze × Warm Alabaster
    ===================================================== */
 
 /* ── Fuentes ─────────────────────────────────────── */
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root {
-  /* ── Marca: Violet profundo ──────────────────────── */
-  --brand-50:  #f5f3ff;
-  --brand-100: #ede9fe;
-  --brand-200: #ddd6fe;
-  --brand-300: #c4b5fd;
-  --brand-400: #a78bfa;
-  --brand-500: #8b5cf6;
-  --brand-600: #7c3aed;   /* ← primario */
-  --brand-700: #6d28d9;   /* ← hover */
-  --brand-800: #5b21b6;
-  --brand-900: #4c1d95;
+  /* ── Marca: Royal Iris & Midnight Indigo ──────────── */
+  --brand-50:  #f6f6fc;
+  --brand-100: #ededf9;
+  --brand-200: #dddcf4;
+  --brand-300: #c2c0ec;
+  --brand-400: #9d99e0;
+  --brand-500: #756ed2;
+  --brand-600: #5850c8;   /* ← primario iris */
+  --brand-700: #463ea7;   /* ← hover / active */
+  --brand-800: #393385;   /* ← dark accent */
+  --brand-900: #1e1b4b;   /* ← obsidian iris */
 
-  /* ── Acento: Amber dorado ────────────────────────── */
-  --gold-300: #fcd34d;
+  /* ── Acento: Burnished Bronze / Warm Amber ────────── */
+  --gold-300: #fde68a;
   --gold-400: #fbbf24;
-  --gold-500: #f59e0b;   /* ← acento principal */
-  --gold-600: #d97706;   /* ← hover acento */
-  --gold-700: #b45309;
+  --gold-500: #d97706;   /* ← acento artesanal cálido */
+  --gold-600: #b45309;   /* ← ámbar profundo */
+  --gold-700: #92400e;
 
   /* ── Primarios semánticos ────────────────────────── */
   --color-primary:       var(--brand-600);
   --color-primary-hover: var(--brand-700);
-  --color-primary-light: rgba(124, 58, 237, 0.10);
-  --color-primary-glow:  rgba(124, 58, 237, 0.25);
-  --color-primary-soft:  rgba(124, 58, 237, 0.06);
+  --color-primary-light: rgba(88, 80, 200, 0.08);
+  --color-primary-glow:  rgba(88, 80, 200, 0.22);
+  --color-primary-soft:  rgba(88, 80, 200, 0.04);
 
   --color-accent:        var(--gold-500);
   --color-accent-hover:  var(--gold-600);
-  --color-accent-light:  rgba(245, 158, 11, 0.12);
-  --color-accent-glow:   rgba(245, 158, 11, 0.30);
+  --color-accent-light:  rgba(217, 119, 6, 0.08);
+  --color-accent-glow:   rgba(217, 119, 6, 0.25);
 
-  /* WhatsApp (mantener) */
-  --color-wa:       #25D366;
-  --color-wa-dark:  #128C7E;
-  --color-wa-light: rgba(37, 211, 102, 0.12);
+  /* ── WhatsApp Boutique (Esmeralda Orgánico) ───────── */
+  --color-wa:       #059669;
+  --color-wa-dark:  #047857;
+  --color-wa-light: rgba(5, 150, 105, 0.08);
+  --color-wa-bubble: #F0FDF4;
 
-  /* ── Estados ─────────────────────────────────────── */
-  --color-success:  #10b981;
-  --color-warning:  #f59e0b;
-  --color-danger:   #ef4444;
-  --color-info:     #3b82f6;
+  /* ── Estados Semánticos ───────────────────────────── */
+  --color-success:  #059669;
+  --color-warning:  #d97706;
+  --color-danger:   #e11d48;
+  --color-info:     #0284c7;
 
-  --color-success-bg: rgba(16, 185, 129, 0.08);
-  --color-warning-bg: rgba(245, 158, 11, 0.08);
-  --color-danger-bg:  rgba(239, 68, 68, 0.08);
-  --color-info-bg:    rgba(59, 130, 246, 0.08);
+  --color-success-bg: rgba(5, 150, 105, 0.06);
+  --color-warning-bg: rgba(217, 119, 6, 0.06);
+  --color-danger-bg:  rgba(225, 29, 72, 0.06);
+  --color-info-bg:    rgba(2, 132, 199, 0.06);
 
-  /* ── Gradientes de marca ─────────────────────────── */
-  --grad-primary:      linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
-  --grad-primary-soft: linear-gradient(135deg, rgba(124,58,237,0.15) 0%, rgba(91,33,182,0.08) 100%);
-  --grad-accent:       linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-  --grad-violet-amber: linear-gradient(135deg, #7c3aed 0%, #a855f7 40%, #f59e0b 100%);
-  --grad-glow-violet:  radial-gradient(ellipse at 30% 0%, rgba(124,58,237,0.18) 0%, rgba(124,58,237,0.06) 45%, transparent 70%);
-  --grad-glow-amber:   radial-gradient(ellipse at 70% 100%, rgba(245,158,11,0.12) 0%, transparent 60%);
+  /* ── Gradientes de Autor ─────────────────────────── */
+  --grad-primary:      linear-gradient(180deg, #5850c8 0%, #463ea7 100%);
+  --grad-primary-soft: linear-gradient(135deg, rgba(88, 80, 200, 0.10) 0%, rgba(57, 51, 133, 0.05) 100%);
+  --grad-accent:       linear-gradient(180deg, #d97706 0%, #b45309 100%);
+  --grad-iris-bronze:  linear-gradient(135deg, #121118 0%, #393385 60%, #d97706 100%);
+  --grad-glow-iris:    radial-gradient(ellipse at 50% 0%, rgba(88, 80, 200, 0.12) 0%, rgba(88, 80, 200, 0.03) 50%, transparent 70%);
+  --grad-glow-amber:   radial-gradient(ellipse at 70% 100%, rgba(217, 119, 6, 0.08) 0%, transparent 60%);
 
   /* ── Tipografía ──────────────────────────────────── */
-  --font-heading: 'Outfit', system-ui, sans-serif;
-  --font-body:    'Inter', system-ui, sans-serif;
+  --font-heading: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body:    'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 
   /* ── Radios ──────────────────────────────────────── */
   --radius-xs: 6px;
   --radius-sm: 10px;
-  --radius-md: 16px;
-  --radius-lg: 20px;
-  --radius-xl: 28px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
   --radius-pill: 9999px;
 
-  /* ── Transiciones ────────────────────────────────── */
-  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  /* ── Transiciones de Alta Precisión ──────────────── */
+  --ease-smooth: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-out:    cubic-bezier(0, 0, 0.2, 1);
-  --transition:  all 0.3s var(--ease-smooth);
+  --transition:  all 0.25s var(--ease-smooth);
 
 
   /* ══════════════════════════════════════════════════
-     MODO CLARO — Landing, Register, páginas públicas
+     MODO CLARO — Atelier Linen & Alabaster
      ══════════════════════════════════════════════════ */
 
-  /* Fondos */
-  --light-bg:          #FAFAF9;
-  --light-bg-subtle:   #F5F3FF;
+  /* Fondos continuos de textura y luz natural */
+  --light-bg:          #FAFAF8;
+  --light-bg-subtle:   #F5F4F0;
   --light-bg-card:     #FFFFFF;
-  --light-bg-elevated: #F0EDFA;
+  --light-bg-elevated: #F7F6F3;
 
   /* Texto */
-  --light-text-heading: #1C1917;
-  --light-text-body:    #3D3744;
-  --light-text-muted:   #6B7280;
-  --light-text-light:   #9CA3AF;
+  --light-text-heading: #121118;
+  --light-text-body:    #3C3946;
+  --light-text-muted:   #686475;
+  --light-text-light:   #9692A3;
 
-  /* Bordes */
-  --light-border:        #E4E1EF;
-  --light-border-subtle: rgba(124, 58, 237, 0.10);
+  /* Bordes Hairline */
+  --light-border:        rgba(28, 25, 23, 0.08);
+  --light-border-subtle: rgba(88, 80, 200, 0.08);
 
-  /* Sombras */
-  --light-shadow-sm:    0 1px 3px rgba(124, 58, 237, 0.06);
-  --light-shadow-md:    0 4px 20px -2px rgba(124, 58, 237, 0.08), 0 2px 6px -1px rgba(28,25,23, 0.04);
-  --light-shadow-lg:    0 20px 40px -15px rgba(124, 58, 237, 0.12), 0 0 0 1px rgba(124,58,237,0.06);
-  --light-shadow-hover: 0 25px 50px -12px rgba(124, 58, 237, 0.20), 0 0 0 1px rgba(124, 58, 237, 0.25);
+  /* Sombras Táctiles con Bisel de Luz Interior */
+  --light-shadow-sm:    0 1px 2px rgba(28, 25, 23, 0.04), 0 0 0 1px rgba(28, 25, 23, 0.04);
+  --light-shadow-md:    0 4px 16px -2px rgba(28, 25, 23, 0.06), 0 1px 3px rgba(28, 25, 23, 0.03), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  --light-shadow-lg:    0 20px 40px -12px rgba(28, 25, 23, 0.08), 0 2px 6px -1px rgba(28, 25, 23, 0.03), inset 0 1px 0 #FFFFFF;
+  --light-shadow-hover: 0 24px 48px -12px rgba(88, 80, 200, 0.16), 0 2px 8px -2px rgba(28, 25, 23, 0.04), inset 0 1px 0 #FFFFFF;
 
 
   /* ══════════════════════════════════════════════════
-     MODO OSCURO — Admin, Precios, Legal, Login, Superadmin
+     MODO OSCURO — Obsidian & Deep Slate
      ══════════════════════════════════════════════════ */
 
   /* Fondos */
-  --dark-bg:          #09090B;
-  --dark-bg-subtle:   #111113;
-  --dark-bg-card:     rgba(20, 19, 26, 0.80);
-  --dark-bg-elevated: rgba(30, 27, 42, 0.90);
-  --dark-bg-glass:    rgba(18, 16, 28, 0.75);
+  --dark-bg:          #0B0A0F;
+  --dark-bg-subtle:   #121118;
+  --dark-bg-card:     rgba(18, 17, 24, 0.85);
+  --dark-bg-elevated: rgba(28, 26, 38, 0.90);
+  --dark-bg-glass:    rgba(14, 13, 20, 0.80);
 
   /* Texto */
   --dark-text-heading: #FAF9FF;
@@ -127,17 +129,17 @@
   --dark-text-light:   #5C5473;
 
   /* Bordes */
-  --dark-border:        rgba(255, 255, 255, 0.07);
-  --dark-border-subtle: rgba(124, 58, 237, 0.15);
-  --dark-border-active: rgba(124, 58, 237, 0.40);
+  --dark-border:        rgba(255, 255, 255, 0.08);
+  --dark-border-subtle: rgba(88, 80, 200, 0.18);
+  --dark-border-active: rgba(88, 80, 200, 0.45);
 
   /* Sombras */
-  --dark-shadow-sm:    0 1px 3px rgba(0, 0, 0, 0.30);
-  --dark-shadow-md:    0 4px 20px -2px rgba(0, 0, 0, 0.40);
-  --dark-shadow-lg:    0 20px 60px -15px rgba(0, 0, 0, 0.50), 0 0 0 1px rgba(255,255,255,0.04);
-  --dark-shadow-hover: 0 25px 50px -12px rgba(124, 58, 237, 0.25), 0 0 0 1px rgba(124, 58, 237, 0.30);
+  --dark-shadow-sm:    0 1px 3px rgba(0, 0, 0, 0.40);
+  --dark-shadow-md:    0 4px 20px -2px rgba(0, 0, 0, 0.50);
+  --dark-shadow-lg:    0 20px 60px -15px rgba(0, 0, 0, 0.60), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  --dark-shadow-hover: 0 25px 50px -12px rgba(88, 80, 200, 0.30), 0 0 0 1px rgba(88, 80, 200, 0.35);
 
   --dark-grad-bg:
-    radial-gradient(ellipse at 0% 0%, rgba(124, 58, 237, 0.12) 0px, transparent 50%),
-    radial-gradient(ellipse at 100% 100%, rgba(245, 158, 11, 0.07) 0px, transparent 50%);
+    radial-gradient(ellipse at 0% 0%, rgba(88, 80, 200, 0.14) 0px, transparent 50%),
+    radial-gradient(ellipse at 100% 100%, rgba(217, 119, 6, 0.08) 0px, transparent 50%);
 }

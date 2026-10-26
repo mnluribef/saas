@@ -282,3 +282,92 @@
     font-size: 0.95rem !important;
   }
 }
+
+/* ==========================================================================
+   VENTRINA SAAS — NAVBAR CON COLOR DE MARCA (MIDNIGHT OBSIDIAN IRIS)
+   ========================================================================== */
+.glass-nav.saas-nav {
+  background: rgba(24, 21, 52, 0.95) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border-bottom: 1px solid rgba(139, 92, 246, 0.22) !important;
+  box-shadow: 0 4px 20px -2px rgba(15, 13, 35, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+
+.glass-nav.saas-nav.scrolled {
+  box-shadow: 0 10px 30px -5px rgba(10, 8, 25, 0.5) !important;
+  background: rgba(18, 15, 42, 0.98) !important;
+}
+
+.glass-nav.saas-nav .logo {
+  color: #FFFFFF !important;
+}
+
+.glass-nav.saas-nav .logo svg {
+  color: #A78BFA !important;
+  filter: drop-shadow(0 0 10px rgba(167, 139, 250, 0.5)) !important;
+}
+
+.glass-nav.saas-nav .logo-primary {
+  color: #FFFFFF !important;
+}
+
+.glass-nav.saas-nav .logo-secondary {
+  color: #A78BFA !important;
+}
+
+.glass-nav.saas-nav .nav-links a {
+  color: rgba(243, 241, 255, 0.85) !important;
+}
+
+.glass-nav.saas-nav .nav-links a:hover,
+.glass-nav.saas-nav .nav-links a.active {
+  color: #FFFFFF !important;
+}
+
+.glass-nav.saas-nav .nav-links a::after {
+  background: #A78BFA !important;
+  box-shadow: 0 0 8px rgba(167, 139, 250, 0.6) !important;
+}
+
+.glass-nav.saas-nav .nav-login-link {
+  color: rgba(243, 241, 255, 0.9) !important;
+}
+
+.glass-nav.saas-nav .nav-login-link:hover {
+  color: #FFFFFF !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+
+.glass-nav.saas-nav .nav-cta-btn {
+  background: linear-gradient(180deg, #6D63E8 0%, #5850C8 100%) !important;
+  color: #FFFFFF !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 4px 14px rgba(88, 80, 200, 0.45) !important;
+  border: 1px solid rgba(167, 139, 250, 0.35) !important;
+}
+
+.glass-nav.saas-nav .nav-cta-btn:hover {
+  background: linear-gradient(180deg, #7C72F2 0%, #6358DC 100%) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 6px 18px rgba(88, 80, 200, 0.6) !important;
+  color: #FFFFFF !important;
+}
+
+.glass-nav.saas-nav #mobile-menu-btn {
+  color: #FFFFFF !important;
+}
+
+.glass-nav.saas-nav #mobile-menu-btn:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+
+@media (max-width: 1024px) {
+  .glass-nav.saas-nav .nav-links {
+    background: rgba(24, 21, 52, 0.98) !important;
+    border-top: 1px solid rgba(139, 92, 246, 0.2) !important;
+    border-bottom: 1px solid rgba(139, 92, 246, 0.2) !important;
+    box-shadow: 0 20px 40px rgba(10, 8, 25, 0.5) !important;
+  }
+  .glass-nav.saas-nav .mobile-login-link {
+    color: #FFFFFF !important;
+  }
+}

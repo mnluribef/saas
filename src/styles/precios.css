@@ -40,7 +40,7 @@ html {
     top: -30%; left: 50%;
     transform: translateX(-50%);
     width: 80vw; height: 80vw;
-    background: radial-gradient(circle, rgba(124,58,237,0.12) 0%, rgba(245,158,11,0.06) 30%, transparent 70%);
+    background: radial-gradient(circle, rgba(88, 80, 200, 0.10) 0%, rgba(217, 119, 6, 0.05) 35%, transparent 70%);
     z-index: 0;
     pointer-events: none;
 }

@@ -1,3 +1,13 @@
+export const DEFAULT_BCV_FALLBACK_RATE = 886.23;
+export const EXTERNAL_BCV_API_URL = "https://ve.dolarapi.com/v1/dolares/oficial";
+
+export function formatBsCurrency(amount: number): string {
+    return new Intl.NumberFormat('es-VE', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(amount);
+}
+
 export interface ICurrencyService {
     getRate(): number;
     fetchRate(): Promise<number>;
@@ -10,7 +20,7 @@ export class BcvCurrencyService implements ICurrencyService {
     private currentRate: number;
     private listeners: Array<(rate: number) => void> = [];
 
-    constructor(initialRate = 853.50) {
+    constructor(initialRate = DEFAULT_BCV_FALLBACK_RATE) {
         this.currentRate = initialRate;
     }
 
@@ -19,6 +29,7 @@ export class BcvCurrencyService implements ICurrencyService {
     }
 
     async fetchRate(): Promise<number> {
+        // 1. Intentar endpoint interno del SaaS
         try {
             const res = await fetch('/api/bcv');
             if (res.ok) {
@@ -26,11 +37,29 @@ export class BcvCurrencyService implements ICurrencyService {
                 if (data.rate && parseFloat(String(data.rate)) > 0) {
                     this.currentRate = parseFloat(String(data.rate));
                     this.notifyListeners();
+                    return this.currentRate;
                 }
             }
         } catch {
-            // Preservar la tasa por defecto en caso de falla de red
+            // Continuar con fallback directo
         }
+
+        // 2. Fallback a la API oficial externa si /api/bcv no responde (ej. en desarrollo local estático)
+        try {
+            const extRes = await fetch(EXTERNAL_BCV_API_URL);
+            if (extRes.ok) {
+                const data = (await extRes.json()) as { promedio?: number; price?: number };
+                const fetchedRate = parseFloat(String(data.promedio || data.price || 0));
+                if (fetchedRate > 0) {
+                    this.currentRate = Math.round(fetchedRate * 100) / 100;
+                    this.notifyListeners();
+                    return this.currentRate;
+                }
+            }
+        } catch {
+            // Preservar la tasa por defecto en caso de falla de red total
+        }
+
         return this.currentRate;
     }
 
