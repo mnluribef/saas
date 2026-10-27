@@ -62,6 +62,7 @@
   --grad-primary-soft: linear-gradient(135deg, rgba(88, 80, 200, 0.10) 0%, rgba(57, 51, 133, 0.05) 100%);
   --grad-accent:       linear-gradient(180deg, #d97706 0%, #b45309 100%);
   --grad-iris-bronze:  linear-gradient(135deg, #121118 0%, #393385 60%, #d97706 100%);
+  --grad-violet-amber: linear-gradient(135deg, #393385 0%, #5850c8 55%, #d97706 100%);
   --grad-glow-iris:    radial-gradient(ellipse at 50% 0%, rgba(88, 80, 200, 0.12) 0%, rgba(88, 80, 200, 0.03) 50%, transparent 70%);
   --grad-glow-amber:   radial-gradient(ellipse at 70% 100%, rgba(217, 119, 6, 0.08) 0%, transparent 60%);
 

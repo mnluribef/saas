@@ -63,9 +63,10 @@ html {
 }
 
 .highlight {
-    background: var(--grad-violet-amber);
+    background: linear-gradient(135deg, #393385 0%, #5850c8 50%, #059669 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    display: inline-block;
     text-shadow: none;
 }
 

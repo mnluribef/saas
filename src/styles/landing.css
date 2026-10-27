@@ -47,6 +47,15 @@
   --lp-ease:      var(--ease-spring);
 }
 
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5.5rem;
+}
+
+section[id] {
+  scroll-margin-top: 5.5rem;
+}
+
 /* Base Body Override para Landing Page */
 body {
   background-color: var(--lp-bg) !important;
@@ -1507,6 +1516,372 @@ a {
   font-weight: 500;
   border: 1px solid var(--lp-border);
   font-size: 0.82rem;
+}
+
+/* ===================== SECCIÓN DE PLANES Y PRECIOS ===================== */
+.pricing-preview-section {
+  padding: 7rem 1.5rem;
+  background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFD 50%, #FFFFFF 100%);
+  border-top: 1px solid var(--lp-border);
+  position: relative;
+}
+
+.pricing-preview-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.pricing-preview-header {
+  text-align: center;
+  max-width: 780px;
+  margin: 0 auto 3.5rem;
+}
+
+.pricing-preview-header h2 {
+  font-family: var(--font-heading);
+  font-size: clamp(2.2rem, 4vw, 3.2rem);
+  font-weight: 800;
+  color: var(--lp-text-heading);
+  margin: 1rem 0 1rem;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.pricing-preview-header p {
+  font-size: 1.15rem;
+  color: var(--lp-text-muted);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.text-gradient-iris {
+  background: linear-gradient(135deg, #3730A3 0%, #4F46E5 50%, #059669 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+}
+
+.pricing-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 2rem;
+  align-items: stretch;
+}
+
+.pricing-card-preview {
+  background: #FFFFFF;
+  border-radius: 24px;
+  border: 1.5px solid #E2E8F0;
+  padding: 2.5rem 2rem;
+  box-shadow: 0 4px 20px -2px rgba(28, 25, 23, 0.05);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pricing-card-preview:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 40px -10px rgba(79, 70, 229, 0.12);
+  border-color: rgba(79, 70, 229, 0.35);
+}
+
+.pricing-card-preview.popular {
+  border: 2px solid #4F46E5;
+  background: linear-gradient(180deg, #FFFFFF 0%, #FAF5FF 100%);
+  box-shadow: 0 20px 45px -10px rgba(79, 70, 229, 0.22);
+  transform: scale(1.03);
+  z-index: 2;
+}
+
+.pricing-card-preview.popular:hover {
+  transform: scale(1.03) translateY(-6px);
+  box-shadow: 0 25px 50px -10px rgba(79, 70, 229, 0.3);
+}
+
+@media (max-width: 1024px) {
+  .pricing-card-preview.popular,
+  .pricing-card-preview.popular:hover {
+    transform: none;
+  }
+}
+
+.popular-ribbon {
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #4F46E5 0%, #3730A3 100%);
+  color: #FFFFFF;
+  font-size: 0.76rem;
+  font-weight: 800;
+  padding: 0.35rem 1rem;
+  border-radius: 50px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+  white-space: nowrap;
+}
+
+.pricing-card-top {
+  border-bottom: 1px solid #E2E8F0;
+  padding-bottom: 1.75rem;
+  margin-bottom: 1.75rem;
+  text-align: center;
+}
+
+.plan-category-badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.2rem 0.65rem;
+  border-radius: 50px;
+  background: #F1F5F9;
+  color: #475569;
+  margin-bottom: 0.85rem;
+}
+
+.plan-category-badge.badge-popular {
+  background: rgba(79, 70, 229, 0.1);
+  color: #4F46E5;
+}
+
+.pricing-card-top h3 {
+  font-family: var(--font-heading);
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--lp-text-heading);
+  margin: 0 0 1rem;
+  letter-spacing: -0.02em;
+}
+
+.plan-price-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
+
+.plan-price-currency {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--lp-text-heading);
+  margin-right: 2px;
+}
+
+.plan-price-val {
+  font-family: var(--font-heading);
+  font-size: 3.5rem;
+  font-weight: 800;
+  color: var(--lp-text-heading);
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.plan-price-period {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--lp-text-muted);
+  margin-left: 4px;
+}
+
+.plan-billing-note {
+  font-size: 0.88rem;
+  color: var(--lp-text-muted);
+  margin: 0;
+}
+
+.pricing-card-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.plan-summary {
+  font-size: 0.94rem;
+  color: var(--lp-text-muted);
+  line-height: 1.55;
+  margin: 0 0 1.75rem;
+  text-align: center;
+}
+
+.plan-perks-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 2rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.95rem;
+}
+
+.plan-perks-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  font-size: 0.93rem;
+  color: var(--lp-text-body);
+  line-height: 1.45;
+}
+
+.plan-check-icon {
+  width: 19px;
+  height: 19px;
+  stroke: #059669;
+  stroke-width: 2.8;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.btn-pricing-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.98rem;
+  text-decoration: none;
+  transition: all 0.25s ease;
+  margin-top: auto;
+}
+
+.btn-pricing-ghost {
+  background: #F8FAFC;
+  color: #1E293B;
+  border: 1.5px solid #CBD5E1;
+}
+
+.btn-pricing-ghost:hover {
+  background: #EEF2FF;
+  border-color: #4F46E5;
+  color: #4F46E5;
+  transform: translateY(-2px);
+}
+
+.btn-pricing-highlight {
+  background: linear-gradient(135deg, #4F46E5 0%, #4338CA 100%);
+  color: #FFFFFF;
+  border: none;
+  box-shadow: 0 8px 20px -4px rgba(79, 70, 229, 0.45);
+}
+
+.btn-pricing-highlight:hover {
+  background: linear-gradient(135deg, #4338CA 0%, #3730A3 100%);
+  color: #FFFFFF;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 26px -4px rgba(79, 70, 229, 0.55);
+}
+
+.pricing-preview-footer {
+  margin-top: 3.5rem;
+}
+
+.pricing-footer-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  background: #FFFFFF;
+  border-radius: 20px;
+  border: 1.5px solid #E2E8F0;
+  padding: 2rem 2.5rem;
+  box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.05);
+}
+
+.pricing-footer-text h4 {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--lp-text-heading);
+  margin: 0 0 0.35rem;
+}
+
+.pricing-footer-text p {
+  font-size: 0.95rem;
+  color: var(--lp-text-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.btn-compare-full {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.9rem 1.6rem;
+  border-radius: 12px;
+  background: #F5F3FF;
+  color: #4F46E5;
+  font-weight: 700;
+  font-size: 0.95rem;
+  border: 1.5px solid rgba(79, 70, 229, 0.25);
+  text-decoration: none;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.btn-compare-full:hover {
+  background: #4F46E5;
+  color: #FFFFFF;
+  border-color: #4F46E5;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px -4px rgba(79, 70, 229, 0.35);
+}
+
+.pricing-trust-strip {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 2.25rem;
+  color: #64748B;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.trust-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.trust-icon {
+  width: 17px;
+  height: 17px;
+  stroke: #059669;
+  stroke-width: 2.6;
+  fill: none;
+}
+
+@media (max-width: 768px) {
+  .pricing-preview-section {
+    padding: 5rem 1rem;
+  }
+  .pricing-preview-grid {
+    grid-template-columns: 1fr;
+  }
+  .pricing-footer-box {
+    flex-direction: column;
+    text-align: center;
+    padding: 1.75rem 1.25rem;
+  }
+  .btn-compare-full {
+    width: 100%;
+    justify-content: center;
+  }
+  .pricing-trust-strip {
+    flex-direction: column;
+    gap: 0.85rem;
+    align-items: center;
+  }
 }
 
 /* ===================== TESTIMONIOS REALES ===================== */
